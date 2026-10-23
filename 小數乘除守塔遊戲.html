@@ -1,0 +1,2743 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>小數乘除守塔大作戰 🏰</title>
+<style>
+  :root{
+    --sky-1:#aee4ff; --sky-2:#e8f8ff; --grass:#7ed957; --grass-d:#5cb83c;
+    --path:#d9a066; --path-d:#c08850; --ink:#2b3a4a; --card:#ffffff;
+    --accent:#ff7a59; --accent-d:#ef5a36; --good:#37c871; --warn:#ffb02e;
+    --shadow:0 10px 24px rgba(40,60,90,.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    font-family:"PingFang TC","Microsoft YaHei","Hiragino Sans TC","Comic Sans MS",system-ui,sans-serif;
+    background:linear-gradient(180deg,#cdeeff 0%,#eafaff 60%,#f6fbff 100%);
+    color:var(--ink); display:flex; align-items:center; justify-content:center;
+    min-height:100%; padding:14px;
+  }
+  .wrap{width:100%; max-width:1120px;}
+  .panel{background:var(--card); border-radius:22px; box-shadow:var(--shadow); overflow:hidden;}
+
+  /* HUD */
+  .hud{
+    display:flex; align-items:center; gap:10px; padding:12px 16px; flex-wrap:wrap;
+    background:linear-gradient(90deg,#ffd66b,#ffb02e); color:#5a3b00;
+    font-weight:800;
+  }
+  .hud .pill{
+    background:rgba(255,255,255,.85); border-radius:999px; padding:6px 12px;
+    display:flex; align-items:center; gap:6px; font-size:15px;
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+  }
+  .hud .grow{flex:1;}
+  .hud .lvbar{height:10px; width:120px; background:rgba(255,255,255,.6); border-radius:999px; overflow:hidden;}
+  .hud .lvbar > i{display:block; height:100%; width:0%; background:var(--good); transition:width .3s;}
+
+  .stage{position:relative; background:#bfeaff;}
+  canvas{display:block; width:100%; height:auto; touch-action:none;}
+
+  /* answer pad */
+  .pad{
+    padding:14px 16px 18px; background:#fff; border-top:3px dashed #ffe0a3;
+  }
+  .question{
+    text-align:center; font-size:30px; font-weight:800; color:var(--ink);
+    margin:2px 0 12px; min-height:38px;
+  }
+  .question .eq{color:var(--accent-d);}
+  .question .blank{
+    display:inline-block; min-width:90px; padding:0 10px; margin-left:6px;
+    border-bottom:4px solid var(--accent); color:var(--accent-d);
+  }
+  .question.idle{color:#9bb1c4; font-size:20px; font-weight:700;}
+
+  .keys{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:420px; margin:0 auto;}
+  .key{
+    border:none; border-radius:16px; padding:16px 0; font-size:24px; font-weight:800;
+    background:#eef4fb; color:var(--ink); cursor:pointer; box-shadow:0 4px 0 #cdd9e8;
+    transition:transform .05s, box-shadow .05s; user-select:none;
+  }
+  .key:active{transform:translateY(3px); box-shadow:0 1px 0 #cdd9e8;}
+  .key.act{background:var(--accent); color:#fff; box-shadow:0 4px 0 var(--accent-d);}
+  .key.clear{background:#ffe1d6; color:var(--accent-d); box-shadow:0 4px 0 #f3b8a6;}
+  .key.wide{grid-column:span 2;}
+  .fire{
+    margin:12px auto 0; display:block; width:100%; max-width:420px;
+    border:none; border-radius:16px; padding:16px 0; font-size:22px; font-weight:900;
+    background:linear-gradient(90deg,#37c871,#1fae5c); color:#fff; cursor:pointer;
+    box-shadow:0 5px 0 #168f49; letter-spacing:2px;
+  }
+  .fire:active{transform:translateY(3px); box-shadow:0 2px 0 #168f49;}
+
+  /* overlay screens */
+  .overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; gap:14px;
+    background:rgba(20,40,70,.55); backdrop-filter:blur(3px); padding:24px;
+    overflow:auto;
+  }
+  .overlay.hidden{display:none;}
+  .hidden{display:none;}
+  .card{background:linear-gradient(180deg,#ffffff 0%,#fff6ef 100%); border-radius:24px; padding:22px 26px; max-width:700px; box-shadow:0 18px 44px rgba(40,60,90,.28); border:3px solid #ffe0c2;}
+  .card h1{margin:0 0 6px; font-size:30px; color:var(--accent-d);}
+  .card h2{margin:0 0 8px; font-size:26px;}
+  .card p{margin:6px 0; font-size:16px; line-height:1.6; color:#4a5a6a;}
+  .btn{
+    margin-top:14px; border:none; border-radius:16px; padding:14px 30px; font-size:20px; font-weight:900;
+    background:linear-gradient(90deg,#ff7a59,#ef5a36); color:#fff; cursor:pointer;
+    box-shadow:0 5px 0 #c8451f; letter-spacing:1px;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 2px 0 #c8451f;}
+  .tag{display:inline-block; background:#fff3e6; color:var(--accent-d); border-radius:999px; padding:4px 12px; font-weight:800; font-size:14px;}
+  .float-msg{
+    position:absolute; left:50%; top:42%; transform:translate(-50%,-50%) scale(0);
+    font-size:40px; font-weight:900; color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.25);
+    pointer-events:none; opacity:0;
+  }
+  .float-msg.show{animation:pop 1s ease forwards;}
+  @keyframes pop{
+    0%{transform:translate(-50%,-50%) scale(.3); opacity:0;}
+    20%{transform:translate(-50%,-50%) scale(1.1); opacity:1;}
+    70%{transform:translate(-50%,-60%) scale(1); opacity:1;}
+    100%{transform:translate(-50%,-90%) scale(.9); opacity:0;}
+  }
+  .toast{
+    position:absolute; left:50%; top:12px; transform:translateX(-50%);
+    background:#fff; color:var(--ink); font-weight:800; padding:8px 16px; border-radius:999px;
+    box-shadow:var(--shadow); opacity:0; transition:opacity .3s; pointer-events:none;
+  }
+  .toast.show{opacity:1;}
+  .hint{font-size:13px; color:#8aa0b4; text-align:center; margin-top:8px;}
+
+  /* 雙人橫屏佈局：左玩家1 / 中戰場 / 右玩家2（開始前先隱藏，不出現鍵盤） */
+  .arena{display:flex; gap:12px; align-items:stretch;}
+  .side{flex:0 0 248px; display:none; flex-direction:column; gap:10px; justify-content:flex-start;}
+  .side.playing{display:flex;}
+  .side .pcard{border-radius:16px; padding:10px 12px; border:2px solid #cfe6ff; background:#f5fbff;}
+  .side.p2 .pcard{border-color:#ffd9c7; background:#fff7f2;}
+  .pcard .pname{font-weight:900; font-size:15px; color:#1f7fb8;}
+  .side.p2 .pcard .pname{color:#d2542f;}
+  .pcard .pstat{font-size:14px; color:#4a5a6a; font-weight:700; margin:3px 0 6px;}
+  .pques{font-size:19px; font-weight:800; color:var(--ink); min-height:28px; text-align:center; line-height:1.25;}
+  .pques.idle{color:#9bb1c4; font-size:14px; font-weight:700;}
+  .pques .eq{color:var(--accent-d);}
+  .pques .blank{display:inline-block; min-width:58px; padding:0 8px; border-bottom:4px solid #1f7fb8; color:#1f7fb8;}
+  .side.p2 .pcard .pques .blank{border-color:#d2542f; color:#d2542f;}
+  .stagewrap{flex:1; min-width:0; position:relative; background:#bfeaff; overflow:hidden;}
+  .stagewrap canvas{display:block; width:100%; height:auto; touch-action:none;}
+  .kp-title{text-align:center; font-weight:800; font-size:14px; color:#1f7fb8;}
+  .side.p2 .kp-title{color:#d2542f;}
+  .side .keys{max-width:none; gap:8px;}
+  .side .key{padding:14px 0; font-size:20px;}
+  .firep1{background:linear-gradient(90deg,#3aa0ff,#1f7fb8); box-shadow:0 5px 0 #155f8c;}
+  .firep1:active{transform:translateY(3px); box-shadow:0 2px 0 #155f8c;}
+  .firep2{background:linear-gradient(90deg,#37c871,#1fae5c); box-shadow:0 5px 0 #168f49;}
+  .firep2:active{transform:translateY(3px); box-shadow:0 2px 0 #168f49;}
+  .side .fire{margin-top:8px; max-width:none;}
+
+  /* 單人模式：唯一的答題區（玩家1）放到右邊 */
+  body.single .side.p1{order:2;}
+
+  /* 玩法模式切換：輸入模式 / 選擇題模式 */
+  body.mode-input .choice-area{display:none;}
+  body.mode-choice .keypad-area{display:none;}
+  /* 選擇題：A/B/C/D 垂直排列，選項區域緊湊不撐滿，保留題目空間 */
+  body.mode-choice .choice-area{flex:0 0 auto; display:flex; flex-direction:column; min-height:0;}
+  /* 選擇題題目區域放大：更大字體＋醒目底框，讓題目一眼看清 */
+  body.mode-choice .pques{
+    font-size:27px; min-height:56px; padding:14px 10px; margin-bottom:10px;
+    line-height:1.32; background:#eef6ff; border:2px solid #cfe6ff; border-radius:14px;
+  }
+  body.mode-choice .pques .blank{min-width:74px; padding:0 10px; border-bottom-width:5px;}
+  .choice-area{margin-top:2px;}
+  .choices{display:grid; grid-template-columns:1fr; gap:7px;}
+  .choice{
+    border:none; border-radius:12px; padding:9px 6px; font-size:18px; font-weight:900;
+    background:#eef4fb; color:var(--ink); cursor:pointer; box-shadow:0 4px 0 #cdd9e8;
+    display:flex; align-items:center; justify-content:center; gap:10px; user-select:none;
+    min-height:42px;
+  }
+  .choice:active{transform:translateY(3px); box-shadow:0 1px 0 #cdd9e8;}
+  /* 選擇題按鈕：左右縮短並置中，不撐滿整個答題區寬度 */
+  .choice{justify-self:center; width:86%;}
+  .choice .lab{background:#1f7fb8; color:#fff; border-radius:8px; padding:3px 10px; font-size:16px;}
+  .side.p2 .choice .lab{background:#d2542f;}
+
+  /* 主動技：能量條（集滿 5 點解鎖）與釋放按鈕 */
+  .ult{margin:6px 0 2px;}
+  .ult-bar{height:11px; background:#eef4fb; border-radius:999px; overflow:hidden; border:1px solid #dbe7f2;}
+  .ult-bar > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,#ffd24d,#ff7a59); transition:width .25s;}
+  .ult-bar.full > i{background:linear-gradient(90deg,#37c871,#1fae5c);}
+  .ult-btn{
+    margin-top:7px; width:100%; border:none; border-radius:12px; padding:10px 6px; font-size:14px; font-weight:900;
+    background:#eef4fb; color:#8aa0b4; cursor:pointer; box-shadow:0 3px 0 #cdd9e8; font-family:inherit; letter-spacing:.5px;
+  }
+  .ult-btn.ready{background:linear-gradient(90deg,#ffd24d,#ff7a59); color:#fff; box-shadow:0 3px 0 #c8701f; animation:pulse 1s ease-in-out infinite;}
+  .ult-btn:disabled{cursor:not-allowed; opacity:.85;}
+  .side.p2 .ult-btn.ready{background:linear-gradient(90deg,#f6b76b,#d2542f); box-shadow:0 3px 0 #a83f1f;}
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+  .choice .val{min-width:42px; text-align:center;}
+  .choice.wrong{background:#ffd6d6; box-shadow:0 4px 0 #e7a0a0;}
+  .choice.correct{background:#c7f3d4; box-shadow:0 4px 0 #8fd6a6;}
+  .mode-btn{margin-top:10px;}
+  /* 題型選擇卡（第三屏）：小數乘法 / 小數除法 */
+  .topic-row{display:flex; gap:14px; margin:12px 0 4px;}
+  .topic-card{flex:1; border:2px solid #dbe7f2; background:#fff; border-radius:16px; padding:16px 10px 12px; cursor:pointer;
+    font-family:inherit; display:flex; flex-direction:column; align-items:center; gap:8px; position:relative;
+    transition:transform .06s, border-color .12s, background .12s;}
+  .topic-card:active{transform:translateY(2px);}
+  .topic-card.sel{border-color:#ff7a59; background:#fff3e6; box-shadow:0 0 0 3px rgba(255,122,89,.18);}
+  .topic-card.sel .mode-badge{display:block;}
+  .topic-emoji{font-size:38px; line-height:1;}
+  .topic-name{font-weight:900; font-size:19px; color:#2b3a4a;}
+  .topic-card.sel .topic-name{color:var(--accent-d);}
+  .topic-row .mode-desc{width:100%;}
+  /* 挑戰模式（第四屏）：鍵盤輸入 / 選擇題 */
+  .play-btns{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;}
+  .play-btns .mode-btn{margin-top:0;}
+  .play-btns .mode-btn small{display:block; font-weight:700; font-size:12.5px; opacity:.92; margin-top:4px; letter-spacing:0;}
+  /* 尚未完成選擇時的提示（各步驟不預設，必須選一個） */
+  .pick-warn{font-weight:900; color:var(--accent-d); font-size:14px; margin:8px 0 0;}
+  @media (max-width:560px){ .topic-row{flex-direction:column;} .play-btns{grid-template-columns:1fr;} }
+
+  /* 開始畫面：職業選擇 */
+  .picks{display:flex; flex-direction:column; gap:10px; margin:10px 0 2px; text-align:left;}
+  .pick-row{display:flex; align-items:center; gap:10px;}
+  .pick-chip{flex:0 0 58px; font-weight:900; font-size:14px; text-align:center; border-radius:10px; padding:9px 0; color:#fff; letter-spacing:1px;}
+  .chip-p1{background:linear-gradient(180deg,#3aa0ff,#1f7fb8); box-shadow:0 3px 0 #155f8c;}
+  .chip-p2{background:linear-gradient(180deg,#ff9a6b,#d2542f); box-shadow:0 3px 0 #a83f1f;}
+  .class-grid{flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .class-card{border:2px solid #dbe7f2; background:#fff; border-radius:12px; padding:8px 5px; cursor:pointer;
+    font-family:inherit; transition:transform .06s, border-color .12s, background .12s;}
+  .class-card:active{transform:translateY(2px);}
+  .class-card.sel{border-color:#ff7a59; background:#fff3e6; box-shadow:0 0 0 3px rgba(255,122,89,.18);}
+  .class-card .cc-head{display:flex; align-items:center; justify-content:center; gap:5px; font-weight:900; font-size:15px; color:#2b3a4a;}
+  .class-card .cc-icon{font-size:19px;}
+  .class-card .cc-hero{font-size:11px; font-weight:800; color:#fff; background:#ff7a59; border-radius:999px; padding:1px 8px; margin-left:3px;}
+  .class-card.sel .cc-hero{background:#ef5a36;}
+  .class-card .cc-skills{margin-top:5px; font-size:10.5px; color:#7a8aa0; line-height:1.5; font-weight:700;
+    display:flex; flex-wrap:wrap; gap:1px 6px; justify-content:center;}
+  .class-card.sel .cc-skills{color:#c2571f;}
+  /* 職業人物公仔（選擇職業時顯示） */
+  .cc-fig{height:106px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:3px;}
+  .cc-fig svg{width:86px; height:104px; display:block; animation:figbob 1.7s ease-in-out infinite; filter:drop-shadow(0 4px 4px rgba(20,40,70,.16));}
+  .class-card.sel .cc-fig svg{animation-duration:1.05s;}
+  /* 職業卡片上的主動技介紹 */
+  .class-card .cc-ult{margin-top:6px; font-size:10px; line-height:1.45; font-weight:700; color:#6f3aa6;
+    background:#f5edfb; border:1px solid #e4d4f6; border-radius:9px; padding:5px 6px; text-align:left;}
+  .class-card .cc-ult .cc-ult-tag{display:inline-block; background:#7a3fb0; color:#fff; border-radius:6px;
+    padding:1px 6px; font-size:9px; font-weight:800; margin-right:4px; vertical-align:1px;}
+  .class-card .cc-ult .ue{font-weight:900; color:#4f2580;}
+  .pick-chip{font-weight:900; color:#2b3a4a; background:#eef4fb; border-radius:999px; padding:4px 12px; font-size:14px;}
+  .pick-chip.chip-p2{background:#fdeede;}
+  .pick-chip.set{background:#fff3e6; border:1px solid #ff7a59; color:#c2571f;}
+  @keyframes figbob{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-4px) scale(1.03);}}
+  /* 模式選擇：單人挑戰 / 雙人合作（開場第一屏） */
+  .mode-row{display:flex; gap:14px; margin:12px 0 4px;}
+  .mode-card{flex:1; border:2px solid #dbe7f2; background:#fff; border-radius:16px; padding:16px 10px 12px; cursor:pointer;
+    font-family:inherit; display:flex; flex-direction:column; align-items:center; gap:8px; position:relative;
+    transition:transform .06s, border-color .12s, background .12s;}
+  .mode-card:active{transform:translateY(2px);}
+  .mode-card.sel{border-color:#ff7a59; background:#fff3e6; box-shadow:0 0 0 3px rgba(255,122,89,.18);}
+  .mode-badge{position:absolute; top:-11px; right:10px; background:#ff7a59; color:#fff; font-size:12px; font-weight:900;
+    border-radius:999px; padding:3px 10px; box-shadow:0 2px 6px rgba(0,0,0,.15); display:none; letter-spacing:1px;}
+  .mode-card.sel .mode-badge{display:block;}
+  .mode-fig{display:flex; gap:2px; align-items:flex-end; height:76px;}
+  .mode-fig svg{width:54px; height:66px; display:block; animation:figbob 1.7s ease-in-out infinite; filter:drop-shadow(0 3px 3px rgba(20,40,70,.16));}
+  .mode-fig svg:nth-child(2){animation-delay:.45s;}
+  .mode-name{font-weight:900; font-size:19px; color:#2b3a4a;}
+  .mode-desc{margin:2px 0 0; padding:0; list-style:none; font-size:13px; color:#4a5a6a; font-weight:700; line-height:1.75; text-align:left;}
+  .mode-desc li::before{content:'✔'; color:#37c871; margin-right:6px; font-weight:900;}
+  .picks.single .p2row{display:none;}
+  .class-btns{margin-top:12px;}
+  .btn.ghost{background:linear-gradient(90deg,#dfe9f3,#c9d8e6); color:#2b3a4a; box-shadow:0 5px 0 #a9bccc; padding:12px 22px; font-size:16px;}
+  .btn.ghost:active{transform:translateY(3px); box-shadow:0 2px 0 #a9bccc;}
+
+  /* 玩家卡片：職業技能輪替顯示 */
+  .pskills{display:flex; gap:5px; flex-wrap:wrap; margin:4px 0 6px;}
+  .pskills .sk{font-size:11px; font-weight:800; color:#8aa0b4; background:#eef4fb; border-radius:999px; padding:2px 8px;}
+  .pskills .sk.next{color:#fff; background:#ff7a59;}
+  .side.p2 .pskills .sk.next{background:#d2542f;}
+
+  @media (max-width:560px){ .class-grid{grid-template-columns:repeat(2,1fr);} }
+
+  @media (max-width:860px){ .arena{flex-direction:column;} .side{flex:1 1 auto;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <div class="hud">
+      <div class="pill" id="lives">❤️❤️❤️❤️❤️</div>
+      <div class="pill" id="strikePill">💢 連錯 0/3</div>
+      <div class="pill">⭐ <span id="score">0</span></div>
+      <div class="grow"></div>
+      <div class="pill">第 <span id="level">1</span> 關</div>
+      <div class="pill" id="modePill">🧑‍🤝‍🧑 雙人合作</div>
+      <div class="pill" id="topicPill">🧮 選擇題型</div>
+      <div class="pill" style="gap:8px;">進度 <span class="lvbar"><i id="lvbar"></i></span></div>
+    </div>
+
+    <div class="arena">
+      <!-- 玩家1 控制面板（雙人模式在左；單人模式時移到右邊） -->
+      <div class="side p1">
+        <div class="pcard">
+          <div class="pname" id="p1name">🧙 魔法師 艾倫</div>
+          <div class="pstat">連擊 <span id="p1combo">0</span></div>
+          <div class="pskills" id="p1skills"></div>
+          <div class="pques idle" id="p1ques">等待你的怪物…</div>
+          <div class="ult">
+            <div class="ult-bar" id="p1ultbarwrap"><i id="p1ultbar"></i></div>
+            <button class="ult-btn" id="p1ult" data-player="p1" type="button" disabled>🔮 智慧祝福 (0/5)</button>
+          </div>
+        </div>
+        <div class="keypad-area">
+          <div class="kp-title" id="p1kpt">🧙 數字鍵（點擊/鍵盤）</div>
+          <div class="keys">
+            <button class="key" data-player="p1" data-k="7">7</button>
+            <button class="key" data-player="p1" data-k="8">8</button>
+            <button class="key" data-player="p1" data-k="9">9</button>
+            <button class="key" data-player="p1" data-k="4">4</button>
+            <button class="key" data-player="p1" data-k="5">5</button>
+            <button class="key" data-player="p1" data-k="6">6</button>
+            <button class="key" data-player="p1" data-k="1">1</button>
+            <button class="key" data-player="p1" data-k="2">2</button>
+            <button class="key" data-player="p1" data-k="3">3</button>
+            <button class="key" data-player="p1" data-k="0">0</button>
+            <button class="key" data-player="p1" data-k=".">.</button>
+            <button class="key clear" data-player="p1" data-k="C">清除</button>
+          </div>
+          <button class="fire firep1" data-player="p1">✨ 攻擊！</button>
+        </div>
+        <div class="choice-area">
+          <div class="kp-title" id="p1ct">🧙 選出答案（點一下）</div>
+          <div class="choices">
+            <button class="choice" data-player="p1" data-idx="0"><span class="lab">A</span><span class="val">?</span></button>
+            <button class="choice" data-player="p1" data-idx="1"><span class="lab">B</span><span class="val">?</span></button>
+            <button class="choice" data-player="p1" data-idx="2"><span class="lab">C</span><span class="val">?</span></button>
+            <button class="choice" data-player="p1" data-idx="3"><span class="lab">D</span><span class="val">?</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 戰場（中） -->
+      <div class="stagewrap">
+        <canvas id="game" width="960" height="560"></canvas>
+        <div class="toast" id="toast"></div>
+        <div class="float-msg" id="floatMsg"></div>
+
+        <!-- start screen -->
+        <div class="overlay" id="startScreen">
+          <!-- 模式選擇：單人挑戰 / 雙人合作（開場第一屏） -->
+          <div class="card" id="modeScreen">
+            <div class="tag">五年級數學 · 小數乘除法</div>
+            <h1>🏰 小數乘除守塔大作戰</h1>
+            <p>四步驟出發：先選<b>人數</b>，再選<b>職業</b>，接著選<b>題型</b>（小數乘法／小數除法），最後選<b>挑戰模式</b>。答對就會<b>釋放技能</b>打怪；每關清光小怪後會出現 <b>超大 BOSS</b>，答對 5 題擊敗牠！</p>
+            <p>每個職業有 <b>3 個絕技</b>，答對時輪流釋放：❄️冰凍、☄️隕石、🌀旋風、⚡審判……各有特色！</p>
+            <p><b>🔮 主動技</b>：每答對 5 題集滿能量，就能點擊釋放該職業的專屬大招——🔮雙倍分數、🛡️答錯免計連錯（保命）、⚔️立即破敵、💖回血，效果各不相同！</p>
+            <div class="mode-row" id="modeRow">
+              <button type="button" class="mode-card" data-count="1">
+                <span class="mode-badge">已選擇</span>
+                <span class="mode-fig" id="modeFig1"></span>
+                <span class="mode-name">🧑 單人挑戰</span>
+                <ul class="mode-desc">
+                  <li>1 位玩家，獨自守城堡</li>
+                  <li>1 條怪物車道，專心計算</li>
+                  <li>BOSS 一個人答 5 題擊敗</li>
+                </ul>
+              </button>
+              <button type="button" class="mode-card" data-count="2">
+                <span class="mode-badge">已選擇</span>
+                <span class="mode-fig" id="modeFig2"></span>
+                <span class="mode-name">🧑‍🤝‍🧑 雙人合作</span>
+                <ul class="mode-desc">
+                  <li>2 位玩家，一起守城堡</li>
+                  <li>上下 2 條車道，同步計算</li>
+                  <li>合計計分，BOSS 共答 5 題</li>
+                </ul>
+              </button>
+            </div>
+            <p class="pick-warn hidden" id="modeWarn">⚠️ 請先選擇「單人挑戰」或「雙人合作」！</p>
+            <button class="btn mode-btn" id="toClassBtn" type="button">⚔️ 下一步：選擇職業</button>
+            <p class="hint" style="margin-top:10px;">選好人數、職業、題型與挑戰模式才開始，開始前不會出現鍵盤。⚠️ 累計答錯 3 次失去 1 條命（5 條命共享）；🎆 擊敗 BOSS 城堡放煙花！</p>
+          </div>
+
+          <!-- 職業選擇（第二屏） -->
+          <div class="card hidden" id="classScreen">
+            <div class="tag mode-tag">👥 請先選擇人數</div>
+            <h2>⚔️ 選擇職業</h2>
+            <p>每位玩家選一個職業，卡片上有<b>專屬人物公仔</b>；答對時會輪流釋放該職業的 <b>3 個絕技</b>。選完職業，再挑<b>題型</b>開打！</p>
+            <div class="picks" id="picks">
+              <div class="pick-row">
+                <span class="pick-chip chip-p1">玩家1</span>
+                <div class="class-grid" id="p1grid"></div>
+              </div>
+              <div class="pick-row p2row">
+                <span class="pick-chip chip-p2">玩家2</span>
+                <div class="class-grid" id="p2grid"></div>
+              </div>
+            </div>
+            <p class="pick-warn hidden" id="classWarn">⚠️ 請先為每位玩家選擇職業！</p>
+            <button class="btn mode-btn" id="toTopicBtn" type="button">🧮 下一步：選擇題型</button>
+            <div class="class-btns">
+              <button class="btn ghost" id="backModeBtn" type="button">← 返回重新選擇模式</button>
+            </div>
+          </div>
+
+          <!-- 題型選擇（第三屏） -->
+          <div class="card hidden" id="topicScreen">
+            <div class="tag mode-tag">👥 請先選擇人數</div>
+            <h2>🧮 選擇題型</h2>
+            <p>這次要練習哪一種計算？選好題型後，再決定挑戰模式。</p>
+            <div class="topic-row" id="topicRow">
+              <button type="button" class="topic-card" data-topic="mul">
+                <span class="mode-badge">已選擇</span>
+                <span class="topic-emoji">✖️</span>
+                <span class="topic-name">小數乘法</span>
+                <ul class="mode-desc">
+                  <li>小數 × 小數的練習</li>
+                  <li>由淺入深 3 個難度</li>
+                  <li>例如 2.4 × 1.5</li>
+                </ul>
+              </button>
+              <button type="button" class="topic-card" data-topic="div">
+                <span class="mode-badge">已選擇</span>
+                <span class="topic-emoji">➗</span>
+                <span class="topic-name">小數除法</span>
+                <ul class="mode-desc">
+                  <li>小數 ÷ 小數的練習</li>
+                  <li>由淺入深 3 個難度</li>
+                  <li>例如 14.8 ÷ 4</li>
+                </ul>
+              </button>
+            </div>
+            <p class="pick-warn hidden" id="topicWarn">⚠️ 請先選擇「小數乘法」或「小數除法」！</p>
+            <button class="btn mode-btn" id="toPlayBtn" type="button">🎯 下一步：選擇挑戰模式</button>
+            <div class="class-btns">
+              <button class="btn ghost" id="backClassBtn" type="button">← 返回重新選擇職業</button>
+            </div>
+          </div>
+
+          <!-- 挑戰模式選擇（第四屏） -->
+          <div class="card hidden" id="playScreen">
+            <div class="tag mode-tag">👥 請先選擇人數</div>
+            <h2>🎮 選擇挑戰模式</h2>
+            <p id="playSummary"></p>
+            <div class="play-btns">
+              <button class="btn mode-btn" id="playInputBtn" type="button" style="background:linear-gradient(90deg,#3aa0ff,#1f7fb8);box-shadow:0 5px 0 #155f8c;">⌨️ 鍵盤輸入<small>點數字鍵輸入答案</small></button>
+              <button class="btn mode-btn" id="playChoiceBtn" type="button" style="background:linear-gradient(90deg,#37c871,#1fae5c);box-shadow:0 5px 0 #168f49;">🎯 選擇題<small>從選項中點出答案</small></button>
+            </div>
+            <div class="class-btns">
+              <button class="btn ghost" id="backTopicBtn" type="button">← 返回重新選擇題型</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- game over -->
+        <div class="overlay hidden" id="overScreen">
+          <div class="card">
+            <h2 id="overTitle">城堡守住了！</h2>
+            <p><span id="scoreWord">合計得分</span>：<b id="finalScore">0</b> 分</p>
+            <p>到達第 <b id="finalLevel">1</b> 關</p>
+          <button class="btn" id="againBtn">再玩一次 🔄</button>
+          <button class="btn" id="changeModeBtn" style="background:linear-gradient(90deg,#ffb02e,#ef8b1f);box-shadow:0 5px 0 #c8701f;">🔁 換一種玩法</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 玩家2 控制面板（右） -->
+      <div class="side p2">
+        <div class="pcard">
+          <div class="pname" id="p2name">🏹 弓箭手 蕾雅</div>
+          <div class="pstat">連擊 <span id="p2combo">0</span></div>
+          <div class="pskills" id="p2skills"></div>
+          <div class="pques idle" id="p2ques">等待你的怪物…</div>
+          <div class="ult">
+            <div class="ult-bar" id="p2ultbarwrap"><i id="p2ultbar"></i></div>
+            <button class="ult-btn" id="p2ult" data-player="p2" type="button" disabled>🛡️ 守護之盾 (0/5)</button>
+          </div>
+        </div>
+        <div class="keypad-area">
+          <div class="kp-title" id="p2kpt">🏹 數字鍵（點擊/鍵盤）</div>
+          <div class="keys">
+            <button class="key" data-player="p2" data-k="7">7</button>
+            <button class="key" data-player="p2" data-k="8">8</button>
+            <button class="key" data-player="p2" data-k="9">9</button>
+            <button class="key" data-player="p2" data-k="4">4</button>
+            <button class="key" data-player="p2" data-k="5">5</button>
+            <button class="key" data-player="p2" data-k="6">6</button>
+            <button class="key" data-player="p2" data-k="1">1</button>
+            <button class="key" data-player="p2" data-k="2">2</button>
+            <button class="key" data-player="p2" data-k="3">3</button>
+            <button class="key" data-player="p2" data-k="0">0</button>
+            <button class="key" data-player="p2" data-k=".">.</button>
+            <button class="key clear" data-player="p2" data-k="C">清除</button>
+          </div>
+          <button class="fire firep2" data-player="p2">🏹 攻擊！</button>
+        </div>
+        <div class="choice-area">
+          <div class="kp-title" id="p2ct">🏹 選出答案（點一下）</div>
+          <div class="choices">
+            <button class="choice" data-player="p2" data-idx="0"><span class="lab">A</span><span class="val">?</span></button>
+            <button class="choice" data-player="p2" data-idx="1"><span class="lab">B</span><span class="val">?</span></button>
+            <button class="choice" data-player="p2" data-idx="2"><span class="lab">C</span><span class="val">?</span></button>
+            <button class="choice" data-player="p2" data-idx="3"><span class="lab">D</span><span class="val">?</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hint">⌨️ 鍵盤輸入：點自己的數字鍵輸入答案，再按「釋放技能」。🎯 選擇題：A/B/C/D 直直排列，點出答案。⚠️ 累計答錯 3 次失去 1 條命。🔮 每答對 5 題可放 1 次主動技（雙倍分數／答錯免計連錯／破敵／回血）。👹 每關最後一隻超大 BOSS，答對 5 題通關，擊敗時城堡放煙花！🧑 單人模式的答題區在右邊，雙人模式左右各一人。</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const cv = document.getElementById('game');
+  const ctx = cv.getContext('2d');
+  const W = 960, H = 560;
+  // HiDPI
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = W*dpr; cv.height = H*dpr;
+  cv.style.aspectRatio = W+'/'+H;
+  ctx.scale(dpr,dpr);
+
+  const GROUND_Y = 300;       // 地平線（草與天交界）
+  const PATH_Y = 437;         // 道路中心（覆蓋上下兩條車道）
+  const PATH_H = 186;         // 加寬以容納兩條車道與 BOSS
+  const LANE1_Y = 388;        // 玩家1（魔法師）車道 · 上排
+  const LANE2_Y = 486;        // 玩家2（弓箭手）車道 · 下排
+  const TOWER_X = 110;
+  const HERO_X = 186;         // 魔法師
+  const ARCHER_X = 256;       // 弓箭手
+  const CASTLE_BASE = 470;    // 城堡與角色腳下
+  const SPAWN_X = W - 40;
+  const REACH_X = TOWER_X + 66;
+  const BOSS_R = 64;          // BOSS 半徑（更大隻）
+  const BOSS_Y = 437;         // BOSS 專用車道（畫面中央，兩人共同目標）
+
+  const livesEl = document.getElementById('lives');
+  const strikeEl = document.getElementById('strikePill');
+  const scoreEl = document.getElementById('score');
+  const levelEl = document.getElementById('level');
+  const lvbarEl = document.getElementById('lvbar');
+  const startScreen = document.getElementById('startScreen');
+  const modeScreen = document.getElementById('modeScreen');
+  const classScreen = document.getElementById('classScreen');
+  const topicScreen = document.getElementById('topicScreen');
+  const playScreen = document.getElementById('playScreen');
+  const overScreen = document.getElementById('overScreen');
+  const againBtn = document.getElementById('againBtn');
+  const toastEl = document.getElementById('toast');
+  const floatMsg = document.getElementById('floatMsg');
+
+  // 怪物種類與代表色（用於爆炸粒子）
+  const MONSTER_TYPES = ['slime','ghost','imp','pumpkin','cyclops'];
+  const MONSTER_COLOR = {
+    slime:'#5cb83c', ghost:'#cfe0f5', imp:'#8a4dff',
+    pumpkin:'#ef7a1f', cyclops:'#2b9fe0'
+  };
+  const PRAISE = ['好棒！','太厲害了！','答對了！','Bingo！','完美！','你真行！'];
+
+  // ---- 職業系統：4 個職業，每個 3 個絕技（答對時輪流釋放）＋ 1 招主動技 ----
+  // 主動技需集滿 5 點（答對 5 題）才能點擊釋放，每職業效果不同：
+  //   mage    → 智慧祝福 double   ：下一題答對分數 ×2
+  //   archer  → 守護之盾 nopenalty：下一次答錯不計入連錯（守住 1 條命）
+  //   warrior → 破陣斬   strike   ：立即對當前目標造成 1 點傷害（小怪秒殺 / BOSS 扣 1 題）
+  //   priest  → 神聖治癒 heal      ：恢復 1 條生命（已滿則轉 +20 分）
+  const CLASSES = {
+    mage: {
+      name:'魔法師', icon:'🧙', hero:'艾倫', skills:[
+        { name:'魔法星',   icon:'✨' },
+        { name:'冰凍術',   icon:'❄️' },
+        { name:'隕石術',   icon:'☄️' }
+      ],
+      ult: { name:'智慧祝福', icon:'🔮', effect:'double', desc:'下一題答對分數 ×2' }
+    },
+    archer: {
+      name:'弓箭手', icon:'🏹', hero:'蕾雅', skills:[
+        { name:'連射箭',   icon:'🏹' },
+        { name:'三連箭',   icon:'🎯' },
+        { name:'穿甲箭',   icon:'🔥' }
+      ],
+      ult: { name:'守護之盾', icon:'🛡️', effect:'nopenalty', desc:'下一次答錯不計入連錯（守住 1 條命）' }
+    },
+    warrior: {
+      name:'劍士', icon:'⚔️', hero:'凱爾', skills:[
+        { name:'斬擊波',   icon:'🗡️' },
+        { name:'旋風斬',   icon:'🌀' },
+        { name:'衝鋒斬',   icon:'💥' }
+      ],
+      ult: { name:'破陣斬', icon:'⚔️', effect:'strike', desc:'立即對怪物造成 1 點傷害' }
+    },
+    priest: {
+      name:'牧師', icon:'🙏', hero:'希雅', skills:[
+        { name:'聖光彈',   icon:'🌟' },
+        { name:'治癒之光', icon:'💚' },
+        { name:'神聖審判', icon:'⚡' }
+      ],
+      ult: { name:'神聖治癒', icon:'💖', effect:'heal', desc:'恢復 1 條生命' }
+    }
+  };
+  const CLASS_ORDER = ['mage','archer','warrior','priest'];
+  // 兩位玩家開始前選定的職業（預設 魔法師 / 弓箭手）
+  let sel = { p1:null, p2:null };
+  // 遊戲人數：1 = 單人挑戰；2 = 雙人合作；0 = 尚未選擇（開始前不預設任何選項）
+  let players = 0;
+  function activePlayers(){ return (players === 1) ? ['p1'] : (players === 2 ? ['p1','p2'] : []); }
+
+  // 職業人物公仔（開始畫面選職業時顯示的迷你角色立牌）
+  // 還沒選職業時的佔位公仔（開始前不預設選項，用問號小人提示）
+  const FIG_PLACEHOLDER = `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="112" rx="30" ry="7" fill="#9fb3c8" opacity=".25"/>
+      <rect x="24" y="103" width="52" height="12" rx="6" fill="#b8c6d6"/>
+      <rect x="24" y="103" width="52" height="4" rx="2" fill="#cfdaea"/>
+      <path d="M50 106 C36 106 32 86 35 66 L40 46 H60 L65 66 C68 86 64 106 50 106 Z" fill="#d9e3ef"/>
+      <circle cx="50" cy="33" r="13" fill="#e9f0f8"/>
+      <text x="50" y="40" font-size="22" font-weight="bold" text-anchor="center" fill="#8aa0b4">?</text>
+    </svg>`;
+  const CLASS_FIG = {
+    mage: `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="figMageRobe" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#74d6ff"/><stop offset="1" stop-color="#2b9fe0"/>
+        </linearGradient>
+        <radialGradient id="figMageGlow" cx=".5" cy=".5" r=".5">
+          <stop offset="0" stop-color="#fff7c2"/><stop offset="1" stop-color="#ffb02e"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="50" cy="112" rx="30" ry="7" fill="#1f7fb8" opacity=".22"/>
+      <rect x="24" y="103" width="52" height="12" rx="6" fill="#1f7fb8"/>
+      <rect x="24" y="103" width="52" height="4" rx="2" fill="#3aa0ff"/>
+      <path d="M50 106 C34 106 30 88 33 68 L37 46 H63 L67 68 C70 88 66 106 50 106 Z" fill="url(#figMageRobe)"/>
+      <path d="M50 106 C40 106 35 96 36 82 L42 46 H50 Z" fill="#ffffff" opacity=".22"/>
+      <rect x="37" y="65" width="26" height="6" rx="3" fill="#ffd24d"/>
+      <circle cx="50" cy="33" r="12" fill="#ffe0c2"/>
+      <circle cx="45" cy="36.5" r="2.4" fill="#ffb3b3" opacity=".55"/>
+      <circle cx="55" cy="36.5" r="2.4" fill="#ffb3b3" opacity=".55"/>
+      <circle cx="45" cy="32" r="1.9" fill="#2b3a4a"/>
+      <circle cx="55" cy="32" r="1.9" fill="#2b3a4a"/>
+      <path d="M46 37 Q50 40.5 54 37" stroke="#2b3a4a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M36 26 H64 L55 4 Z" fill="#3a7bd5"/>
+      <path d="M36 26 H50 L55 4 Z" fill="#5c9de8"/>
+      <rect x="33" y="22" width="34" height="5" rx="2.5" fill="#2f66b0"/>
+      <circle cx="55" cy="4" r="3" fill="#ff7a59"/>
+      <path d="M55 12 l1.6 3.2 3.4 .5 -2.5 2.4 .6 3.4 -3.1 -1.6 -3.1 1.6 .6 -3.4 -2.5 -2.4 3.4 -.5 Z" fill="#ffd24d"/>
+      <line x1="74" y1="46" x2="78" y2="104" stroke="#7a5a3a" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="74" cy="42" r="9" fill="#ffb02e" opacity=".35"/>
+      <circle cx="74" cy="42" r="6.5" fill="url(#figMageGlow)"/>
+      <path d="M74 37 l1.3 2.6 2.9 .4 -2.1 2 .5 2.9 -2.6 -1.4 -2.6 1.4 .5 -2.9 -2.1 -2 2.9 -.4 Z" fill="#fff7c2"/>
+    </svg>`,
+    archer: `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="figArchCoat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#7ed957"/><stop offset="1" stop-color="#4ea233"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="50" cy="112" rx="30" ry="7" fill="#3f8f2a" opacity=".22"/>
+      <rect x="24" y="103" width="52" height="12" rx="6" fill="#4ea233"/>
+      <rect x="24" y="103" width="52" height="4" rx="2" fill="#7ed957"/>
+      <path d="M37 106 L42 46 H58 L63 106 Z" fill="url(#figArchCoat)"/>
+      <path d="M37 106 L42 46 H50 L46 106 Z" fill="#ffffff" opacity=".2"/>
+      <rect x="41" y="64" width="18" height="5" rx="2" fill="#caa85a"/>
+      <circle cx="50" cy="33" r="12" fill="#ffe0c2"/>
+      <path d="M38 29 Q50 20 62 29 L62 24 Q50 15 38 24 Z" fill="#3a7bd5"/>
+      <path d="M38 28 Q26 31 22 41 Q33 36 38 32 Z" fill="#2f66b0"/>
+      <circle cx="45" cy="36.5" r="2.4" fill="#ffb3b3" opacity=".55"/>
+      <circle cx="55" cy="36.5" r="2.4" fill="#ffb3b3" opacity=".55"/>
+      <circle cx="45" cy="32.5" r="1.9" fill="#2b3a4a"/>
+      <circle cx="55" cy="32.5" r="1.9" fill="#2b3a4a"/>
+      <path d="M46 37.5 Q50 41 54 37.5" stroke="#2b3a4a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <g transform="rotate(10 62 58)">
+        <rect x="58" y="46" width="9" height="24" rx="4" fill="#8a5a2b"/>
+        <line x1="61" y1="48" x2="58" y2="32" stroke="#e8d3a0" stroke-width="1.6"/>
+        <line x1="64" y1="48" x2="63" y2="34" stroke="#e8d3a0" stroke-width="1.6"/>
+        <path d="M58 32 l-2 -4 l4 0 Z" fill="#c0392b"/>
+        <path d="M63 34 l2 -4 l-4 0 Z" fill="#c0392b"/>
+      </g>
+      <path d="M31 42 Q20 60 31 78" stroke="#7a5a3a" stroke-width="4" fill="none"/>
+      <line x1="31" y1="42" x2="31" y2="78" stroke="#e8d3a0" stroke-width="1.5"/>
+      <line x1="31" y1="60" x2="45" y2="60" stroke="#5b4632" stroke-width="2.5"/>
+      <path d="M47 60 L39 56.5 L39 63.5 Z" fill="#c0392b"/>
+    </svg>`,
+    warrior: `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="figWarArmor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff9a6b"/><stop offset="1" stop-color="#d2542f"/>
+        </linearGradient>
+        <linearGradient id="figWarSteel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#9fb4c8"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="50" cy="112" rx="30" ry="7" fill="#a83f1f" opacity=".22"/>
+      <rect x="24" y="103" width="52" height="12" rx="6" fill="#d2542f"/>
+      <rect x="24" y="103" width="52" height="4" rx="2" fill="#ff9a6b"/>
+      <ellipse cx="35" cy="49" rx="8" ry="7" fill="#b9c4d0"/>
+      <ellipse cx="65" cy="49" rx="8" ry="7" fill="#b9c4d0"/>
+      <path d="M37 106 L42 46 H58 L63 106 Z" fill="url(#figWarArmor)"/>
+      <path d="M37 106 L42 46 H50 L46 106 Z" fill="#ffffff" opacity=".18"/>
+      <rect x="41" y="64" width="18" height="6" rx="2" fill="#7a5a3a"/>
+      <rect x="47" y="64" width="6" height="6" fill="#ffd24d"/>
+      <circle cx="50" cy="33" r="12" fill="#ffe0c2"/>
+      <path d="M38 33 A12 12 0 0 1 62 33 Z" fill="#b9c4d0"/>
+      <rect x="37" y="29" width="26" height="5" rx="2" fill="#aab6c4"/>
+      <path d="M39 28 Q30 17 39 12 Q45 19 43 25 Z" fill="#f0e6d2"/>
+      <path d="M61 28 Q70 17 61 12 Q55 19 57 25 Z" fill="#f0e6d2"/>
+      <circle cx="45" cy="36.5" r="2.4" fill="#ffb3b3" opacity=".55"/>
+      <circle cx="55" cy="36.5" r="2.4" fill="#ffb3b3" opacity=".55"/>
+      <circle cx="45" cy="33" r="1.9" fill="#2b3a4a"/>
+      <circle cx="55" cy="33" r="1.9" fill="#2b3a4a"/>
+      <path d="M46 38 Q50 41.5 54 38" stroke="#2b3a4a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <g transform="rotate(10 32 62)">
+        <rect x="29" y="48" width="6" height="28" rx="2.5" fill="url(#figWarSteel)"/>
+        <rect x="24" y="43" width="16" height="4.5" rx="2" fill="#ffd24d"/>
+        <rect x="30.5" y="36" width="3" height="8" rx="1.5" fill="#7a5a3a"/>
+      </g>
+    </svg>`,
+    priest: `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="figPriRobe" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e8dfc8"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="50" cy="112" rx="30" ry="7" fill="#c9a227" opacity=".22"/>
+      <rect x="24" y="103" width="52" height="12" rx="6" fill="#e8b84b"/>
+      <rect x="24" y="103" width="52" height="4" rx="2" fill="#ffd98a"/>
+      <path d="M50 106 C34 106 31 88 34 68 L38 46 H62 L66 68 C69 88 66 106 50 106 Z" fill="url(#figPriRobe)"/>
+      <path d="M50 106 C40 106 36 94 37 80 L41 46 H50 Z" fill="#ffffff" opacity=".55"/>
+      <rect x="37" y="65" width="26" height="5" rx="2.5" fill="#e8b84b"/>
+      <circle cx="50" cy="33" r="12" fill="#ffe0c2"/>
+      <path d="M38 29 Q50 19 62 29 L62 24 Q50 15 38 24 Z" fill="#f4ecd8"/>
+      <ellipse cx="50" cy="16" rx="12" ry="3.6" fill="#ffd24d"/>
+      <ellipse cx="50" cy="16" rx="8" ry="2.2" fill="#fffbe8"/>
+      <circle cx="45" cy="33" r="1.8" fill="#2b3a4a"/>
+      <circle cx="55" cy="33" r="1.8" fill="#2b3a4a"/>
+      <path d="M46.5 38 Q50 40.5 53.5 38" stroke="#2b3a4a" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <circle cx="45" cy="36.5" r="2.2" fill="#ffb3b3" opacity=".5"/>
+      <circle cx="55" cy="36.5" r="2.2" fill="#ffb3b3" opacity=".5"/>
+      <line x1="26" y1="46" x2="30" y2="104" stroke="#c9a227" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="26" cy="42" r="9" fill="#ffd24d" opacity=".35"/>
+      <circle cx="26" cy="42" r="6" fill="#ffd24d"/>
+      <path d="M26 36.5 V47.5 M20.5 42 H31.5" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+    </svg>`
+  };
+
+  let state = null;
+  let lastT = 0;
+  let spawnTimer = 0;
+  let rafId = null;
+  let currentMode = 'input';   // 'input' 輸入模式 | 'choice' 選擇題模式
+  let topic = 'mul';           // 'mul' 小數乘法 | 'div' 小數除法（選完職業後、開始前選擇）
+
+  function round2(v){ return Math.round(v*100)/100; }
+  function randInt(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+  function fmt(v){ return (Math.round(v*100)/100).toString(); }
+
+  // 為選擇題模式生成 4 個選項（含正解與常見錯誤干擾項）
+  function genOptions(answer, level){
+    const fmtA = fmt(answer);
+    const pool = [fmtA];
+    const seen = new Set([fmtA]);
+    // 常見錯誤：忘記小數點（答案 ×10）
+    if(level <= 2){
+      const shift = fmt(answer*10);
+      if(shift !== fmtA && !seen.has(shift) && parseFloat(shift) <= 99){ pool.push(shift); seen.add(shift); }
+    }
+    const step = (level >= 3) ? 0.1 : 1;   // 干擾項與正解的差距
+    let guard = 0;
+    while(pool.length < 4 && guard < 300){
+      guard++;
+      const d = randInt(1,3) * (Math.random()<0.5?-1:1) * step;
+      const v = Math.round((answer+d)*100)/100;
+      if(v <= 0) continue;
+      const s = fmt(v);
+      if(!seen.has(s)){ seen.add(s); pool.push(s); }
+    }
+    while(pool.length < 4){   // 兜底，確保一定有 4 個
+      const s = fmt(Math.max(0.1, Math.round((answer + (pool.length+1)*step)*100)/100));
+      if(!seen.has(s)){ seen.add(s); pool.push(s); }
+    }
+    // 打亂順序
+    for(let i=pool.length-1;i>0;i--){ const j=randInt(0,i); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+    return { list: pool, correct: pool.indexOf(fmtA) };
+  }
+
+  // 題型派發：小數乘法 / 小數除法
+  function genProblem(level){
+    return (topic === 'div') ? genDivProblem(level) : genMulProblem(level);
+  }
+
+  // 小數乘法出題
+  function genMulProblem(level){
+    if(level <= 1){
+      // a.b × c  (1 位小數 × 整數)
+      const a = randInt(1,9), b = randInt(1,9), c = randInt(2,9);
+      return { text:`${a}.${b} × ${c}`, answer: round2((a + b/10)*c) };
+    } else if(level === 2){
+      // a.bc × c
+      const a = randInt(1,9), b = randInt(0,9), cc = randInt(0,9), c = randInt(2,9);
+      return { text:`${a}.${b}${cc} × ${c}`, answer: round2((a + b/10 + cc/100)*c) };
+    } else {
+      // a.b × c.d
+      const a = randInt(1,9), b = randInt(1,9), c = randInt(1,9), d = randInt(1,9);
+      return { text:`${a}.${b} × ${c}.${d}`, answer: round2((a + b/10)*(c + d/10)) };
+    }
+  }
+
+  // 小數除法出題（先決定商，再反推被除數，保證答案是有限小數，適合五年級）
+  function genDivProblem(level){
+    if(level <= 1){
+      // a.b ÷ c：一位小數 ÷ 整數（商為一位小數）
+      const d = randInt(2,9);
+      const q = randInt(1,9) + randInt(1,9)/10;
+      const dividend = round2(q*d);
+      return { text: fmt(dividend) + ' ÷ ' + d, answer: round2(q) };
+    } else if(level === 2){
+      // a.bc ÷ c：兩位小數 ÷ 整數（商固定為兩位小數）
+      const d = randInt(2,9);
+      const q = (randInt(5,99)*10 + randInt(1,9))/100;   // 0.51 ~ 9.99
+      const dividend = round2(q*d);
+      return { text: fmt(dividend) + ' ÷ ' + d, answer: round2(q) };
+    } else {
+      // a.b ÷ c.d：兩位小數 ÷ 一位小數（商為一位小數）
+      const c = randInt(1,9), d = randInt(1,9);
+      const divisor = c + d/10;
+      const q = randInt(1,9) + randInt(1,9)/10;
+      const dividend = round2(q*divisor);
+      return { text: fmt(dividend) + ' ÷ ' + c + '.' + d, answer: round2(q) };
+    }
+  }
+
+  // owner: 'p1' 走上方車道，'p2' 走下方車道；兩者成對同時出現
+  function makeEnemy(owner, laneY){
+    const p = genProblem(state.level);
+    const opt = genOptions(p.answer, state.level);
+    p.options = opt.list;
+    p.answerIndex = opt.correct;
+    const type = MONSTER_TYPES[randInt(0,MONSTER_TYPES.length-1)];
+    return {
+      x: SPAWN_X, y: laneY,
+      baseY: laneY,
+      r: 26,
+      type: type,
+      color: MONSTER_COLOR[type],
+      owner: owner,
+      problem: p,
+      state: 'alive',          // alive | dying | gone
+      bob: Math.random()*Math.PI*2,
+      frozen: 0                // 冰凍術：減速計時
+    };
+  }
+
+  // BOSS：每關最後出現的唯一大 BOSS（兩人共同目標），需合計答對 5 題才能擊敗
+  function makeBoss(){
+    const p = genProblem(state.level);
+    const opt = genOptions(p.answer, state.level);
+    p.options = opt.list;
+    p.answerIndex = opt.correct;
+    return {
+      x: W - 90, y: BOSS_Y, baseY: BOSS_Y,
+      r: BOSS_R,
+      type: 'boss', color: '#b06bff',
+      problem: p, state: 'alive',
+      bob: Math.random()*Math.PI*2,
+      isBoss: true, hp: 5, maxHp: 5,
+      hurt: 0,                 // 受擊計時（痛苦表情 + 白閃 + 抖動）
+      rage: 0,                 // 發怒計時（紅光 + 更凶 + 大幅抖動）
+      frozen: 0                // 冰凍術：減速計時
+    };
+  }
+
+  function resetState(){
+    state = {
+      lives: 5, level: 1,
+      wrongTally: 0,               // 累計答錯次數（滿 3 次失去 1 條命）
+      goal: 4, cleared: 0,         // 普通怪物清光後才出 BOSS
+      score: 0,                     // 兩位玩家合計總分
+      p1: { combo:0, input:'', target:null, cls: sel.p1, skillIdx: 0, ultPts:0, ultReady:false, buff:{} },
+      p2: { combo:0, input:'', target:null, cls: sel.p2, skillIdx: 0, ultPts:0, ultReady:false, buff:{} },
+      enemies: [], projectiles: [], particles: [], floats: [],
+      fireworks: [], castleGlow: 0,     // 擊敗 BOSS 的煙火與城堡金色光暈
+      shake: 0, flash: 0,               // 衝鋒斬震屏 / 神聖審判白光
+      bossActive: false, bossesDefeated: 0,
+      running: false, over: false
+    };
+  }
+
+  function difficulty(){
+    const lv = state.level;
+    return {
+      speed: 26 + (lv-1)*4,               // px / sec（已調慢，適合小朋友）
+      interval: Math.max(4000 - (lv-1)*220, 2200), // ms
+      minGap: 150                          // 怪物之間最小間距（px）
+    };
+  }
+
+  function startGame(){
+    // 人數、職業、題型、挑戰模式都選好才開始（不預設，防止誤玩）
+    if(!players || !sel.p1 || (players === 2 && !sel.p2)) return;
+    resetState();
+    state.running = true;
+    startScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    // 選好職業與玩法才開始：這時才顯示數字鍵盤（單人模式只顯示玩家1）
+    document.querySelectorAll('.side.p1').forEach(el=>el.classList.add('playing'));
+    if(players === 2) document.querySelectorAll('.side.p2').forEach(el=>el.classList.add('playing'));
+    else document.querySelectorAll('.side.p2').forEach(el=>el.classList.remove('playing'));
+    document.body.classList.remove('mode-input','mode-choice','topic-mul','topic-div');
+    document.body.classList.add(currentMode==='choice' ? 'mode-choice' : 'mode-input',
+                                topic==='div' ? 'topic-div' : 'topic-mul');
+    const tp = document.getElementById('topicPill');
+    if(tp) tp.textContent = (topic==='div') ? '➗ 小數除法' : '✖️ 小數乘法';
+    spawnTimer = 0;
+    lastT = performance.now();
+    if(rafId) cancelAnimationFrame(rafId);
+    // 一開始就派出第一批怪物：單人一隊、雙人成對，玩家立即同步開算
+    state.enemies.push(makeEnemy('p1', LANE1_Y));
+    if(players === 2) state.enemies.push(makeEnemy('p2', LANE2_Y));
+    assignTargets();
+    renderPad();
+    updateHUD();
+    rafId = requestAnimationFrame(loop);
+    beep([523,659,784],0.09,'triangle');
+  }
+
+  function endGame(win){
+    state.running = false;
+    state.over = true;
+    if(rafId) cancelAnimationFrame(rafId);
+    document.getElementById('finalScore').textContent = state.score;
+    document.getElementById('scoreWord').textContent = (players===1) ? '得分' : '合計得分';
+    document.getElementById('finalLevel').textContent = state.level;
+    document.getElementById('overTitle').textContent = win ? '🎉 城堡守住了！' : '💥 城堡被攻破了！';
+    overScreen.classList.remove('hidden');
+  }
+
+  function updateHUD(){
+    let hearts = '';
+    for(let i=0;i<5;i++) hearts += (i<state.lives ? '❤️' : '🤍');
+    livesEl.textContent = hearts;
+    if(strikeEl) strikeEl.textContent = '💢 連錯 ' + state.wrongTally + '/3';
+    scoreEl.textContent = state.score;
+    levelEl.textContent = state.level;
+    lvbarEl.style.width = Math.min(100, (state.cleared/state.goal)*100) + '%';
+  }
+
+  // 為每位在場玩家各自指派最接近的「自己這隊」怪物（單人模式只指派玩家1）
+  function assignTargets(){
+    for(const who of activePlayers()){
+      const pl = state[who];
+      if(pl.target && pl.target.state === 'alive') continue;
+      let best = null;
+      for(const e of state.enemies){
+        if(e.state === 'alive' && (!e.owner || e.owner === who) && (!best || e.x < best.x)) best = e;
+      }
+      if(pl.target !== best){
+        pl.target = best;
+        if(!best) pl.input = '';
+        renderPad();
+      }
+    }
+  }
+
+  function renderPad(){
+    for(const who of activePlayers()){
+      const pl = state[who];
+      const cls = CLASSES[pl.cls];
+      const tag = cls.icon + ' ' + cls.name + ' ' + cls.hero;   // 用職業姓名代替「玩家1 / 玩家2」
+      document.getElementById(who+'combo').textContent = pl.combo;
+      const nameEl = document.getElementById(who+'name');
+      if(nameEl) nameEl.textContent = tag;
+      const kpt = document.getElementById(who+'kpt');
+      if(kpt) kpt.textContent = tag + ' 數字鍵（點擊/鍵盤）';
+      const ct = document.getElementById(who+'ct');
+      if(ct) ct.textContent = tag + ' 選出答案（點一下）';
+      // 技能輪替徽章：下一個要釋放的技能高亮
+      const skEl = document.getElementById(who+'skills');
+      if(skEl){
+        let html = '';
+        for(let i=0;i<cls.skills.length;i++){
+          const s = cls.skills[i];
+          html += '<span class="sk' + (i === (pl.skillIdx % cls.skills.length) ? ' next' : '') + '">' + s.icon + s.name + '</span>';
+        }
+        skEl.innerHTML = html;
+      }
+      // 攻擊鈕顯示下一個要釋放的技能名
+      const fire = document.querySelector('.fire[data-player="' + who + '"]');
+      if(fire){
+        const s = cls.skills[pl.skillIdx % cls.skills.length];
+        fire.textContent = s.icon + ' 釋放【' + s.name + '】';
+      }
+      // 主動技能量條與釋放按鈕（集滿 5 點解鎖）
+      const ult = cls.ult;
+      const ultBar = document.getElementById(who+'ultbar');
+      const ultWrap = document.getElementById(who+'ultbarwrap');
+      const ultBtn = document.getElementById(who+'ult');
+      const pts = pl.ultPts, ready = pl.ultReady;
+      if(ultBar) ultBar.style.width = (pts/5*100) + '%';
+      if(ultWrap) ultWrap.classList.toggle('full', ready);
+      if(ultBtn){
+        ultBtn.textContent = ult.icon + ' ' + ult.name + (ready ? ' ✦' : ' ('+pts+'/5)');
+        ultBtn.disabled = !ready;
+        ultBtn.classList.toggle('ready', ready);
+      }
+    }
+    setPlayerQues('p1');
+    setPlayerQues('p2');
+  }
+
+  function setPlayerQues(who){
+    const el = document.getElementById(who === 'p1' ? 'p1ques' : 'p2ques');
+    const pl = state[who];
+    const choiceBtns = document.querySelectorAll('.choice[data-player="'+who+'"]');
+    if(pl.target && pl.target.state === 'alive'){
+      const txt = pl.target.problem.text;
+      if(currentMode === 'choice'){
+        el.classList.remove('idle');
+        el.textContent = txt + ' = ?';
+        const opts = pl.target.problem.options;
+        choiceBtns.forEach(b=>{
+          b.querySelector('.val').textContent = opts[+b.dataset.idx];
+          b.classList.remove('wrong','correct');
+        });
+      } else {
+        el.classList.remove('idle');
+        el.innerHTML = `${txt} <span class="eq">=</span> <span class="blank">${pl.input || '?'}</span>`;
+      }
+    } else {
+      el.classList.add('idle');
+      el.textContent = '等待你的怪物…';
+      choiceBtns.forEach(b=>{ b.querySelector('.val').textContent='?'; b.classList.remove('wrong','correct'); });
+    }
+  }
+
+  // ---- input（雙人）----
+  function pressKey(k, who){
+    if(!state || !state.running) return;
+    const pl = state[who];
+    const a = pl.target;
+    if(!a) return;
+    if(k === 'C'){ pl.input = ''; }
+    else if(k === '.'){ if(!pl.input.includes('.')) pl.input += '.'; }
+    else { if(pl.input.replace('.','').length < 6) pl.input += k; }
+    renderPad();
+  }
+
+  // 各職業技能的發射原點（依職業的武器位置）
+  function originOf(who){
+    const cls = state[who].cls;
+    const slotX = (who === 'p1') ? HERO_X : ARCHER_X;
+    const off = {
+      mage:    { x: 18,  y: -50 },   // 杖尖發光球
+      archer:  { x: -16, y: -26 },   // 弓弦
+      warrior: { x: -17, y: -40 },   // 劍手持劍
+      priest:  { x: -16, y: -48 }    // 權杖頂端
+    }[cls] || { x: 0, y: -40 };
+    return { x: slotX + off.x, y: CASTLE_BASE + off.y };
+  }
+
+  // 加分並套用「雙倍分數」主動技 buff（魔法師·智慧祝福）
+  function grantScore(who, base){
+    const pl = state[who];
+    let gain = base;
+    if(pl.buff.doubleNext){
+      gain = gain * 2;
+      pl.buff.doubleNext = false;
+      const o = originOf(who);
+      state.floats.push({ x:o.x, y:o.y-30, text:'🔮 雙倍 +'+gain, color:'#ffd24d', life:1.2 });
+    }
+    state.score += gain;
+    return gain;
+  }
+
+  // 答對的統一處理（普通怪物 與 BOSS 共用）：依職業輪替釋放技能攻擊
+  function onCorrect(who, a){
+    const pl = state[who];
+    const cls = CLASSES[pl.cls];
+    // 答對累積主動技能量點：集滿 5 點解鎖主動技
+    pl.ultPts = Math.min(5, pl.ultPts + 1);
+    if(pl.ultPts >= 5) pl.ultReady = true;
+    const si = pl.skillIdx % cls.skills.length;   // 本回合釋放第幾個技能
+    const sk = cls.skills[si];
+    pl.skillIdx = si + 1;                          // 下次換一個技能
+    const kind = pl.cls + '-' + si;                // 技能代號（用於彈道繪製）
+    const tag = cls.icon + ' 【' + sk.name + '】';
+    if(a.isBoss){
+      const dmg = (kind === 'priest-2') ? 2 : 1;   // 神聖審判對 BOSS 雙倍傷害
+      a.hp -= dmg;
+      if(kind === 'mage-1') a.frozen = 2.5;        // 冰凍術：BOSS 減速
+      // 受擊反饋：痛苦表情 + 抖動 + 白閃
+      a.hurt = 0.45;
+      explode(a.x, a.y - a.r*0.4, '#ffd24d');
+      explode(a.x - a.r*0.6, a.y + 10, '#ff5a3c');
+      if(kind === 'warrior-2') state.shake = 0.35; // 衝鋒斬：震屏
+      if(kind === 'priest-2') state.flash = 0.14;  // 神聖審判：白光
+      if(kind === 'priest-1' && state.lives < 5){  // 治癒之光：回復 1 顆愛心
+        state.lives++;
+        const oh = originOf(who);
+        state.floats.push({ x: oh.x, y: oh.y-30, text:'+1 ❤️', color:'#37c871', life:1.2 });
+      }
+      if(a.hp === 3 || a.hp === 1){          // 血量過半 / 瀕死：發怒
+        a.rage = 1.5;
+        toast('👹 BOSS 發怒了！');
+        beep([120,90,120],0.2,'sawtooth');
+      }
+      if(a.hp > 0){
+        // 還沒打敗，換一題繼續答
+        const p = genProblem(state.level);
+        const opt = genOptions(p.answer, state.level);
+        p.options = opt.list; p.answerIndex = opt.correct;
+        a.problem = p;
+        pl.combo++;
+        const gain = 10 + (pl.combo-1)*2 + (state.level-1)*2;
+        grantScore(who, gain);
+        showFloat(tag + ' 命中！BOSS 還剩 ' + a.hp + ' 題！');
+        beep([659,880],0.07,'square');
+      } else {
+        // 擊敗 BOSS
+        a.state = 'dying';
+        const o = originOf(who);
+        state.projectiles.push({ x: o.x, y: o.y, target: a, speed: 760, kind });
+        pl.combo++;
+        const gain = 40 + (state.level-1)*5;      // BOSS 獎勵較高
+        grantScore(who, gain);
+        state.bossesDefeated++;
+        bossDefeatedFireworks();             // 🎆 城堡上空施放煙花
+        showFloat('💥 ' + tag + ' 擊敗 BOSS！+'+gain);
+        beep([784,1046,1318],0.1,'square');
+        pl.target = null;
+        assignTargets();
+      }
+      pl.input = '';
+      // 題目已更換，兩位玩家都重新輸入（BOSS 是兩人共同目標）
+      state.p1.input = ''; state.p2.input = '';
+      updateHUD(); renderPad();
+      return;
+    }
+    // 普通怪物
+    a.state = 'dying';
+    const o = originOf(who);
+    if(kind === 'mage-1') a.frozen = 2.5;          // 冰凍術：怪物變慢
+    if(kind === 'warrior-2') state.shake = 0.32;   // 衝鋒斬：震屏
+    if(kind === 'priest-2') state.flash = 0.14;    // 神聖審判：白光
+    if(kind === 'priest-1' && state.lives < 5){    // 治癒之光：回復 1 顆愛心
+      state.lives++;
+      state.floats.push({ x: o.x, y: o.y-30, text:'+1 ❤️', color:'#37c871', life:1.2 });
+    }
+    const proj = { x: o.x, y: o.y, target: a, speed: 640, kind };
+    if(kind === 'mage-2'){                         // 隕石術：從怪物正上方落下
+      proj.x = a.x; proj.y = -40; proj.trail = '#ffb02e'; proj.big = true;
+    } else if(kind === 'archer-2'){                // 穿甲箭：更快更猛
+      proj.speed = 980; proj.big = true;
+    } else if(kind === 'warrior-0'){               // 斬擊波：極快劍氣
+      proj.speed = 980;
+    } else if(kind === 'warrior-1'){               // 旋風斬：持續旋進
+      proj.speed = 560; proj.spin = 0;
+    } else if(kind === 'warrior-2'){               // 衝鋒斬：全速重擊
+      proj.speed = 1100; proj.big = true;
+    } else if(kind === 'priest-2'){                // 神聖審判：光柱極速
+      proj.speed = 1000; proj.big = true;
+    }
+    if(kind === 'archer-1'){
+      // 三連箭：一次射出三支（錯開時間與高度）
+      for(let i=0;i<3;i++){
+        state.projectiles.push({ x:o.x, y:o.y, target:a, speed:640, kind:'archer-0', delay:i*0.09, dy:(i-1)*11 });
+      }
+    } else {
+      state.projectiles.push(proj);
+    }
+    pl.combo++;
+    const gain = 10 + (pl.combo-1)*2 + (state.level-1)*2;
+    grantScore(who, gain);
+    state.cleared++;
+    showFloat(tag + ' ' + PRAISE[randInt(0,PRAISE.length-1)] + (pl.combo>1?` 連擊x${pl.combo}`:''));
+    beep([659,880],0.07,'square');
+    pl.input = '';
+    pl.target = null;
+    assignTargets();
+    updateHUD();
+    renderPad();
+  }
+
+  function submit(who){
+    if(!state || !state.running) return;
+    if(currentMode !== 'input') return;
+    const pl = state[who];
+    const a = pl.target;
+    if(!a) return;
+    if(!/^\d+(\.\d+)?$/.test(pl.input)){ flashWrong('請輸入數字'); return; }
+    const val = parseFloat(pl.input);
+    if(Math.abs(val - a.problem.answer) < 1e-9){
+      onCorrect(who, a);
+    } else {
+      pl.combo = 0;
+      registerWrong(who);
+    }
+  }
+  // 選擇題模式：點 A/B/C/D 作答
+  function choose(who, idx){
+    if(!state || !state.running) return;
+    if(currentMode !== 'choice') return;
+    const pl = state[who];
+    const a = pl.target;
+    if(!a) return;
+    if(idx === a.problem.answerIndex){
+      onCorrect(who, a);
+    } else {
+      pl.combo = 0;
+      const b = document.querySelector('.choice[data-player="'+who+'"][data-idx="'+idx+'"]');
+      if(b){ b.classList.add('wrong'); setTimeout(()=>b.classList.remove('wrong'),500); }
+      registerWrong(who);
+    }
+  }
+  function flashWrong(msg){
+    toast(msg);
+    cv.style.transition='transform .05s';
+    cv.style.transform='translateX(-6px)';
+    setTimeout(()=>{ cv.style.transform='translateX(6px)'; },60);
+    setTimeout(()=>{ cv.style.transform='translateX(0)'; },130);
+  }
+  // 答錯處罰：累計答錯 3 次失去 1 條命（5 條命共享，歸零即輸）；若有「守護之盾」buff 則讓本次答錯不計入連錯
+  function registerWrong(who){
+    const pl = state[who];
+    if(pl && pl.buff.noPenaltyNext){
+      pl.buff.noPenaltyNext = false;
+      const o = originOf(who);
+      state.floats.push({ x:o.x, y:o.y-30, text:'🛡️ 擋下!', color:'#37c871', life:1.2 });
+      flashWrong('🛡️ 護盾展開，這次不計入連錯！');
+      beep([523,659],0.08,'sine');
+      updateHUD();
+      return;   // 不計入連錯、不扣命
+    }
+    state.wrongTally++;
+    if(state.wrongTally >= 3){
+      state.wrongTally = 0;
+      state.lives--;
+      state.floats.push({ x: W/2, y: H-130, text:'−1 ❤', color:'#ff3b3b', life:1.3, big:true });
+      flashWrong('連錯 3 次，失去 1 條命！');
+      beep([180,120],0.18,'sawtooth');
+      if(state.lives <= 0){ updateHUD(); endGame(false); return; }
+    } else {
+      flashWrong('答錯了！連錯 ' + state.wrongTally + '/3');
+      beep([196,165],0.12,'sawtooth');
+    }
+    updateHUD();
+  }
+  // 主動技：集滿 5 點才能點擊釋放，每職業效果不同
+  function castUltimate(who){
+    if(!state || !state.running) return;
+    const pl = state[who];
+    if(!pl.ultReady) return;                 // 未集滿 5 點不可使用
+    const ult = CLASSES[pl.cls].ult;
+    pl.ultPts = 0; pl.ultReady = false;       // 釋放後重置能量
+    const o = originOf(who);
+    switch(ult.effect){
+      case 'double':
+        pl.buff.doubleNext = true;
+        state.floats.push({ x:o.x, y:o.y-30, text:'🔮 雙倍分數!', color:'#ffd24d', life:1.4 });
+        showFloat(ult.icon+' '+ult.name+'：下一題得分 ×2！');
+        beep([784,1046],0.1,'sine');
+        break;
+      case 'nopenalty':
+        pl.buff.noPenaltyNext = true;
+        state.floats.push({ x:o.x, y:o.y-30, text:'🛡️ 護盾展開!', color:'#37c871', life:1.4 });
+        showFloat(ult.icon+' '+ult.name+'：下一次答錯不計入連錯，守住 1 條命！');
+        beep([659,880],0.1,'sine');
+        break;
+      case 'strike': {
+        const a = pl.target;
+        if(a && a.state==='alive'){
+          if(a.isBoss){
+            a.hp -= 1; a.hurt = 0.45;
+            explode(a.x, a.y - a.r*0.4, '#ffd24d');
+            if(a.hp > 0){
+              const p = genProblem(state.level);
+              const opt = genOptions(p.answer, state.level);
+              p.options = opt.list; p.answerIndex = opt.correct;
+              a.problem = p;
+              showFloat(ult.icon+' '+ult.name+'：BOSS 剩 '+a.hp+' 題！');
+            } else {
+              a.state='dying';
+              state.projectiles.push({ x:o.x, y:o.y, target:a, speed:760, kind:pl.cls+'-0' });
+              state.score += (40 + (state.level-1)*5);
+              state.bossesDefeated++;
+              bossDefeatedFireworks();
+              showFloat('💥 '+ult.icon+' 擊敗 BOSS！');
+              pl.target = null; assignTargets();
+            }
+          } else {
+            a.state='dying';
+            state.projectiles.push({ x:o.x, y:o.y, target:a, speed:640, kind:pl.cls+'-0' });
+            state.cleared++;
+            state.score += (10 + (state.level-1)*2);
+            showFloat(ult.icon+' '+ult.name+'：清掉一隻！');
+            pl.target = null; assignTargets();
+          }
+          state.p1.input=''; state.p2.input='';
+          beep([440,660],0.1,'square');
+        } else {
+          showFloat('沒有可攻擊的目標');
+          beep([300,240],0.12,'square');
+        }
+        updateHUD();
+        break;
+      }
+      case 'heal':
+        if(state.lives < 5){
+          state.lives++;
+          state.floats.push({ x:o.x, y:o.y-30, text:'+1 ❤️', color:'#37c871', life:1.2 });
+          showFloat(ult.icon+' '+ult.name+'：恢復 1 條命！');
+        } else {
+          state.score += 20;
+          showFloat(ult.icon+' '+ult.name+'：生命已滿，+20 分！');
+        }
+        beep([523,659,784],0.1,'sine');
+        updateHUD();
+        break;
+    }
+    renderPad();
+  }
+
+  // BOSS 擊敗後，進入下一關
+  function checkBossCleared(){
+    if(state.bossActive && state.bossesDefeated >= 1){
+      const anyPending = state.enemies.some(e=>e.isBoss && e.state!=='gone');
+      if(anyPending) return;            // 等 BOSS 死亡動畫播完
+      state.bossActive = false;
+      state.bossesDefeated = 0;
+      state.cleared = 0;
+      state.level++;
+      state.goal = 4 + (state.level - 1);
+      toast('🎉 擊敗 BOSS！進入第 '+state.level+' 關！');
+      beep([523,659,784,1046],0.1,'triangle');
+      updateHUD();
+    }
+  }
+
+  // ---- effects ----
+  function showFloat(txt){
+    floatMsg.textContent = txt;
+    floatMsg.classList.remove('show'); void floatMsg.offsetWidth; floatMsg.classList.add('show');
+  }
+  let toastTimer=null;
+  function toast(t){
+    toastEl.textContent=t; toastEl.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>toastEl.classList.remove('show'),1400);
+  }
+  function explode(x,y,color,count){
+    const n = count || 14;
+    for(let i=0;i<n;i++){
+      const ang=Math.random()*Math.PI*2, sp=60+Math.random()*160;
+      state.particles.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-40,life:0.7,color});
+    }
+  }
+
+  // ---- 煙火（擊敗 BOSS 時在城堡上空施放）----
+  const FW_COLORS=['#ff5a3c','#ffd24d','#8ad86a','#5bc8ff','#c58aff','#ff8ac2','#fff6d5'];
+  function launchFirework(x){
+    state.fireworks.push({
+      x, y: H-46,
+      vx:(Math.random()-0.5)*50, vy:-(430+Math.random()*140),   // 咻——升空
+      fuse: 0.85+Math.random()*0.35,
+      color: FW_COLORS[randInt(0,FW_COLORS.length-1)],
+      sparks: [], done:false
+    });
+  }
+  function updateFireworks(dt){
+    for(const f of state.fireworks){
+      if(!f.done){
+        f.fuse-=dt;
+        f.vy+=300*dt; f.x+=f.vx*dt; f.y+=f.vy*dt;
+        f.sparks.push({x:f.x, y:f.y, vx:0, vy:0, life:0.32, color:f.color});   // 上升尾跡
+        if(f.fuse<=0 || f.vy>=0){                   // 到最高點：啪——绽放
+          f.done=true;
+          const n=26+randInt(0,10);
+          for(let i=0;i<n;i++){
+            const ang=(i/n)*Math.PI*2+Math.random()*0.25, sp=95+Math.random()*140;
+            f.sparks.push({x:f.x,y:f.y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:1.0+Math.random()*0.6,color:f.color,star:true});
+          }
+          beep([300+Math.random()*200,600],0.08,'sine');
+        }
+      }
+      for(const s of f.sparks){
+        s.life-=dt; s.x+=s.vx*dt; s.y+=s.vy*dt; s.vy+=160*dt; s.vx*=0.985; s.vy*=0.985;
+      }
+      f.sparks=f.sparks.filter(s=>s.life>0);
+    }
+    state.fireworks=state.fireworks.filter(f=>!(f.done&&f.sparks.length===0));
+  }
+  function drawFireworks(){
+    for(const f of state.fireworks){
+      for(const s of f.sparks){
+        ctx.globalAlpha=Math.max(0,Math.min(1,s.life));
+        if(s.star){
+          ctx.fillStyle=s.color; drawStar(s.x,s.y,4,5.5,2.2);
+        } else {
+          ctx.fillStyle='#ffe9a8';
+          ctx.beginPath(); ctx.arc(s.x,s.y,2.4,0,Math.PI*2); ctx.fill();
+        }
+      }
+    }
+    ctx.globalAlpha=1;
+  }
+  // 擊敗 BOSS：連放數發煙火 + 城堡金色光暈（只對本局有效）
+  function bossDefeatedFireworks(){
+    const st = state;
+    const baseX = TOWER_X + 30;
+    let i=0;
+    const shoot=()=>{
+      if(state!==st || st.over) return;
+      launchFirework(baseX + randInt(-120, 260));
+      if(++i<7) setTimeout(shoot, 240);
+    };
+    shoot();
+    st.castleGlow = 2.0;
+  }
+
+  // ---- audio (WebAudio, no files) ----
+  let actx=null;
+  function beep(freqs,dur,type){
+    try{
+      if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+      let t=actx.currentTime;
+      freqs.forEach(f=>{
+        const o=actx.createOscillator(), g=actx.createGain();
+        o.type=type||'sine'; o.frequency.value=f;
+        g.gain.setValueAtTime(0.0001,t);
+        g.gain.exponentialRampToValueAtTime(0.18,t+0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+        o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+dur);
+        t+=dur;
+      });
+    }catch(e){}
+  }
+
+  // ---- loop ----
+  function loop(now){
+    const dt = Math.min(0.05,(now-lastT)/1000); lastT=now;
+    if(state.running) update(dt);
+    draw();
+    if(state.running) rafId = requestAnimationFrame(loop);
+  }
+
+  function update(dt){
+    const diff = difficulty();
+    // spawn（同時遵守時間間隔與最小間距；清光普通怪後改出 BOSS）
+    spawnTimer += dt*1000;
+    const aliveCount = state.enemies.filter(e=>e.state==='alive').length;
+    if(!state.bossActive){
+      if(spawnTimer >= diff.interval){
+        const rightmost = state.enemies.reduce((m,e)=> (e.state==='alive' && e.x>m) ? e.x : m, -9999);
+        if(aliveCount < 6 && rightmost <= SPAWN_X - diff.minGap){
+          spawnTimer = 0;
+          if(state.cleared >= state.goal){
+            // BOSS 波：自動清光場上所有小怪，只派出唯一一隻大 BOSS（兩人共同擊敗）
+            for(const e of state.enemies){
+              if(!e.isBoss && e.state!=='gone'){
+                e.state='gone';
+                explode(e.x, e.y, e.color);
+              }
+            }
+            state.p1.target=null; state.p2.target=null;
+            state.p1.input=''; state.p2.input='';
+            state.enemies.push(makeBoss());
+            state.bossActive = true;
+            toast('👹 BOSS 出現！小怪清光！' + (players===1 ? '答對 5 題打敗牠！' : '兩人一起答對 5 題打敗牠！'));
+            beep([180,140,200],0.18,'sawtooth');
+          } else if(players === 1){
+            // 單人模式：只在上排車道生成怪物（一位玩家顧一條路）
+            state.enemies.push(makeEnemy('p1', LANE1_Y));
+          } else {
+            // 成對同時生成：上排給玩家1、下排給玩家2，兩人可同步計算
+            state.enemies.push(makeEnemy('p1', LANE1_Y));
+            state.enemies.push(makeEnemy('p2', LANE2_Y));
+          }
+          assignTargets();
+        }
+      }
+    }
+    // move enemies
+    for(const e of state.enemies){
+      if(e.hurt>0) e.hurt-=dt;               // BOSS 受傷表情 / 抖動計時
+      if(e.rage>0) e.rage-=dt;               // BOSS 發怒計時
+      if(e.frozen>0) e.frozen-=dt;           // 冰凍術減速計時
+      if(e.state==='alive'){
+        const freezeMul = (e.frozen>0) ? 0.35 : 1;   // 冰凍時只剩 35% 速度
+        e.x -= (e.isBoss ? diff.speed*0.8 : diff.speed) * freezeMul * dt;   // BOSS 稍慢，留出答題時間
+        e.bob += dt*4;
+        if(e.x <= (e.isBoss ? REACH_X + 110 : REACH_X)){
+          if(e.isBoss){
+            e.x = W - 90; e.bob = 0;            // BOSS 撞到城堡不消失，重新出發再戰
+          } else {
+            e.state='gone';
+          }
+          state.lives--;
+          state.p1.combo=0; state.p2.combo=0;
+          explode(TOWER_X+30, PATH_Y-10, '#ff5d5d');
+          toast('💥 城堡被撞到了！');
+          cv.style.transition='transform .08s'; cv.style.transform='translateY(6px)';
+          setTimeout(()=>{ cv.style.transform='translateY(0)'; },120);
+          beep([140,110],0.18,'sawtooth');
+          updateHUD();
+          if(state.lives<=0){ endGame(false); return; }
+        }
+      }
+    }
+    // projectiles（技能彈道：支援延遲發射、偏移、尾跡、重擊）
+    for(const p of state.projectiles){
+      if(p.delay>0){ p.delay-=dt; continue; }        // 三連箭錯開發射
+      if(p.kind === 'warrior-1') p.spin = (p.spin||0) + dt*18;   // 旋風斬自轉
+      const t=p.target;
+      if(!t || t.state!=='dying'){ p.done=true; continue; }
+      if(p.trail){                                  // 隕石術火尾
+        state.particles.push({ x:p.x+(Math.random()-0.5)*10, y:p.y+(Math.random()-0.5)*10,
+          vx:0, vy:40, life:0.35, color:p.trail });
+      }
+      const tx = (p.kind==='mage-2') ? t.x : t.x-(t.r+4);   // 隕石直落怪物正上方
+      const dx=tx-p.x, dy=(t.y+(p.dy||0))-p.y;
+      const d=Math.hypot(dx,dy);
+      const step=p.speed*dt;
+      if(d<=step){
+        p.x=tx; p.y=t.y; p.done=true;
+        t.state='gone';
+        explode(t.x,t.y,t.color, p.big?26:14);
+        if(p.kind==='mage-1')  explode(t.x,t.y,'#aee2ff',12);   // 冰凍碎屑
+        if(p.kind==='priest-2'){ explode(t.x,t.y,'#ffe9a8',22); state.flash=0.12; }  // 審判白光
+        if(p.kind==='warrior-2') explode(t.x,t.y,'#ffffff',16);
+        beep(p.big?[520,780]:[880,1175],0.07,'square');
+      } else {
+        p.x += dx/d*step; p.y += dy/d*step;
+      }
+    }
+    // particles
+    for(const pt of state.particles){
+      pt.life-=dt; pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vy+=300*dt;
+    }
+    // 煙火與城堡過關光暈
+    updateFireworks(dt);
+    if(state.castleGlow>0) state.castleGlow-=dt;
+    if(state.shake>0) state.shake-=dt;      // 震屏
+    if(state.flash>0) state.flash-=dt;      // 技能白光
+    // 扣分 / 得分飄字
+    for(const f of state.floats){ f.life-=dt; f.y -= 34*dt; }
+    // cleanup
+    state.enemies = state.enemies.filter(e=>e.state!=='gone');
+    state.projectiles = state.projectiles.filter(p=>!p.done);
+    state.particles = state.particles.filter(p=>p.life>0);
+    state.floats = state.floats.filter(f=>f.life>0);
+
+    // 每幀刷新兩位玩家的目標，並檢查 BOSS 是否全滅
+    assignTargets();
+    checkBossCleared();
+  }
+
+  // ---- draw ----
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const shaking = !!(state && state.shake>0);
+    if(shaking){                       // 衝鋒斬震屏
+      const m = state.shake*26;
+      ctx.save();
+      ctx.translate((Math.random()-0.5)*m, (Math.random()-0.5)*m);
+    }
+    drawBackground();
+    drawTower();
+    drawPlayers();                     // 依職業繪製兩位守護者
+
+    // enemies
+    for(const e of state.enemies){
+      if(e.state==='gone') continue;
+      drawMonster(e);
+    }
+    // projectiles（各職業技能彈道）
+    for(const p of state.projectiles){
+      if(p.delay>0) continue;
+      drawProjectile(p);
+    }
+    // particles
+    for(const pt of state.particles){
+      ctx.globalAlpha=Math.max(0,pt.life/0.7);
+      ctx.fillStyle=pt.color; ctx.beginPath(); ctx.arc(pt.x,pt.y,5,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    // 飄字（扣分 / 得分提示）
+    for(const f of state.floats){
+      ctx.globalAlpha = Math.max(0, Math.min(1, f.life));
+      ctx.fillStyle = f.color;
+      ctx.font = 'bold 24px "PingFang TC",sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha=1;
+    // 🎆 煙火過關特效（畫在暗角之前，讓煙火更亮）
+    if(state.fireworks.length) drawFireworks();
+    // 神聖審判白光
+    if(state.flash>0){
+      ctx.fillStyle='rgba(255,255,240,'+Math.min(0.5, state.flash*4)+')';
+      ctx.fillRect(-40,-40,W+80,H+80);
+    }
+    // 柔和暗角，提升整體質感
+    drawVignette();
+    if(shaking) ctx.restore();
+  }
+
+  function drawVignette(){
+    const g=ctx.createRadialGradient(W/2,H/2,H*0.34,W/2,H/2,H*0.78);
+    g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(20,30,60,.20)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  }
+
+  function drawCloud(x,y,s){
+    ctx.fillStyle='rgba(255,255,255,.9)';
+    ctx.beginPath();
+    ctx.arc(x,y,22*s,0,Math.PI*2); ctx.arc(x+26*s,y+6*s,18*s,0,Math.PI*2);
+    ctx.arc(x-26*s,y+6*s,16*s,0,Math.PI*2); ctx.arc(x,y+14*s,20*s,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawStar(cx,cy,spikes,outer,inner){
+    let rot=-Math.PI/2, step=Math.PI/spikes;
+    ctx.beginPath(); ctx.moveTo(cx, cy-outer);
+    for(let i=0;i<spikes;i++){
+      ctx.lineTo(cx+Math.cos(rot)*outer, cy+Math.sin(rot)*outer); rot+=step;
+      ctx.lineTo(cx+Math.cos(rot)*inner, cy+Math.sin(rot)*inner); rot+=step;
+    }
+    ctx.closePath(); ctx.fill();
+  }
+
+  function drawSideTower(cx, ground, w){
+    ctx.fillStyle='#aeb9c7';
+    roundRect(cx-w/2, ground-104, w, 104, 8); ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.06)'; ctx.fillRect(cx, ground-104, w/2, 104);
+    // 藍色尖頂
+    ctx.fillStyle='#5b8def';
+    ctx.beginPath();
+    ctx.moveTo(cx-w/2-5, ground-104); ctx.lineTo(cx+w/2+5, ground-104);
+    ctx.lineTo(cx, ground-146); ctx.closePath(); ctx.fill();
+    // 屋頂高光
+    ctx.fillStyle='rgba(255,255,255,.25)';
+    ctx.beginPath();
+    ctx.moveTo(cx-w/2-5, ground-104); ctx.lineTo(cx, ground-104); ctx.lineTo(cx, ground-146); ctx.closePath(); ctx.fill();
+    // 窗
+    ctx.fillStyle='#ffd98a'; ctx.beginPath(); ctx.arc(cx, ground-66, 7,0,Math.PI*2); ctx.fill();
+  }
+
+  function drawArchWindow(cx, cy, r){
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+  }
+
+  function drawHill(baseY, pts){
+    ctx.beginPath(); ctx.moveTo(0,baseY);
+    ctx.lineTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.lineTo(W,baseY); ctx.closePath(); ctx.fill();
+  }
+
+  function drawSun(x,y){
+    const g=ctx.createRadialGradient(x,y,8,x,y,150);
+    g.addColorStop(0,'rgba(255,226,120,.95)'); g.addColorStop(1,'rgba(255,226,120,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,150,0,Math.PI*2); ctx.fill();
+    ctx.save(); ctx.translate(x,y); ctx.rotate(performance.now()/4000);
+    ctx.strokeStyle='rgba(255,224,110,.5)'; ctx.lineWidth=4;
+    for(let i=0;i<12;i++){ ctx.rotate(Math.PI/6); ctx.beginPath(); ctx.moveTo(48,0); ctx.lineTo(70,0); ctx.stroke(); }
+    ctx.restore();
+    ctx.fillStyle='#ffd84d'; ctx.beginPath(); ctx.arc(x,y,38,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(x-12,y-10,30,0,Math.PI*2); ctx.fill();
+  }
+
+  function drawTree(x,y,s){
+    ctx.fillStyle='#6b4a2b'; ctx.fillRect(x-4*s,y-32*s,8*s,32*s);
+    ctx.fillStyle='#4ea233';
+    ctx.beginPath(); ctx.arc(x-13*s,y-42*s,17*s,0,Math.PI*2); ctx.arc(x+13*s,y-42*s,17*s,0,Math.PI*2);
+    ctx.arc(x,y-56*s,19*s,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#3f8f2a';
+    ctx.beginPath(); ctx.arc(x+7*s,y-38*s,13*s,0,Math.PI*2); ctx.fill();
+  }
+
+  function drawBackground(){
+    // 天空（多層漸層 + 頂部柔光）
+    const sky=ctx.createLinearGradient(0,0,0,GROUND_Y);
+    sky.addColorStop(0,'#6fc4ff'); sky.addColorStop(.45,'#aee4ff'); sky.addColorStop(1,'#e6f8ff');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,GROUND_Y);
+    const lg=ctx.createRadialGradient(W*0.5,-40,20,W*0.5,-40,W*0.75);
+    lg.addColorStop(0,'rgba(255,255,255,.55)'); lg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=lg; ctx.fillRect(0,0,W,GROUND_Y);
+    // 太陽 + 緩轉光芒
+    drawSun(W-130, 84);
+    // 遠山（三層次）
+    ctx.fillStyle='#cfe7f2'; drawHill(GROUND_Y, [[0,210],[150,120],[300,210],[470,110],[640,200],[820,120],[960,190]]);
+    ctx.fillStyle='#a9d8c4'; drawHill(GROUND_Y, [[0,250],[220,170],[430,255],[650,165],[860,250],[960,200]]);
+    ctx.fillStyle='#8fc9b0'; drawHill(GROUND_Y, [[0,285],[260,225],[520,290],[760,225],[960,275]]);
+    // 雲（緩慢飄動）
+    const ct=performance.now()/6000;
+    drawCloud((120+ct*30)%(W+200)-100, 70, 1);
+    drawCloud((520-ct*20)%(W+200)-100, 52, 0.85);
+    drawCloud((760+ct*15)%(W+200)-100, 110, 0.7);
+    // 草地（多層綠）
+    const gr=ctx.createLinearGradient(0,GROUND_Y,0,H);
+    gr.addColorStop(0,'#9be36f'); gr.addColorStop(.5,'#6fcc46'); gr.addColorStop(1,'#4ea233');
+    ctx.fillStyle=gr; ctx.fillRect(0,GROUND_Y,W,H-GROUND_Y);
+    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.fillRect(0,GROUND_Y,W,4);
+    // 遠處樹叢
+    drawTree(64,GROUND_Y+12,1); drawTree(440,GROUND_Y+8,0.8); drawTree(772,GROUND_Y+14,1.1);
+    // 泥土小路（含兩條車道）
+    const pg=ctx.createLinearGradient(0,PATH_Y-PATH_H/2,0,PATH_Y+PATH_H/2);
+    pg.addColorStop(0,'#ecbf86'); pg.addColorStop(.5,'#dba868'); pg.addColorStop(1,'#c08f52');
+    ctx.fillStyle=pg; roundRect(TOWER_X-6, PATH_Y-PATH_H/2, W-(TOWER_X-6), PATH_H, 40); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.16)';
+    for(let x=TOWER_X+50;x<W-30;x+=70){ ctx.beginPath(); ctx.ellipse(x,PATH_Y,15,6,0,0,Math.PI*2); ctx.fill(); }
+    // 車道分隔虛線
+    ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.lineWidth=3; ctx.setLineDash([16,14]);
+    ctx.beginPath(); ctx.moveTo(TOWER_X-6, PATH_Y); ctx.lineTo(W-10, PATH_Y); ctx.stroke();
+    ctx.setLineDash([]);
+    // 前景小花
+    drawFlower(120,H-30,'#ff7a59'); drawFlower(360,H-24,'#ffd24d');
+    drawFlower(560,H-34,'#ff5d8f'); drawFlower(840,H-26,'#ffffff'); drawFlower(690,H-20,'#9b6bff');
+  }
+
+  function drawBush(x,y,s){
+    ctx.fillStyle='#5cb83c';
+    ctx.beginPath();
+    ctx.arc(x-10*s,y,12*s,0,Math.PI*2); ctx.arc(x+10*s,y,12*s,0,Math.PI*2);
+    ctx.arc(x,y-8*s,14*s,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#4ea233';
+    ctx.beginPath(); ctx.arc(x+4*s,y+2*s,10*s,0,Math.PI*2); ctx.fill();
+  }
+
+  function drawFlower(x,y,c){
+    ctx.fillStyle='#3f9e2e'; ctx.fillRect(x-1,y,2,12);
+    ctx.fillStyle=c;
+    for(let i=0;i<5;i++){ const a=i/5*Math.PI*2; ctx.beginPath(); ctx.arc(x+Math.cos(a)*5,y-6+Math.sin(a)*5,3.4,0,Math.PI*2); ctx.fill(); }
+    ctx.fillStyle='#ffd24d'; ctx.beginPath(); ctx.arc(x,y-6,2.6,0,Math.PI*2); ctx.fill();
+  }
+
+  function drawTower(){
+    const x=TOWER_X, ground=CASTLE_BASE;
+    // 過關金色光暈（煙火慶祝時）
+    if(state.castleGlow>0){
+      const a=Math.min(0.55, state.castleGlow/2.0*0.55);
+      const cg=ctx.createRadialGradient(x,ground-150,10,x,ground-150,200);
+      cg.addColorStop(0,'rgba(255,220,120,'+a+')'); cg.addColorStop(1,'rgba(255,220,120,0)');
+      ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(x,ground-150,200,0,Math.PI*2); ctx.fill();
+    }
+    // 投影
+    ctx.fillStyle='rgba(0,0,0,.10)'; ctx.beginPath(); ctx.ellipse(x, ground+10, 102, 20, 0,0,Math.PI*2); ctx.fill();
+    // 小丘底座
+    ctx.fillStyle='#69c44a'; ctx.beginPath(); ctx.ellipse(x, ground+6, 94, 18, 0,0,Math.PI*2); ctx.fill();
+    // 兩側小塔
+    drawSideTower(x-56, ground, 44);
+    drawSideTower(x+56, ground, 44);
+    // 中央主塔
+    const stone=ctx.createLinearGradient(0,ground-186,0,ground);
+    stone.addColorStop(0,'#f4f8fc'); stone.addColorStop(.5,'#dde6ef'); stone.addColorStop(1,'#c2ccda');
+    ctx.fillStyle=stone; roundRect(x-48, ground-186, 96, 186, 14); ctx.fill();
+    ctx.strokeStyle='rgba(120,130,150,.18)'; ctx.lineWidth=1.5;
+    for(let yy=ground-162; yy<ground-10; yy+=22){ ctx.beginPath(); ctx.moveTo(x-48,yy); ctx.lineTo(x+48,yy); ctx.stroke(); }
+    ctx.fillStyle='rgba(0,0,0,.06)'; ctx.fillRect(x+12, ground-186, 36, 186);
+    // 城垛 + 金邊
+    ctx.fillStyle='#e2e9f1';
+    for(let i=0;i<8;i++) ctx.fillRect(x-48 + i*14, ground-200, 9, 16);
+    ctx.fillStyle='#ffd24d';
+    for(let i=0;i<8;i++) ctx.fillRect(x-48 + i*14, ground-200, 9, 4);
+    // 窗戶（暖光＋窗框）
+    for(const wx of [x-26, x+10]){
+      ctx.fillStyle='#ffd98a'; roundRect(wx, ground-140, 16, 28, 8); ctx.fill();
+      ctx.strokeStyle='#caa85a'; ctx.lineWidth=2;
+      ctx.strokeRect(wx+1, ground-139, 14, 26);
+      ctx.beginPath(); ctx.moveTo(wx+8, ground-139); ctx.lineTo(wx+8, ground-113);
+      ctx.moveTo(wx+1, ground-126); ctx.lineTo(wx+15, ground-126); ctx.stroke();
+    }
+    // 拱門
+    ctx.fillStyle='#7a5a3a'; roundRect(x-20, ground-94, 40, 94, 20); ctx.fill();
+    ctx.fillStyle='#5e4429'; for(let i=1;i<6;i++) ctx.fillRect(x-20+i*7, ground-80, 2, 78);
+    ctx.strokeStyle='#caa85a'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x, ground-94, 20, Math.PI, 0); ctx.stroke();
+    // 盾牌徽章
+    ctx.fillStyle='#ff7a59';
+    ctx.beginPath();
+    ctx.moveTo(x, ground-170); ctx.lineTo(x+18, ground-154);
+    ctx.lineTo(x+13, ground-134); ctx.lineTo(x, ground-124);
+    ctx.lineTo(x-13, ground-134); ctx.lineTo(x-18, ground-154); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff'; drawStar(x, ground-150, 5, 8, 3);
+    // 旗幟（飄動）
+    const fw=Math.sin(performance.now()/500)*4;
+    ctx.strokeStyle='#7a5a3a'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(x, ground-200); ctx.lineTo(x, ground-240); ctx.stroke();
+    ctx.fillStyle='#ff7a59';
+    ctx.beginPath();
+    ctx.moveTo(x, ground-240);
+    ctx.quadraticCurveTo(x+26, ground-234+fw, x+48, ground-238);
+    ctx.quadraticCurveTo(x+34, ground-222, x+48, ground-206);
+    ctx.quadraticCurveTo(x+22, ground-210, x, ground-204);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#fff'; drawStar(x+22, ground-222, 5, 6, 2.5);
+    // 砲台（朝向右方怪物）
+    ctx.save(); ctx.translate(x+42, PATH_Y-14); ctx.rotate(-0.04);
+    ctx.fillStyle='#5a6b7a'; roundRect(0,-11,54,22,11); ctx.fill();
+    ctx.fillStyle='#3c4856'; ctx.beginPath(); ctx.arc(0,0,14,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#7a8a99'; ctx.beginPath(); ctx.arc(0,0,6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#ffd24d'; ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawArcher(x, baseY, phase){
+    const bob=Math.sin(performance.now()/460+(phase||0))*2;
+    ctx.save(); ctx.translate(x, baseY + bob);
+    ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0,2,18,6,0,0,Math.PI*2); ctx.fill();
+    // 腿
+    ctx.fillStyle='#5b4632'; ctx.fillRect(-10,-6,8,12); ctx.fillRect(3,-6,8,12);
+    // 外衣
+    const rg=ctx.createLinearGradient(0,-46,0,2);
+    rg.addColorStop(0,'#7ed957'); rg.addColorStop(1,'#4ea233');
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.moveTo(-15,-44); ctx.lineTo(15,-44); ctx.lineTo(18,2); ctx.lineTo(-18,2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.22)'; ctx.beginPath(); ctx.moveTo(-15,-44); ctx.lineTo(0,-44); ctx.lineTo(0,2); ctx.lineTo(-18,2); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#caa85a'; ctx.fillRect(-15,-20,30,5);
+    // 頭
+    ctx.fillStyle='#ffe0c2'; ctx.beginPath(); ctx.arc(0,-54,12,0,Math.PI*2); ctx.fill();
+    // 頭巾
+    ctx.fillStyle='#3a7bd5'; ctx.beginPath(); ctx.arc(0,-56,13,Math.PI,0); ctx.fill();
+    ctx.fillStyle='#2f66b0'; ctx.fillRect(-13,-60,26,6);
+    // 腮紅
+    ctx.fillStyle='rgba(255,140,140,.4)';
+    ctx.beginPath(); ctx.arc(-6,-50,2.6,0,Math.PI*2); ctx.arc(6,-50,2.6,0,Math.PI*2); ctx.fill();
+    // 眼睛（朝左）
+    ctx.fillStyle='#2b3a4a'; ctx.beginPath(); ctx.arc(-4,-54,2,0,Math.PI*2); ctx.arc(5,-54,2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#2b3a4a'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(-1,-50,3.4,0.1*Math.PI,0.9*Math.PI); ctx.stroke();
+    // 箭袋
+    ctx.save(); ctx.translate(14,-30); ctx.rotate(0.3);
+    ctx.fillStyle='#8a5a2b'; roundRect(-4,-14,8,22,3); ctx.fill();
+    ctx.strokeStyle='#e8d3a0'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,-12); ctx.lineTo(0,-26); ctx.stroke();
+    ctx.restore();
+    // 弓（左側）
+    ctx.save(); ctx.translate(-16,-26);
+    ctx.strokeStyle='#7a5a3a'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(0,-22); ctx.quadraticCurveTo(-18,0,0,22); ctx.stroke();
+    ctx.strokeStyle='#e8d3a0'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(0,-22); ctx.lineTo(0,22); ctx.stroke();
+    ctx.strokeStyle='#5b4632'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(2,-2); ctx.lineTo(16,-2); ctx.stroke();
+    ctx.fillStyle='#c0392b'; ctx.beginPath(); ctx.moveTo(18,-2); ctx.lineTo(12,-5); ctx.lineTo(12,1); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function drawHero(x, baseY, phase){
+    const bob=Math.sin(performance.now()/420+(phase||0))*2;
+    ctx.save(); ctx.translate(x, baseY + bob);
+    ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0,2,18,6,0,0,Math.PI*2); ctx.fill();
+    // 長袍
+    const rg=ctx.createLinearGradient(0,-48,0,4);
+    rg.addColorStop(0,'#74d6ff'); rg.addColorStop(1,'#2b9fe0');
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.moveTo(-17,-46); ctx.quadraticCurveTo(-22,-10,-21,4); ctx.lineTo(21,4); ctx.quadraticCurveTo(22,-10,17,-46); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.28)'; ctx.beginPath(); ctx.moveTo(-17,-46); ctx.lineTo(0,-46); ctx.lineTo(0,4); ctx.lineTo(-21,4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#ffd24d'; ctx.fillRect(-15,-18,30,6);
+    // 頭
+    ctx.fillStyle='#ffe0c2'; ctx.beginPath(); ctx.arc(0,-54,13,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,140,140,.4)'; ctx.beginPath(); ctx.arc(-7,-50,3,0,Math.PI*2); ctx.arc(7,-50,3,0,Math.PI*2); ctx.fill();
+    // 巫師帽
+    ctx.fillStyle='#3a7bd5';
+    ctx.beginPath(); ctx.moveTo(-18,-60); ctx.lineTo(18,-60); ctx.lineTo(2,-98); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.25)'; ctx.beginPath(); ctx.moveTo(-18,-60); ctx.lineTo(0,-60); ctx.lineTo(2,-98); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#ffd24d'; drawStar(-2,-78,5,5,2);
+    ctx.fillStyle='#ff7a59'; ctx.beginPath(); ctx.arc(2,-98,4,0,Math.PI*2); ctx.fill();
+    // 眼睛 + 微笑
+    ctx.fillStyle='#2b3a4a'; ctx.beginPath(); ctx.arc(-5,-54,2.2,0,Math.PI*2); ctx.arc(5,-54,2.2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#2b3a4a'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.arc(0,-50,4,0.1*Math.PI,0.9*Math.PI); ctx.stroke();
+    // 魔法杖 + 發光球
+    ctx.strokeStyle='#7a5a3a'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(18,-44); ctx.lineTo(22,2); ctx.stroke();
+    const og=ctx.createRadialGradient(18,-50,1,18,-50,12);
+    og.addColorStop(0,'#fff7c2'); og.addColorStop(1,'#ffb02e');
+    ctx.fillStyle='rgba(255,247,194,.45)'; ctx.beginPath(); ctx.arc(18,-50,15,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=og; ctx.beginPath(); ctx.arc(18,-50,10,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff7c2'; drawStar(18,-50,5,5,2.4);
+    ctx.restore();
+  }
+
+  // 劍士（玩家可選職業）
+  function drawWarrior(x, baseY, phase){
+    const bob=Math.sin(performance.now()/440+(phase||0)*1.3)*2;
+    ctx.save(); ctx.translate(x, baseY + bob);
+    ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0,2,18,6,0,0,Math.PI*2); ctx.fill();
+    // 腿
+    ctx.fillStyle='#4a3428'; ctx.fillRect(-10,-6,8,12); ctx.fillRect(3,-6,8,12);
+    // 戰甲
+    const rg=ctx.createLinearGradient(0,-46,0,4);
+    rg.addColorStop(0,'#ff9a6b'); rg.addColorStop(1,'#d2542f');
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.moveTo(-16,-44); ctx.lineTo(16,-44); ctx.lineTo(19,4); ctx.lineTo(-19,4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.22)'; ctx.beginPath(); ctx.moveTo(-16,-44); ctx.lineTo(0,-44); ctx.lineTo(0,4); ctx.lineTo(-19,4); ctx.closePath(); ctx.fill();
+    // 腰帶 + 扣
+    ctx.fillStyle='#7a5a3a'; ctx.fillRect(-16,-20,32,6);
+    ctx.fillStyle='#ffd24d'; ctx.fillRect(-4,-20,8,6);
+    // 肩甲
+    ctx.fillStyle='#b9c4d0';
+    ctx.beginPath(); ctx.ellipse(-17,-38,8,7,0,0,Math.PI*2); ctx.ellipse(17,-38,8,7,0,0,Math.PI*2); ctx.fill();
+    // 頭
+    ctx.fillStyle='#ffe0c2'; ctx.beginPath(); ctx.arc(0,-54,12,0,Math.PI*2); ctx.fill();
+    // 頭盔（角盔）
+    ctx.fillStyle='#b9c4d0';
+    ctx.beginPath(); ctx.arc(0,-57,13,Math.PI,0); ctx.fill();
+    ctx.fillRect(-13,-61,26,6);
+    ctx.fillStyle='#f0e6d2';
+    for(const s of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(s*11,-64); ctx.quadraticCurveTo(s*21,-77, s*8,-72);
+      ctx.quadraticCurveTo(s*9,-67, s*6,-64);
+      ctx.closePath(); ctx.fill();
+    }
+    // 腮紅 + 眼睛 + 微笑
+    ctx.fillStyle='rgba(255,140,140,.4)';
+    ctx.beginPath(); ctx.arc(-6,-50,2.6,0,Math.PI*2); ctx.arc(6,-50,2.6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2b3a4a'; ctx.beginPath(); ctx.arc(-4,-54,2,0,Math.PI*2); ctx.arc(5,-54,2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#2b3a4a'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(-1,-50,3.4,0.1*Math.PI,0.9*Math.PI); ctx.stroke();
+    // 巨劍（左手持，微微擺動）
+    ctx.save(); ctx.translate(-17,-40); ctx.rotate(0.5+Math.sin(performance.now()/700+(phase||0))*0.05);
+    const bg=ctx.createLinearGradient(0,0,0,32);
+    bg.addColorStop(0,'#ffffff'); bg.addColorStop(1,'#9fb4c8');
+    ctx.fillStyle=bg;
+    ctx.beginPath(); ctx.moveTo(-4,0); ctx.lineTo(4,0); ctx.lineTo(3,26); ctx.lineTo(0,32); ctx.lineTo(-3,26); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#7a5a3a'; ctx.fillRect(-2.5,26,5,10);
+    ctx.fillStyle='#ffd24d'; ctx.fillRect(-7,24,14,4);
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // 牧師（玩家可選職業）
+  function drawPriest(x, baseY, phase){
+    const bob=Math.sin(performance.now()/500+(phase||0)*1.7)*2;
+    ctx.save(); ctx.translate(x, baseY + bob);
+    ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0,2,18,6,0,0,Math.PI*2); ctx.fill();
+    // 長袍（白/金）
+    const rg=ctx.createLinearGradient(0,-46,0,4);
+    rg.addColorStop(0,'#ffffff'); rg.addColorStop(1,'#e8dfc8');
+    ctx.fillStyle=rg;
+    ctx.beginPath(); ctx.moveTo(-17,-46); ctx.quadraticCurveTo(-22,-10,-21,4); ctx.lineTo(21,4); ctx.quadraticCurveTo(22,-10,17,-46); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.5)'; ctx.beginPath(); ctx.moveTo(-17,-46); ctx.lineTo(0,-46); ctx.lineTo(0,4); ctx.lineTo(-21,4); ctx.closePath(); ctx.fill();
+    // 金色滾邊
+    ctx.fillStyle='#e8b84b'; ctx.fillRect(-16,-20,32,5);
+    // 頭
+    ctx.fillStyle='#ffe0c2'; ctx.beginPath(); ctx.arc(0,-54,12,0,Math.PI*2); ctx.fill();
+    // 兜帽
+    ctx.fillStyle='#f4ecd8';
+    ctx.beginPath(); ctx.arc(0,-57,13,Math.PI,0); ctx.fill();
+    ctx.fillStyle='#e0d4b8'; ctx.fillRect(-13,-61,26,6);
+    // 光環（輕輕閃爍）
+    const ha=0.75+0.25*Math.sin(performance.now()/300+(phase||0));
+    ctx.fillStyle='rgba(255,220,110,'+ha+')';
+    ctx.beginPath(); ctx.ellipse(0,-77,13,4.5,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.75)';
+    ctx.beginPath(); ctx.ellipse(0,-77,9,3,0,0,Math.PI*2); ctx.fill();
+    // 溫柔的眼睛 + 微笑
+    ctx.fillStyle='#2b3a4a';
+    ctx.beginPath(); ctx.arc(-4,-53,2,0,Math.PI*2); ctx.arc(5,-53,2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#2b3a4a'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(-1,-49,3.4,0.1*Math.PI,0.9*Math.PI); ctx.stroke();
+    // 權杖（左手持，頂端發光十字）
+    ctx.strokeStyle='#c9a227'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(-16,-44); ctx.lineTo(-19,2); ctx.stroke();
+    const og=ctx.createRadialGradient(-16,-50,1,-16,-50,12);
+    og.addColorStop(0,'#fffbe0'); og.addColorStop(1,'#ffd24d');
+    ctx.fillStyle='rgba(255,250,220,.45)'; ctx.beginPath(); ctx.arc(-16,-50,15,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=og; ctx.beginPath(); ctx.arc(-16,-50,10,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(-16,-55); ctx.lineTo(-16,-45);
+    ctx.moveTo(-21,-50); ctx.lineTo(-11,-50);
+    ctx.stroke();
+    ctx.lineCap='butt';
+    ctx.restore();
+  }
+
+  // 依在場玩家的職業繪製守護者（單人模式：唯一守護者站到兩格中間）
+  // 還沒選職業時只畫背景與城堡，不預設英雄外型
+  function drawPlayers(){
+    if(!sel.p1) return;
+    const x1 = (players === 1) ? (HERO_X + ARCHER_X)/2 : HERO_X;
+    drawCharacterAt(x1, state.p1.cls, CASTLE_BASE, 0);
+    if(players === 2 && sel.p2) drawCharacterAt(ARCHER_X, state.p2.cls, CASTLE_BASE, 1);
+  }
+  function drawCharacterAt(x, cls, baseY, phase){
+    if(cls === 'warrior')    drawWarrior(x, baseY, phase);
+    else if(cls === 'priest')drawPriest(x, baseY, phase);
+    else if(cls === 'archer')drawArcher(x, baseY, phase);
+    else                     drawHero(x, baseY, phase);
+  }
+
+  // 各職業技能彈道繪製
+  function drawProjectile(p){
+    const t = p.target;
+    const ang = t ? Math.atan2((t.y+(p.dy||0))-p.y, (t.x-(t.r+4))-p.x) : 0;
+    const pulse = 1 + 0.12*Math.sin(performance.now()/90);
+    switch(p.kind){
+      case 'mage-0': {   // ✨ 魔法星
+        const g=ctx.createRadialGradient(p.x,p.y,1,p.x,p.y,12);
+        g.addColorStop(0,'#fff7c2'); g.addColorStop(1,'#ffb02e');
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,10,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#ffe9a8'; drawStar(p.x,p.y,5,4.6*pulse,1.9);
+        break;
+      }
+      case 'mage-1': {   // ❄️ 冰凍術：冰錐
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+        const g=ctx.createLinearGradient(-12,0,12,0);
+        g.addColorStop(0,'#5fb8f0'); g.addColorStop(.5,'#cfeeff'); g.addColorStop(1,'#ffffff');
+        ctx.fillStyle=g;
+        ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(0,-8); ctx.lineTo(-12,0); ctx.lineTo(0,8); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.9)'; drawStar(0,0,4,3.2,1.2);
+        ctx.restore();
+        break;
+      }
+      case 'mage-2': {   // ☄️ 隕石術：火隕石 + 尾焰
+        ctx.save(); ctx.translate(p.x,p.y);
+        const g=ctx.createRadialGradient(0,0,2,0,0,17);
+        g.addColorStop(0,'#fff3c0'); g.addColorStop(.45,'#ff9a2e'); g.addColorStop(1,'rgba(255,80,20,.15)');
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,16,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(255,140,30,.5)';
+        ctx.beginPath(); ctx.ellipse(0,-16,8,15,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#ffe9a8'; drawStar(0,0,4,5,2);
+        ctx.restore();
+        break;
+      }
+      case 'archer-0': { // 🏹 連射箭
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+        ctx.strokeStyle='#7a5a3a'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(7,0); ctx.stroke();
+        ctx.fillStyle='#c0392b';
+        ctx.beginPath(); ctx.moveTo(9,0); ctx.lineTo(1,-5); ctx.lineTo(1,5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#e8d3a0';
+        ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-7,-4); ctx.lineTo(-7,4); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        break;
+      }
+      case 'archer-2': { // 🔥 穿甲箭：爆炎巨箭
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+        ctx.strokeStyle='#5a3a1a'; ctx.lineWidth=4;
+        ctx.beginPath(); ctx.moveTo(-14,0); ctx.lineTo(9,0); ctx.stroke();
+        ctx.fillStyle='#c0392b';
+        ctx.beginPath(); ctx.moveTo(13,0); ctx.lineTo(3,-7); ctx.lineTo(3,7); ctx.closePath(); ctx.fill();
+        const fg=ctx.createRadialGradient(11,0,1,11,0,10);
+        fg.addColorStop(0,'#fff3c0'); fg.addColorStop(.5,'#ff9a2e'); fg.addColorStop(1,'rgba(255,80,20,0)');
+        ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(11,0,10,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#e8d3a0';
+        ctx.beginPath(); ctx.moveTo(-14,0); ctx.lineTo(-9,-5); ctx.lineTo(-9,5); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        break;
+      }
+      case 'warrior-0': {  // 🗡️ 斬擊波：劍氣月牙
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+        ctx.strokeStyle='rgba(255,255,255,.95)'; ctx.lineWidth=7; ctx.lineCap='round';
+        ctx.beginPath(); ctx.arc(0,0,15,-1.0,1.0); ctx.stroke();
+        ctx.strokeStyle='rgba(120,200,255,.8)'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.arc(2,0,11,-0.8,0.8); ctx.stroke();
+        ctx.restore();
+        break;
+      }
+      case 'warrior-1': {  // 🌀 旋風斬：旋轉風刃
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.spin||0);
+        for(let i=0;i<3;i++){
+          ctx.strokeStyle = i===0 ? 'rgba(255,255,255,.95)' : 'rgba(140,220,255,.7)';
+          ctx.lineWidth = i===0 ? 6 : 3;
+          ctx.lineCap='round';
+          ctx.beginPath(); ctx.arc(0,0,13+i*4,i*2.1,i*2.1+1.9); ctx.stroke();
+        }
+        ctx.restore();
+        break;
+      }
+      case 'warrior-2': {  // 💥 衝鋒斬：巨刃 + 火花
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+        ctx.strokeStyle='rgba(255,255,255,.98)'; ctx.lineWidth=13; ctx.lineCap='round';
+        ctx.beginPath(); ctx.arc(0,0,20,-1.15,1.15); ctx.stroke();
+        ctx.strokeStyle='rgba(255,210,77,.95)'; ctx.lineWidth=6;
+        ctx.beginPath(); ctx.arc(2,0,15,-0.9,0.9); ctx.stroke();
+        ctx.fillStyle='#fff'; drawStar(22,0,4,5,2);
+        ctx.restore();
+        break;
+      }
+      case 'priest-0': {   // 🌟 聖光彈
+        const g=ctx.createRadialGradient(p.x,p.y,1,p.x,p.y,13);
+        g.addColorStop(0,'#fffbe0'); g.addColorStop(.5,'#ffe9a8'); g.addColorStop(1,'rgba(255,210,77,0)');
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,12,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#fff'; drawStar(p.x,p.y,4,5*pulse,2);
+        break;
+      }
+      case 'priest-1': {   // 💚 治癒之光：綠白柔光十字
+        const g=ctx.createRadialGradient(p.x,p.y,1,p.x,p.y,14);
+        g.addColorStop(0,'#f2fff2'); g.addColorStop(.5,'#aef0c6'); g.addColorStop(1,'rgba(80,220,140,0)');
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,13,0,Math.PI*2); ctx.fill();
+        ctx.save();
+        ctx.strokeStyle='#37c871'; ctx.lineWidth=3.4; ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(p.x,p.y-7); ctx.lineTo(p.x,p.y+7);
+        ctx.moveTo(p.x-7,p.y); ctx.lineTo(p.x+7,p.y);
+        ctx.stroke();
+        ctx.restore();
+        break;
+      }
+      case 'priest-2': {   // ⚡ 神聖審判：光柱
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(ang);
+        const g=ctx.createLinearGradient(-26,0,26,0);
+        g.addColorStop(0,'rgba(255,250,220,0)'); g.addColorStop(.5,'#fffbe0'); g.addColorStop(1,'rgba(255,250,220,0)');
+        ctx.fillStyle=g;
+        ctx.beginPath(); ctx.ellipse(0,0,26,10,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.95)';
+        ctx.beginPath(); ctx.ellipse(0,0,15,5.5,0,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#ffd24d'; drawStar(4,0,4,5,2);
+        ctx.restore();
+        break;
+      }
+      default: {           // 後備能量球
+        ctx.fillStyle='#ffd24d'; ctx.beginPath(); ctx.arc(p.x,p.y,8,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle='#ef8b1f'; ctx.lineWidth=2; ctx.stroke();
+      }
+    }
+  }
+
+  function drawFace(r, eyeY){
+    eyeY = (eyeY===undefined) ? -r*0.05 : eyeY;
+    const ex=r*0.32, ey=eyeY, er=r*0.26;
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(-ex,ey,er,0,Math.PI*2); ctx.arc(ex,ey,er,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2b3a4a';
+    ctx.beginPath(); ctx.arc(-ex+er*0.2,ey+er*0.1,er*0.5,0,Math.PI*2); ctx.arc(ex+er*0.2,ey+er*0.1,er*0.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#2b3a4a'; ctx.lineWidth=Math.max(2,r*0.07);
+    ctx.beginPath(); ctx.arc(0,ey+er*0.7,r*0.38,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+  }
+
+  function drawSlime(r){
+    // 果凍身體（多層漸層 + 底緣陰影）
+    const g=ctx.createRadialGradient(-r*0.3,-r*0.35,r*0.2,0,0,r*1.1);
+    g.addColorStop(0,'#c8f7a0'); g.addColorStop(.55,'#7ed957'); g.addColorStop(1,'#4ea233');
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(-r, r*0.62);
+    ctx.quadraticCurveTo(-r*1.02, -r*0.35, 0, -r);
+    ctx.quadraticCurveTo(r*1.02, -r*0.35, r, r*0.62);
+    ctx.quadraticCurveTo(0, r*1.05, -r, r*0.62);
+    ctx.closePath(); ctx.fill();
+    // 底部陰影
+    ctx.fillStyle='rgba(30,90,20,.22)';
+    ctx.beginPath(); ctx.ellipse(0,r*0.55,r*0.72,r*0.18,0,0,Math.PI*2); ctx.fill();
+    // 小腳
+    ctx.fillStyle='#3f8f2a';
+    ctx.beginPath();
+    ctx.ellipse(-r*0.42,r*0.7,r*0.19,r*0.1,0,0,Math.PI*2);
+    ctx.ellipse(r*0.42,r*0.7,r*0.19,r*0.1,0,0,Math.PI*2); ctx.fill();
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,.55)';
+    ctx.beginPath(); ctx.ellipse(-r*0.35,-r*0.42,r*0.2,r*0.28,-0.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.beginPath(); ctx.ellipse(r*0.3,-r*0.55,r*0.07,r*0.1,-0.4,0,Math.PI*2); ctx.fill();
+    drawFace(r,-r*0.05);
+  }
+
+  function drawGhost(r,t){
+    const g=ctx.createLinearGradient(0,-r,0,r);
+    g.addColorStop(0,'#ffffff'); g.addColorStop(.6,'#e3f0fc'); g.addColorStop(1,'#bcd6ee');
+    ctx.fillStyle=g;
+    const top=-r*0.92, bottom=r*0.78;
+    ctx.beginPath();
+    ctx.moveTo(-r, bottom);
+    ctx.lineTo(-r, top);
+    ctx.quadraticCurveTo(-r, -r*1.05, 0, -r*1.05);
+    ctx.quadraticCurveTo(r, -r*1.05, r, top);
+    ctx.lineTo(r, bottom);
+    const bumps=4, w=(2*r)/bumps;
+    for(let i=0;i<bumps;i++){
+      const x = r - i*w;
+      const off=Math.sin(t*3+i*1.3)*w*0.16;   // 飄動波浪裙擺
+      ctx.quadraticCurveTo(x - w/2 + off, bottom - w*0.62, x - w, bottom);
+    }
+    ctx.closePath(); ctx.fill();
+    // 內透光
+    ctx.fillStyle='rgba(140,200,255,.22)';
+    ctx.beginPath(); ctx.ellipse(0,-r*0.1,r*0.55,r*0.6,0,0,Math.PI*2); ctx.fill();
+    // 小手
+    ctx.fillStyle='#dceaf7';
+    ctx.beginPath(); ctx.arc(-r*0.98,r*0.15,r*0.14,0,Math.PI*2); ctx.arc(r*0.98,r*0.15,r*0.14,0,Math.PI*2); ctx.fill();
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,.75)';
+    ctx.beginPath(); ctx.ellipse(-r*0.38,-r*0.5,r*0.15,r*0.23,-0.4,0,Math.PI*2); ctx.fill();
+    // 眼睛（含眼神光）
+    ctx.fillStyle='#2b3a4a';
+    ctx.beginPath(); ctx.arc(-r*0.32,-r*0.12,r*0.14,0,Math.PI*2); ctx.arc(r*0.32,-r*0.12,r*0.14,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(-r*0.36,-r*0.17,r*0.05,0,Math.PI*2); ctx.arc(r*0.28,-r*0.17,r*0.05,0,Math.PI*2); ctx.fill();
+    // 腮紅 + 微笑
+    ctx.fillStyle='rgba(255,150,150,.5)';
+    ctx.beginPath(); ctx.arc(-r*0.55,r*0.12,r*0.12,0,Math.PI*2); ctx.arc(r*0.55,r*0.12,r*0.12,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#2b3a4a'; ctx.lineWidth=Math.max(2,r*0.06);
+    ctx.beginPath(); ctx.ellipse(0,r*0.24,r*0.16,r*0.12,0,0,Math.PI); ctx.stroke();
+  }
+
+  function drawImp(r,t){
+    const flap=Math.sin(t*2.4)*0.35;
+    // 翅膀（含膜紋）
+    for(const s of [-1,1]){
+      ctx.save(); ctx.translate(s*r*0.72,-r*0.05); ctx.rotate(s*(0.45+flap));
+      const wg=ctx.createLinearGradient(0,0,s*r*0.9,-r*0.9);
+      wg.addColorStop(0,'#d9c2ff'); wg.addColorStop(1,'#8a4dff');
+      ctx.fillStyle=wg;
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.quadraticCurveTo(s*r*0.95,-r*0.5, s*r*0.75,-r*1.05);
+      ctx.quadraticCurveTo(s*r*0.3,-r*0.5, 0,0);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='rgba(90,40,160,.5)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(s*r*0.7,-r*0.9); ctx.stroke();
+      ctx.restore();
+    }
+    // 尾巴（箭尖 + 擺動）
+    ctx.strokeStyle='#8a4dff'; ctx.lineWidth=Math.max(3,r*0.11);
+    ctx.beginPath(); ctx.moveTo(r*0.5,r*0.75);
+    ctx.quadraticCurveTo(r*1.15,r*0.9+Math.sin(t*3)*r*0.15, r*0.85,r*0.08);
+    ctx.stroke();
+    ctx.fillStyle='#ef5a36';
+    ctx.beginPath();
+    ctx.moveTo(r*0.96,r*0.1); ctx.lineTo(r*1.28,r*0.02); ctx.lineTo(r*1.06,r*0.36);
+    ctx.closePath(); ctx.fill();
+    // 身體
+    const g=ctx.createRadialGradient(-r*0.3,-r*0.35,r*0.2,0,0,r*1.15);
+    g.addColorStop(0,'#c9a6ff'); g.addColorStop(.55,'#9a63ff'); g.addColorStop(1,'#6a2fb0');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
+    // 彎角
+    ctx.fillStyle='#3a1a66';
+    for(const s of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.38,-r*0.8);
+      ctx.quadraticCurveTo(s*r*0.72,-r*1.35, s*r*0.12,-r*1.18);
+      ctx.quadraticCurveTo(s*r*0.18,-r*0.95, s*r*0.12,-r*0.82);
+      ctx.closePath(); ctx.fill();
+    }
+    // 小手
+    ctx.fillStyle='#6a2fb0';
+    ctx.beginPath(); ctx.arc(-r*0.95,r*0.1,r*0.16,0,Math.PI*2); ctx.arc(r*0.95,r*0.1,r*0.16,0,Math.PI*2); ctx.fill();
+    drawFace(r,-r*0.05);
+  }
+
+  function drawPumpkin(r){
+    // 梗 + 葉
+    ctx.fillStyle='#6b4a2b'; ctx.fillRect(-r*0.1,-r*1.22,r*0.2,r*0.32);
+    ctx.fillStyle='#3a8a2a';
+    ctx.beginPath(); ctx.ellipse(r*0.24,-r*1.1,r*0.24,r*0.11,-0.5,0,Math.PI*2); ctx.fill();
+    // 身體
+    const g=ctx.createRadialGradient(-r*0.3,-r*0.3,r*0.2,0,0,r*1.15);
+    g.addColorStop(0,'#ffc266'); g.addColorStop(.55,'#ef7a1f'); g.addColorStop(1,'#c25a10');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.ellipse(0,0,r*1.05,r,0,0,Math.PI*2); ctx.fill();
+    // 瓜稜
+    ctx.strokeStyle='rgba(150,65,10,.4)'; ctx.lineWidth=r*0.06;
+    for(const k of [-0.6,-0.2,0.2,0.6]){
+      ctx.beginPath(); ctx.ellipse(k*r*0.5,0,r*0.42,r*0.96,0,0,Math.PI*2); ctx.stroke();
+    }
+    // 發光三角眼
+    for(const s of [-1,1]){
+      ctx.fillStyle='rgba(255,210,77,.9)';
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.56,-r*0.1); ctx.lineTo(s*r*0.12,-r*0.1); ctx.lineTo(s*r*0.34,-r*0.55);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#3a1505';
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.46,-r*0.14); ctx.lineTo(s*r*0.16,-r*0.14); ctx.lineTo(s*r*0.31,-r*0.42);
+      ctx.closePath(); ctx.fill();
+    }
+    // 鋸齒嘴
+    ctx.fillStyle='#3a1505';
+    ctx.beginPath();
+    ctx.moveTo(-r*0.55,r*0.2);
+    for(let i=0;i<5;i++){
+      const x0=-r*0.55 + i*r*0.275;
+      ctx.lineTo(x0+r*0.13,r*0.2);
+      ctx.lineTo(x0+r*0.21,r*0.44);
+      ctx.lineTo(x0+r*0.28,r*0.2);
+    }
+    ctx.lineTo(r*0.55,r*0.34);
+    ctx.quadraticCurveTo(0,r*0.62,-r*0.55,r*0.2);
+    ctx.closePath(); ctx.fill();
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,.3)';
+    ctx.beginPath(); ctx.ellipse(-r*0.45,-r*0.45,r*0.16,r*0.26,-0.5,0,Math.PI*2); ctx.fill();
+  }
+
+  function drawCyclops(r){
+    // 左右拳頭
+    ctx.fillStyle='#1f7fb8';
+    ctx.beginPath(); ctx.arc(-r*1.0,r*0.3,r*0.22,0,Math.PI*2); ctx.arc(r*1.0,r*0.3,r*0.22,0,Math.PI*2); ctx.fill();
+    // 身體
+    const g=ctx.createRadialGradient(-r*0.3,-r*0.35,r*0.2,0,0,r*1.15);
+    g.addColorStop(0,'#8fd8ff'); g.addColorStop(.55,'#3aa0e0'); g.addColorStop(1,'#1f7fb8');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.ellipse(0,0,r,r*0.98,0,0,Math.PI*2); ctx.fill();
+    // 頭頂小角
+    ctx.fillStyle='#ffd24d';
+    ctx.beginPath(); ctx.moveTo(-r*0.12,-r*0.95); ctx.lineTo(0,-r*1.35); ctx.lineTo(r*0.12,-r*0.95); ctx.closePath(); ctx.fill();
+    // 獨眼（漸層虹膜 + 高光）
+    const eg=ctx.createRadialGradient(-r*0.08,-r*0.18,r*0.05,0,-r*0.1,r*0.55);
+    eg.addColorStop(0,'#ffffff'); eg.addColorStop(.5,'#bfe9ff'); eg.addColorStop(1,'#8fd0f5');
+    ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(0,-r*0.1,r*0.52,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#2b3a4a'; ctx.beginPath(); ctx.arc(0,-r*0.06,r*0.27,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-r*0.1,-r*0.18,r*0.09,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(r*0.14,r*0.16,r*0.05,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#2b3a4a'; ctx.lineWidth=Math.max(2,r*0.07);
+    ctx.beginPath(); ctx.arc(0,r*0.42,r*0.34,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    ctx.fillStyle='rgba(255,140,140,.35)';
+    ctx.beginPath(); ctx.arc(-r*0.62,r*0.28,r*0.11,0,Math.PI*2); ctx.arc(r*0.62,r*0.28,r*0.11,0,Math.PI*2); ctx.fill();
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,.25)';
+    ctx.beginPath(); ctx.ellipse(-r*0.45,-r*0.5,r*0.15,r*0.22,-0.5,0,Math.PI*2); ctx.fill();
+  }
+
+  function drawBoss(r, e){
+    const hurt = !!(e && e.hurt>0);        // 受擊：痛苦表情 + 白閃
+    const rage = !!(e && e.rage>0);        // 發怒：紅光 + 更凶
+    // 身後暗影邪氣
+    const aura=ctx.createRadialGradient(0,0,r*0.55,0,0,r*1.75);
+    aura.addColorStop(0,'rgba(150,25,80,.5)'); aura.addColorStop(.55,'rgba(150,25,80,.2)'); aura.addColorStop(1,'rgba(150,25,80,0)');
+    ctx.fillStyle=aura; ctx.beginPath(); ctx.arc(0,0,r*1.75,0,Math.PI*2); ctx.fill();
+    // 發怒時邪氣翻滾加劇（紅色脈動）
+    if(rage){
+      const puls=0.22+0.12*Math.sin(e.bob*30);
+      const rg=ctx.createRadialGradient(0,0,r*0.9,0,0,r*2.05);
+      rg.addColorStop(0,'rgba(255,40,40,'+puls+')'); rg.addColorStop(1,'rgba(255,40,40,0)');
+      ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(0,0,r*2.05,0,Math.PI*2); ctx.fill();
+    }
+    // 肩刺
+    ctx.fillStyle='#571040';
+    for(const s of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.5, -r*0.2);
+      ctx.lineTo(s*r*1.18, -r*0.78);
+      ctx.lineTo(s*r*0.95, 0.02);
+      ctx.closePath(); ctx.fill();
+    }
+    // 利爪大手
+    for(const s of [-1,1]){
+      ctx.save(); ctx.translate(s*r*0.98, r*0.32); ctx.scale(s,1);
+      ctx.fillStyle='#7c1a56';
+      ctx.beginPath(); ctx.ellipse(0,0,r*0.3,r*0.24,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#f7ecd9';
+      for(let i=-1;i<=1;i++){
+        ctx.beginPath();
+        ctx.moveTo(i*r*0.15-r*0.05, r*0.04);
+        ctx.lineTo(i*r*0.15+r*0.05, r*0.04);
+        ctx.lineTo(i*r*0.15, r*0.26);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
+    // 身體（深紅紫巨軀）
+    const g=ctx.createRadialGradient(-r*0.3,-r*0.4,r*0.2,0,0,r*1.15);
+    g.addColorStop(0,'#c94f86'); g.addColorStop(.55,'#8e2a5c'); g.addColorStop(1,'#551040');
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.ellipse(0,r*0.06,r,r*1.02,0,0,Math.PI*2); ctx.fill();
+    // 岩石紋理 + 肚腹
+    ctx.fillStyle='rgba(255,255,255,.1)';
+    ctx.beginPath(); ctx.arc(-r*0.42,r*0.05,r*0.09,0,Math.PI*2); ctx.arc(r*0.4,r*0.32,r*0.08,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.08)';
+    ctx.beginPath(); ctx.ellipse(0,r*0.48,r*0.5,r*0.34,0,0,Math.PI*2); ctx.fill();
+    // 彎曲大角
+    for(const s of [-1,1]){
+      const hg=ctx.createLinearGradient(0,-r,0,0);
+      hg.addColorStop(0,'#f0e6d2'); hg.addColorStop(1,'#8a7a5a');
+      ctx.fillStyle=hg;
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.42,-r*0.72);
+      ctx.quadraticCurveTo(s*r*1.06,-r*1.28, s*r*0.54,-r*1.52);
+      ctx.quadraticCurveTo(s*r*0.42,-r*1.08, s*r*0.12,-r*0.9);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='rgba(90,70,40,.45)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(s*r*0.3,-r*0.86); ctx.lineTo(s*r*0.6,-r*1.24); ctx.stroke();
+    }
+    // 王冠
+    ctx.fillStyle='#ffd24d';
+    ctx.beginPath();
+    ctx.moveTo(-r*0.5,-r*0.78); ctx.lineTo(-r*0.32,-r*1.12); ctx.lineTo(-r*0.08,-r*0.84);
+    ctx.lineTo(r*0.12,-r*1.18); ctx.lineTo(r*0.36,-r*0.86); ctx.lineTo(r*0.52,-r*1.1);
+    ctx.lineTo(r*0.56,-r*0.74); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#ff5a3c'; ctx.beginPath(); ctx.arc(0,-r*0.95,r*0.07,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-r*0.03,-r*0.98,r*0.025,0,Math.PI*2); ctx.fill();
+    // 怒眉（粗黑；發怒時壓得更低更斜）
+    ctx.strokeStyle='#28071a'; ctx.lineWidth=Math.max(4, r*(rage?0.11:0.09));
+    const brow = rage ? r*0.14 : 0;
+    ctx.beginPath();
+    ctx.moveTo(-r*0.62,-r*0.34-brow); ctx.lineTo(-r*0.12,-r*0.12+brow*0.4);
+    ctx.moveTo(r*0.62,-r*0.34-brow); ctx.lineTo(r*0.12,-r*0.12+brow*0.4);
+    ctx.stroke();
+    if(hurt){
+      // 受擊：X_X 痛苦眼 + 痛到歪斜的嘴 + 汗滴
+      ctx.strokeStyle='#1c020a'; ctx.lineWidth=Math.max(4,r*0.09);
+      for(const s of [-1,1]){
+        const ex=s*r*0.3, ey=-r*0.05, q=r*0.15;
+        ctx.beginPath();
+        ctx.moveTo(ex-q,ey-q); ctx.lineTo(ex+q,ey+q);
+        ctx.moveTo(ex+q,ey-q); ctx.lineTo(ex-q,ey+q);
+        ctx.stroke();
+      }
+      ctx.fillStyle='#2a0512';
+      ctx.beginPath(); ctx.ellipse(0,r*0.42,r*0.42,r*0.34,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#fff8ee';
+      for(let i=-1;i<=1;i++){
+        const x=i*r*0.22, w=r*0.06;
+        ctx.beginPath(); ctx.moveTo(x-w,r*0.2); ctx.lineTo(x+w,r*0.2); ctx.lineTo(x,r*0.42); ctx.closePath(); ctx.fill();
+      }
+      ctx.fillStyle='#8fd8ff';
+      ctx.beginPath(); ctx.ellipse(r*0.82,-r*0.5,r*0.07,r*0.11,0.4,0,Math.PI*2); ctx.fill();
+    } else {
+      // 發光紅眼（直豎瞳；發怒時更亮更大）
+      const eyeR = rage ? r*0.32 : r*0.28;
+      for(const s of [-1,1]){
+        const ex=s*r*0.3, ey=-r*0.05;
+        const eg=ctx.createRadialGradient(ex,ey,r*0.02,ex,ey,eyeR);
+        eg.addColorStop(0,'#fff0a0'); eg.addColorStop(.45,rage?'#ff7a4d':'#ff5a3c'); eg.addColorStop(1,'#b8102a');
+        ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,ey,eyeR,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#1c020a';
+        ctx.beginPath(); ctx.ellipse(ex,ey,r*0.08,r*(rage?0.19:0.16),0,0,Math.PI*2); ctx.fill();
+      }
+    }
+    // 血盆大口 + 利齒（受傷時改用上面的歪嘴）
+    if(!hurt){
+      ctx.fillStyle='#2a0512';
+      ctx.beginPath();
+      ctx.moveTo(-r*0.5, r*0.26);
+      ctx.quadraticCurveTo(0, r*0.88, r*0.5, r*0.26);
+      ctx.quadraticCurveTo(0, r*0.44, -r*0.5, r*0.26);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#fff8ee';
+      for(let i=-2;i<=2;i++){
+        const x=i*r*0.17, w=r*0.075;
+        ctx.beginPath();
+        ctx.moveTo(x-w, r*0.3); ctx.lineTo(x+w, r*0.3); ctx.lineTo(x, r*0.48);
+        ctx.closePath(); ctx.fill();
+      }
+      for(let i=-1;i<=1;i++){
+        const x=i*r*0.2, w=r*0.07;
+        ctx.beginPath();
+        ctx.moveTo(x-w, r*0.62); ctx.lineTo(x+w, r*0.62); ctx.lineTo(x, r*0.47);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+    if(rage && !hurt){
+      // 發怒：嘴張得更開（猙獰輪廓）
+      ctx.strokeStyle='#1c020a'; ctx.lineWidth=Math.max(3,r*0.06);
+      ctx.beginPath();
+      ctx.moveTo(-r*0.52,r*0.2); ctx.quadraticCurveTo(0,r*1.02,r*0.52,r*0.2);
+      ctx.stroke();
+    }
+    // 高光
+    ctx.fillStyle='rgba(255,255,255,.2)';
+    ctx.beginPath(); ctx.ellipse(-r*0.35,-r*0.45,r*0.2,r*0.3,-0.5,0,Math.PI*2); ctx.fill();
+    // 受擊白閃（整個身體漸漸泛白）
+    if(hurt){
+      ctx.globalAlpha=Math.min(0.65, (e.hurt/0.45)*0.65);
+      ctx.fillStyle='#ffffff';
+      ctx.beginPath(); ctx.ellipse(0,r*0.06,r*0.96,r*0.98,0,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+  }
+
+  function drawBossHP(cx, topY, e){
+    const w=176, h=18, x=cx-w/2;
+    ctx.fillStyle='rgba(20,10,30,.55)'; roundRect(x-4,topY-3,w+8,h+6,10); ctx.fill();
+    ctx.fillStyle='#fff'; roundRect(x,topY,w,h,9); ctx.fill();
+    const ratio=Math.max(0,e.hp/e.maxHp);
+    ctx.fillStyle = ratio>0.6?'#37c871':(ratio>0.3?'#ffb02e':'#ff4d4d');
+    roundRect(x+2,topY+2,(w-4)*ratio,h-4,7); ctx.fill();
+    if(e.hurt>0){    // 受擊時血條閃紅
+      ctx.fillStyle='rgba(255,60,60,'+Math.min(0.8,e.hurt/0.45*0.8)+')';
+      roundRect(x+2,topY+2,(w-4)*ratio,h-4,7); ctx.fill();
+    }
+    ctx.fillStyle='#2b1a40'; ctx.font='bold 12px "PingFang TC",sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('👹 BOSS HP '+e.hp+'/'+e.maxHp, cx, topY+h/2);
+  }
+
+  function drawMonster(e){
+    // BOSS 體型大，浮沉幅度也更大，更有氣勢
+    const bob = e.isBoss ? Math.sin(e.bob*0.6)*7 : Math.sin(e.bob)*4;
+    // 受擊 / 發怒時的抖動偏移（發怒抖得更凶）
+    const shake = (e.hurt>0 ? 7 : 0) + (e.rage>0 ? 5 : 0);
+    const shx = shake ? Math.sin(e.bob*47)*shake : 0;
+    const shy = shake ? Math.cos(e.bob*61)*shake*0.6 : 0;
+    const cx=e.x, cy=e.y+bob, r=e.r;
+    ctx.fillStyle='rgba(0,0,0,.12)';
+    ctx.beginPath(); ctx.ellipse(cx, cy + r + 4, e.isBoss ? r*0.85 : r*0.9, e.isBoss ? r*0.16 : 7,0,0,Math.PI*2); ctx.fill();
+    ctx.save(); ctx.translate(cx+shx, cy+shy);
+    if(e.isBoss){ drawBoss(r, e); }
+    else {
+      switch(e.type){
+        case 'slime':   drawSlime(r); break;
+        case 'ghost':   drawGhost(r, e.bob); break;
+        case 'imp':     drawImp(r, e.bob); break;
+        case 'pumpkin': drawPumpkin(r); break;
+        case 'cyclops': drawCyclops(r); break;
+        default:        drawSlime(r);
+      }
+    }
+    ctx.restore();
+    // 冰凍術：藍色霜凍覆蓋 + 冰晶碎片
+    if(e.frozen>0 && e.state==='alive'){
+      ctx.globalAlpha = Math.min(0.5, e.frozen*0.3);
+      ctx.fillStyle='#9fd8ff';
+      ctx.beginPath(); ctx.ellipse(cx,cy,r*0.95,r*0.9,0,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.fillStyle='rgba(255,255,255,.9)';
+      drawStar(cx-r*0.5,cy-r*0.6,4,4,1.5);
+      drawStar(cx+r*0.55,cy+r*0.3,4,3.4,1.3);
+    }
+    const owner = (state && state.p1.target===e) ? 'p1' : (state && state.p2.target===e) ? 'p2' : null;
+    if(owner && e.state==='alive'){
+      if(e.isBoss){
+        // BOSS（兩人共同目標）：紅色大環 + 頭頂血量條 + 題目氣泡
+        ctx.strokeStyle='rgba(255,80,80,.95)'; ctx.lineWidth=4;
+        ctx.setLineDash([9,8]);
+        ctx.beginPath(); ctx.arc(cx,cy,r*1.14,0,Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+        const txt='👹 BOSS  '+e.problem.text;
+        ctx.font='bold 20px "PingFang TC",sans-serif';
+        const tw=ctx.measureText(txt).width+26;
+        const bx=cx-tw/2;
+        drawBossHP(cx, cy - r - 84, e);          // 血量條緊貼 BOSS 頭頂
+        const by=cy - r - 128;                    // 題目氣泡在血條上方
+        ctx.fillStyle='#fff'; roundRect(bx,by,tw,30,15); ctx.fill();
+        ctx.strokeStyle='rgba(122,63,176,.35)'; ctx.lineWidth=2;
+        roundRect(bx,by,tw,30,15); ctx.stroke();
+        ctx.fillStyle='#7a3fb0'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(txt, cx, by+15);
+        ctx.fillStyle='#fff';
+        ctx.beginPath(); ctx.moveTo(cx-7,by+30); ctx.lineTo(cx+7,by+30); ctx.lineTo(cx,by+40); ctx.fill();
+        return;
+      }
+      const ring = owner==='p1' ? 'rgba(43,159,224,.95)' : 'rgba(255,122,89,.95)';
+      ctx.strokeStyle=ring; ctx.lineWidth=3;
+      ctx.setLineDash([6,6]);
+      ctx.beginPath(); ctx.arc(cx,cy,r+12,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+      const tag = owner==='p1' ? 'P1 ' : 'P2 ';
+      const txt = tag + e.problem.text;
+      ctx.font='bold 16px "PingFang TC",sans-serif';
+      const tw=ctx.measureText(txt).width+18;
+      const bx=cx-tw/2;
+      const below = (owner==='p2');
+      const by = below ? cy + r + 6 : cy - r - 46;
+      ctx.fillStyle='#fff'; roundRect(bx,by,tw,26,13); ctx.fill();
+      ctx.fillStyle= owner==='p1' ? '#1f7fb8' : '#ef5a36';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(txt, cx, by+13);
+      ctx.fillStyle='#fff';
+      if(below){ ctx.beginPath(); ctx.moveTo(cx-6,by); ctx.lineTo(cx+6,by); ctx.lineTo(cx,by-8); ctx.fill(); }
+      else { ctx.beginPath(); ctx.moveTo(cx-6,by+26); ctx.lineTo(cx+6,by+26); ctx.lineTo(cx,by+34); ctx.fill(); }
+    }
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  // ---- events ----
+  document.querySelectorAll('.key').forEach(b=>{
+    b.addEventListener('click',()=>pressKey(b.dataset.k, b.dataset.player));
+  });
+  document.querySelectorAll('.fire').forEach(b=>{
+    b.addEventListener('click',()=>submit(b.dataset.player));
+  });
+  document.querySelectorAll('.choice').forEach(b=>{
+    b.addEventListener('click',()=>choose(b.dataset.player, +b.dataset.idx));
+  });
+  document.querySelectorAll('.ult-btn').forEach(b=>{
+    b.addEventListener('click',()=>castUltimate(b.dataset.player));
+  });
+  // 挑戰模式（最後一屏的兩顆按鈕）：鍵盤輸入 / 選擇題
+  document.getElementById('playInputBtn').addEventListener('click',()=>{
+    if(actx) actx.resume&&actx.resume();
+    currentMode = 'input'; startGame();
+  });
+  document.getElementById('playChoiceBtn').addEventListener('click',()=>{
+    if(actx) actx.resume&&actx.resume();
+    currentMode = 'choice'; startGame();
+  });
+  againBtn.addEventListener('click',()=>{ startGame(); });   // 沿用上次的全部選擇
+  function showStartScreen(){
+    overScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+    // 回到開始畫面：清除所有選擇（不預設），回到第一屏，並收起兩側鍵盤
+    players = 0; sel.p1 = null; sel.p2 = null; topic = null; currentMode = 'input';
+    refreshPlayers(); refreshSel(); refreshTopicSel();
+    showScreen('modeScreen');
+    document.querySelectorAll('.side').forEach(el=>el.classList.remove('playing'));
+  }
+  document.getElementById('changeModeBtn').addEventListener('click', showStartScreen);
+
+  // 開始畫面四屏流程：人數 → 職業 → 題型 → 挑戰模式（每步都必須選，不預設）
+  function showScreen(id){
+    [modeScreen, classScreen, topicScreen, playScreen].forEach(s=>s.classList.add('hidden'));
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('hidden');
+    document.querySelectorAll('.pick-warn').forEach(w=>w.classList.add('hidden'));
+  }
+  function showWarn(el){ if(el){ el.classList.remove('hidden'); beep([300,240],0.12,'square'); } }
+  document.getElementById('toClassBtn').addEventListener('click',()=>{
+    if(!players){ showWarn(document.getElementById('modeWarn')); return; }
+    showScreen('classScreen');
+    beep([700,900],0.07,'sine');
+  });
+  document.getElementById('toTopicBtn').addEventListener('click',()=>{
+    if(!sel.p1 || (players === 2 && !sel.p2)){ showWarn(document.getElementById('classWarn')); return; }
+    showScreen('topicScreen');
+    beep([700,900],0.07,'sine');
+  });
+  document.getElementById('backModeBtn').addEventListener('click',()=>{
+    showScreen('modeScreen'); beep([500,400],0.07,'sine');
+  });
+  document.getElementById('backClassBtn').addEventListener('click',()=>{
+    showScreen('classScreen'); beep([500,400],0.07,'sine');
+  });
+  document.getElementById('toPlayBtn').addEventListener('click',()=>{
+    if(!topic){ showWarn(document.getElementById('topicWarn')); return; }
+    // 進入最後一屏：顯示目前為止的選擇摘要
+    const pLabel = (players===1) ? '🧑 單人挑戰' : '🧑‍🤝‍🧑 雙人合作';
+    const cLabel = (players===1)
+      ? (CLASSES[sel.p1].icon + CLASSES[sel.p1].name + ' ' + CLASSES[sel.p1].hero)
+      : (CLASSES[sel.p1].icon + CLASSES[sel.p1].name + ' ' + CLASSES[sel.p1].hero + ' ＋ ' + CLASSES[sel.p2].icon + CLASSES[sel.p2].name + ' ' + CLASSES[sel.p2].hero);
+    const tLabel = (topic==='div') ? '➗ 小數除法' : '✖️ 小數乘法';
+    const sum = document.getElementById('playSummary');
+    if(sum) sum.innerHTML = '目前的選擇：<b>' + pLabel + '</b> ｜ <b>' + cLabel + '</b> ｜ <b>' + tLabel + '</b>';
+    showScreen('playScreen');
+    beep([700,900],0.07,'sine');
+  });
+  document.getElementById('backTopicBtn').addEventListener('click',()=>{
+    showScreen('topicScreen'); beep([500,400],0.07,'sine');
+  });
+  // 題型卡的選擇狀態（不預設，必須按一下）
+  function refreshTopicSel(){
+    document.querySelectorAll('.topic-card').forEach(el=>{
+      el.classList.toggle('sel', el.dataset.topic === topic);
+    });
+  }
+  document.querySelectorAll('.topic-card').forEach(el=>{
+    el.addEventListener('click',()=>{
+      topic = el.dataset.topic;
+      refreshTopicSel();
+      beep([520,720],0.06,'sine');
+    });
+  });
+  refreshTopicSel();
+
+  // ---- 職業選擇（開始畫面：兩位玩家各自選職業）----
+  function buildClassCards(){
+    for(const who of ['p1','p2']){
+      const grid = document.getElementById(who+'grid');
+      if(!grid) continue;
+      grid.innerHTML = '';
+      for(const cid of CLASS_ORDER){
+        const c = CLASSES[cid];
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'class-card';
+        card.dataset.player = who;
+        card.dataset.cls = cid;
+        card.innerHTML =
+          '<div class="cc-fig">' + (CLASS_FIG[cid] || '') + '</div>' +
+          '<div class="cc-head"><span class="cc-icon">'+c.icon+'</span><span class="cc-name">'+c.name+'</span><span class="cc-hero">'+c.hero+'</span></div>' +
+          '<div class="cc-skills">' + c.skills.map(s=>'<span>'+s.icon+s.name+'</span>').join('') + '</div>' +
+          '<div class="cc-ult"><span class="cc-ult-tag">🔮 主動技</span>'+c.ult.icon+' <b class="ue">'+c.ult.name+'</b>：'+c.ult.desc+'</div>';
+        card.addEventListener('click',()=>{
+          sel[who] = cid;
+          refreshSel();
+          beep([660,880],0.06,'sine');
+        });
+        grid.appendChild(card);
+      }
+    }
+  }
+  function refreshSel(){
+    document.querySelectorAll('.class-card').forEach(el=>{
+      el.classList.toggle('sel', sel[el.dataset.player] === el.dataset.cls);
+    });
+    refreshChips();      // 選擇了職業就把「玩家1/玩家2」標籤換成該職業的姓名
+    refreshModeFigs();   // 模式卡的公仔預覽跟著職業走
+  }
+  // 選職業後：把選擇列上的「玩家1 / 玩家2」標籤換成該職業的姓名（如「魔法師 艾倫」）
+  function refreshChips(){
+    for(const who of ['p1','p2']){
+      const chip = document.querySelector('.pick-chip.chip-' + who);
+      if(!chip) continue;
+      if(sel[who]){
+        const c = CLASSES[sel[who]];
+        chip.textContent = c.icon + ' ' + c.name + ' ' + c.hero;
+        chip.classList.add('set');
+      } else {
+        chip.textContent = (who === 'p1') ? '玩家1' : '玩家2';
+        chip.classList.remove('set');
+      }
+    }
+  }
+  buildClassCards();
+  refreshSel();
+
+  // ---- 模式選擇（單人挑戰 / 雙人合作，開場第一屏）----
+  function refreshPlayers(){
+    document.querySelectorAll('.mode-card').forEach(el=>{
+      el.classList.toggle('sel', +el.dataset.count === players);
+    });
+    const picks = document.getElementById('picks');
+    if(picks) picks.classList.toggle('single', players === 1);
+    // 單人模式：答題區用 flex order 移到右邊
+    document.body.classList.toggle('single', players === 1);
+    // 模式標籤（各開始畫面）與 HUD 模式膠囊同步更新（未選擇時給提示，不預設）
+    const label = (players === 1) ? '🧑 單人挑戰' : (players === 2 ? '🧑‍🤝‍🧑 雙人合作' : '👥 請先選擇人數');
+    document.querySelectorAll('.mode-tag').forEach(t=>t.textContent = label);
+    const pill = document.getElementById('modePill');
+    if(pill) pill.textContent = (players === 1 || players === 2) ? label : '👥 選擇人數';
+  }
+  // 模式卡片的公仔預覽：跟著目前選定的職業即時更新（未選職業時顯示問號小人）
+  function refreshModeFigs(){
+    const f1 = document.getElementById('modeFig1');
+    const f2 = document.getElementById('modeFig2');
+    if(f1) f1.innerHTML = CLASS_FIG[sel.p1] || FIG_PLACEHOLDER;
+    if(f2) f2.innerHTML = CLASS_FIG[sel.p2] || FIG_PLACEHOLDER;
+  }
+  // （人數／職業／題型／挑戰模式的切換與驗證，統一由下方「四屏流程」處理）
+
+  document.querySelectorAll('.mode-card').forEach(el=>{
+    el.addEventListener('click',()=>{
+      players = +el.dataset.count;
+      refreshPlayers();
+      beep([520,720],0.06,'sine');
+    });
+  });
+  refreshPlayers();
+  refreshModeFigs();
+
+  // 鍵盤輸入（僅輸入模式；雙人共用一台裝置時作為輔助，螢幕數字鍵仍是主輸入）
+  function keyboardPlayer(){
+    // 單人模式：鍵盤輸入全部給玩家1
+    if(players === 1) return 'p1';
+    // 優先給「還沒開始輸入」的那一位，否則給玩家1
+    if(state.p2.target && state.p2.target.state==='alive' && state.p2.input==='' &&
+       !(state.p1.target && state.p1.target.state==='alive' && state.p1.input!=='')){
+      return 'p2';
+    }
+    return 'p1';
+  }
+  document.addEventListener('keydown',e=>{
+    if(!state || !state.running || currentMode!=='input') return;
+    const who = keyboardPlayer();
+    if(e.key>='0'&&e.key<='9') pressKey(e.key, who);
+    else if(e.key==='.') pressKey('.', who);
+    else if(e.key==='Backspace'){ state[who].input = state[who].input.slice(0,-1); renderPad(); }
+    else if(e.key==='Enter') submit(who);
+  });
+
+  // initial paint
+  document.body.classList.add('mode-input','topic-mul');
+  resetState(); updateHUD(); renderPad(); draw();
+})();
+</script>
+</body>
+</html>
