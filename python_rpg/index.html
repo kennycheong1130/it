@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 勇者大冒險：魔王討伐戰</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <div class="app-header">
+    🐍 Python 勇者大冒險：魔王討伐戰
+    <small>小學六年級 Python 入門・選擇題複習遊戲</small>
+  </div>
+
+  <!-- 首頁 -->
+  <section id="screen-home" class="screen active">
+    <div class="home-hero">
+      <div class="big">🏰⚔️🐉</div>
+      <h2>歡迎來到程式勇者村！</h2>
+      <p>用你在 10 堂課學到的 Python 魔法指令，<br>答對選擇題就能攻擊魔王，把牠打倒吧！</p>
+    </div>
+    <button class="menu-btn" onclick="selectMode('solo')">🧍 單人冒險</button>
+    <button class="menu-btn alt" onclick="selectMode('coop')">👫 雙人合作</button>
+  </section>
+
+  <!-- 職業選擇 -->
+  <section id="screen-class" class="screen">
+    <div class="section-title" id="class-title">請選擇你的職業</div>
+    <div class="section-sub" id="class-sub">不同職業有不同血量與攻擊力，選一個你喜歡的！</div>
+    <div class="card-grid" id="class-cards"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="back-link" onclick="backHome()">← 回到首頁</button>
+    </div>
+  </section>
+
+  <!-- 階段選擇 -->
+  <section id="screen-stage" class="screen">
+    <div class="section-title">選擇挑戰的階段</div>
+    <div class="section-sub">題目對應 10 堂課（print → 變數 → 運算 → if → 迴圈 → 清單 → turtle → 專題），由易到難分成 3 個階段</div>
+    <div class="card-grid" id="stage-cards"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="back-link" onclick="beginClassSelection()">← 重新選職業</button>
+    </div>
+  </section>
+
+  <!-- 戰鬥 -->
+  <section id="screen-battle" class="screen">
+    <div class="battle-top" id="battle-sub"></div>
+
+    <div id="timer-bar"><div id="timer-fill"></div><span id="timer-text">⏱️ 15</span></div>
+
+    <div id="battle-layout">
+      <div id="battle-field">
+        <div class="battle-scene">
+          <div id="players-panel"></div>
+
+          <div class="vs-badge">VS</div>
+
+          <div id="boss-area">
+            <div class="boss-sprite" id="boss-sprite">👾</div>
+            <div id="boss-name">魔王</div>
+            <div class="boss-skill" id="boss-skill">👹 技能：—</div>
+            <div class="boss-progress" id="boss-progress">魔王 1 / 5</div>
+            <div class="hp-bar"><div class="hp-fill" id="boss-hp-fill" style="width:100%"></div>
+              <span class="hp-text" id="boss-hp-text">0/0</span></div>
+            <div class="boss-shield" id="boss-shield" style="display:none">🛡️ 護盾 <span id="boss-shield-val">0</span></div>
+            <div class="boss-hp-label">魔王血量（打掉就勝利！）</div>
+          </div>
+        </div>
+
+        <div id="skill-banner"></div>
+      </div>
+
+      <div id="battle-question">
+        <div id="questions-area"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 結果 -->
+  <section id="screen-result" class="screen">
+    <div class="result-box">
+      <div class="result-title" id="result-title"></div>
+      <div id="result-msg"></div>
+      <div id="result-stats"></div>
+      <button class="menu-btn" onclick="retryStage()">🔁 再挑戰一次</button>
+      <button class="menu-btn alt" onclick="backToStages()">🗺️ 選其他階段</button>
+      <button class="menu-btn" onclick="backHome()" style="background:linear-gradient(135deg,#95a5c6,#b6c0db);box-shadow:0 6px 0 #6b748f;">🏠 回到首頁</button>
+    </div>
+  </section>
+
+  <!-- 打敗魔王・升級畫面 -->
+  <section id="screen-levelup" class="screen">
+    <div class="result-box">
+      <div class="result-title win" id="levelup-title"></div>
+      <div id="levelup-msg"></div>
+      <div id="levelup-stats" class="lu-stats"></div>
+      <div id="levelup-next" class="lu-next"></div>
+      <button class="menu-btn" onclick="nextBoss()">⚔️ 挑戰下一隻魔王</button>
+      <button class="menu-btn" onclick="backHome()" style="background:linear-gradient(135deg,#95a5c6,#b6c0db);box-shadow:0 6px 0 #6b748f;">🏠 回到首頁</button>
+    </div>
+  </section>
+
+  <div id="confetti"></div>
+</div>
+
+<script src="sprites.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
