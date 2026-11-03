@@ -1,0 +1,2329 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<!-- 單檔版：CSS 與 JS 全部內嵌，直接開這個檔案就能玩，不需要其他檔案 -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 勇者大冒險：魔王討伐戰</title>
+<style>
+/* ===== 內嵌樣式（原 style.css） ===== */
+/* ============================================================
+   Python 勇者大冒險：魔王討伐戰 — 樣式
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root{
+  --bg1:#1b2a4a; --bg2:#2c3e6b; --card:#ffffff; --ink:#2b2b3a;
+  --accent:#ffd93d; --good:#3ec46d; --bad:#ff5a5a; --line:#e3e8f0;
+}
+html,body{ height:100%; }
+body{
+  font-family: "Comic Sans MS","Baloo 2","微軟正黑體","Microsoft JhengHei","PingFang TC",sans-serif;
+  background: radial-gradient(circle at 30% 10%, #34508f, #1b2a4a 70%);
+  color: var(--ink);
+  min-height:100vh; min-height:100dvh;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding: 18px;
+}
+
+#app{
+  width:100%; max-width: 760px;
+  background: linear-gradient(180deg,#fefefe,#eef3ff);
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.35);
+  overflow:hidden;
+  position:relative;
+}
+
+/* 頂部標題 */
+.app-header{
+  background: linear-gradient(90deg,#ff6b6b,#ffa94d);
+  color:#fff; text-align:center; padding:14px 10px;
+  font-size: 22px; font-weight:bold; letter-spacing:1px;
+  text-shadow: 0 2px 0 rgba(0,0,0,.18);
+}
+.app-header small{ display:block; font-size:13px; font-weight:normal; opacity:.95; margin-top:3px; }
+
+/* 畫面切換 */
+.screen{ display:none; padding: 22px 20px 28px; }
+.screen.active{ display:block; animation: fade .25s ease; }
+@keyframes fade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+/* 首頁 */
+.home-hero{ text-align:center; padding: 14px 0 8px; }
+.home-hero .big{ font-size: 50px; }
+.home-hero h2{ color:#3a3a55; font-size:22px; margin:10px 0 4px; }
+.home-hero p{ color:#6b6b85; font-size:15px; line-height:1.6; }
+
+.menu-btn{
+  display:block; width:100%; margin:12px 0; padding:16px;
+  font-size:18px; font-weight:bold; color:#fff; cursor:pointer;
+  border:none; border-radius:16px;
+  background: linear-gradient(135deg,#4d96ff,#6bcB77);
+  box-shadow: 0 6px 0 #2f6fb0; transition: transform .08s, box-shadow .08s;
+}
+.menu-btn.alt{ background: linear-gradient(135deg,#ff8e3c,#ffd93d); box-shadow:0 6px 0 #c97a1f; }
+.menu-btn:active{ transform: translateY(4px); box-shadow:0 2px 0 #2f6fb0; }
+.menu-btn.alt:active{ box-shadow:0 2px 0 #c97a1f; }
+
+/* 通用卡片網格 */
+.card-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:14px; margin-top:14px; }
+.section-title{ text-align:center; color:#3a3a55; font-size:20px; margin:6px 0 2px; }
+.section-sub{ text-align:center; color:#7a7a95; font-size:14px; margin-bottom:8px; }
+
+/* 職業卡 */
+.class-card{
+  background:var(--card); border:3px solid var(--c); border-radius:18px;
+  padding:14px 10px; cursor:pointer; text-align:center; transition: transform .1s;
+}
+.class-card:hover{ transform: translateY(-4px) scale(1.02); }
+.class-icon{ font-size:44px; }
+.class-icon svg, .stage-boss svg{ width:64px; height:64px; display:block; margin:0 auto; }
+.class-name{ font-size:19px; font-weight:bold; color:var(--c); margin:4px 0; }
+.class-stats{ display:flex; justify-content:center; gap:10px; font-size:13px; color:#555; margin:6px 0; }
+.class-skill{ font-size:12px; color:#777; line-height:1.4; min-height:32px; }
+
+/* 階段卡 */
+.stage-card{
+  background:var(--card); border:3px solid var(--c); border-radius:18px;
+  padding:16px 12px; cursor:pointer; text-align:center; transition: transform .1s;
+}
+.stage-card:hover{ transform: translateY(-4px) scale(1.02); }
+.stage-boss{ font-size:48px; margin-bottom:4px; }
+.stage-name{ font-weight:bold; font-size:17px; color:var(--c); margin:4px 0; }
+.stage-sub{ font-size:13px; color:#666; }
+.stage-bossname{ font-size:14px; margin:8px 0 4px; color:#444; font-weight:bold; }
+.stage-qcount{ font-size:13px; color:#888; }
+
+/* ---------- 戰鬥畫面 ---------- */
+#screen-battle{ position:relative; }
+.battle-top{ text-align:center; color:#3a3a55; font-size:14px; margin-bottom:6px; }
+
+/* 魔王區 */
+#boss-area{
+  background: linear-gradient(180deg,#fff0f0,#ffe0e0);
+  border:none; border-radius:18px;
+  padding:14px; text-align:center; position:relative;
+  box-shadow:0 6px 16px rgba(0,0,0,.12);
+}
+#boss-area.boss-hit{ animation: bossShake .4s; }
+@keyframes bossShake{ 0%,100%{transform:none;} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+.boss-sprite{ font-size:64px; animation: bob 1.6s ease-in-out infinite; }
+.boss-sprite svg{ width:96px; height:96px; display:block; margin:0 auto; filter: drop-shadow(0 6px 6px rgba(0,0,0,.18)); }
+.boss-sprite.flash{ animation: bossShake .4s, flashRed .4s; }
+.boss-sprite.crit{ filter: drop-shadow(0 0 12px gold) brightness(1.15); }
+/* 魔王施放技能：蓄力放大 + 彩色光暈 */
+.boss-sprite.casting{ animation: bossCast .65s ease-out; }
+@keyframes bossCast{
+  0%{ transform:scale(1); filter:brightness(1); }
+  25%{ transform:scale(1.28); }
+  55%{ transform:scale(1.1); filter: brightness(1.4) drop-shadow(0 0 16px var(--cast-color,#ff5a5a)); }
+  100%{ transform:scale(1); filter:brightness(1); }
+}
+/* 技能衝擊波光環（由 JS 動態插入，按技能類型上色） */
+.cast-ring{
+  position:absolute; left:50%; top:42%; transform:translate(-50%,-50%);
+  width:30px; height:30px; border-radius:50%;
+  border:5px solid var(--cast-color,#ff5a5a); pointer-events:none; opacity:.9;
+  box-shadow:0 0 18px 4px var(--cast-color,#ff5a5a);
+  animation: castRing .75s ease-out forwards;
+}
+@keyframes castRing{
+  0%{ width:24px; height:24px; opacity:.95; }
+  100%{ width:230px; height:230px; opacity:0; }
+}
+/* 施法時魔王區背景微微染色 */
+#boss-area.casting{ animation: bossAreaCast .65s ease-out; }
+@keyframes bossAreaCast{
+  0%,100%{ box-shadow:none; }
+  45%{ box-shadow:0 0 22px 2px var(--cast-color,#ff5a5a) inset; }
+}
+@keyframes flashRed{ 0%,100%{filter:none;} 50%{filter:brightness(2.2) sepia(1) hue-rotate(-50deg) saturate(5);} }
+@keyframes bob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+#boss-name{ font-size:20px; font-weight:bold; color:#c0392b; margin:2px 0 8px; }
+
+.hp-bar{
+  position:relative; height:24px; background:#e6e6e6; border-radius:12px;
+  overflow:hidden; border:2px solid #ccc;
+}
+.hp-fill{ height:100%; border-radius:10px 0 0 10px; transition: width .45s ease; }
+#boss-hp-fill{ background: linear-gradient(90deg,#ff5a5a,#ff9a3c); }
+.hp-text{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:bold; color:#222; text-shadow:0 1px 1px #fff;
+}
+.boss-hp-label{ font-size:12px; color:#a55; margin-top:4px; }
+.boss-progress{ font-size:13px; font-weight:bold; color:#c0392b; background:#ffe0e0;
+  display:inline-block; padding:2px 10px; border-radius:10px; margin-bottom:6px; }
+/* 魔王技能標籤 + 護盾顯示（直接浮在地圖上，不另設白底） */
+.boss-skill{
+  font-size:12px; font-weight:bold; color:#5a2d82; background:rgba(255,255,255,.55);
+  display:inline-block; padding:2px 10px; border-radius:10px; margin-bottom:6px;
+  border:1px dashed #a06cd5;
+}
+.boss-shield{
+  font-size:12px; font-weight:bold; color:#1d4ed8; background:rgba(219,234,254,.85);
+  display:inline-block; padding:2px 10px; border-radius:10px; margin-top:4px;
+  border:1px solid #93c5fd;
+}
+
+/* 玩家面板 */
+#players-panel{ display:flex; gap:12px; justify-content:center; margin:14px 0; flex-wrap:wrap; }
+.player-card{
+  flex:1; min-width:160px; background:#fff; border:3px solid #cdd6e6; border-radius:16px;
+  padding:10px; text-align:center; position:relative; transition: all .15s;
+}
+.player-card.active{ border-color:#ffb300; box-shadow:0 0 0 4px rgba(255,179,0,.25); }
+.player-card.down{ filter:grayscale(1); opacity:.6; }
+.player-sprite{ font-size:40px; }
+.player-sprite svg{ width:54px; height:54px; display:block; margin:0 auto; }
+.player-name{ font-size:14px; font-weight:bold; color:#3a3a55; margin:2px 0 6px; }
+.level-badge{ display:inline-block; background:#ffb300; color:#fff; font-size:12px;
+  padding:1px 8px; border-radius:10px; margin-left:4px; }
+.player-card .hp-bar{ height:18px; }
+.player-card .hp-fill{ background: linear-gradient(90deg,#3ec46d,#9be15d); }
+.player-atk{ font-size:13px; color:#666; margin-top:6px; }
+.down-tag{ font-size:13px; color:#c0392b; font-weight:bold; margin-top:4px; }
+.player-card.player-hit{ animation: shake .4s; box-shadow:0 0 0 4px rgba(255,90,90,.6); }
+.player-card.heal-flash{ animation: healPulse .6s; }
+@keyframes healPulse{ 0%,100%{box-shadow:none;} 50%{box-shadow:0 0 0 6px rgba(46,204,113,.55);} }
+
+/* ---------- 戰鬥場景：魔王與勇者同處一張地圖 ---------- */
+.battle-scene{
+  position:relative;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:14px 12px 16px;
+  border:3px solid #aebfd6; border-radius:18px; overflow:hidden;
+  background: linear-gradient(180deg,#cdeeff 0%,#bfe9ff 44%, #8fd96a 45%, #79c94f 100%);
+}
+/* 草地上的小路（虛線），強化「地圖」感 */
+.battle-scene::after{
+  content:""; position:absolute; left:6%; right:6%; top:56%;
+  border-top:3px dashed rgba(255,255,255,.55); z-index:0;
+}
+.battle-scene > *{ position:relative; z-index:2; }
+.battle-scene #boss-area{
+  background:transparent; border:none; padding:0; flex:1; max-width:46%;
+}
+.battle-scene #players-panel{
+  flex:1; margin:0; gap:8px; justify-content:center; max-width:46%;
+}
+/* 玩家卡：與魔王卡完全相同的格式（圓角卡片＋主題漸層底，無外框） */
+.battle-scene .player-card{
+  background: linear-gradient(180deg,#eef5ff,#dbe9ff);
+  border:none; border-radius:18px; padding:14px;
+  box-shadow:0 6px 16px rgba(0,0,0,.12);
+}
+/* 戰場中：用光暈取代「框」來標示當前玩家 / 受擊，而不是顯示邊框 */
+.battle-scene .player-card.active{ border:none; box-shadow:0 0 0 4px rgba(255,179,0,.35); }
+.battle-scene .player-card.player-hit{ border:none !important; box-shadow:0 0 0 4px rgba(255,90,90,.6); }
+/* 玩家資訊標籤與魔王卡風格一致 */
+.battle-scene .player-sprite svg{ width:72px; height:72px; }
+.battle-scene .player-name{ font-size:15px; color:#243b66; margin:2px 0 8px; }
+.battle-scene .player-skill{
+  display:inline-block; padding:2px 10px; border-radius:10px; margin-bottom:8px;
+  font-size:12px; font-weight:bold; color:#3a2d6e;
+  background:#efeaff; border:1px dashed #a06cd5;
+}
+.battle-scene .player-atk{
+  display:inline-block; padding:3px 10px; border-radius:10px; margin-top:8px;
+  font-size:13px; color:#243b66; font-weight:bold;
+  background: linear-gradient(135deg,#dbe9ff,#cfe0ff);
+}
+.battle-scene .down-tag{ margin-top:6px; }
+.vs-badge{
+  position:absolute; left:50%; top:47%; transform:translate(-50%,-50%);
+  z-index:3; width:50px; height:50px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:900; color:#fff; letter-spacing:0;
+  background: radial-gradient(circle at 35% 30%, #ff8a8a, #c0392b);
+  border:3px solid #fff; box-shadow:0 4px 10px rgba(0,0,0,.25);
+}
+
+/* 題目區 */
+.q-box{
+  background:#fff; border:3px solid #4d96ff; border-radius:18px; padding:16px; margin-top:6px;
+}
+.q-meta{ display:flex; justify-content:space-between; font-size:12px; color:#888; margin-bottom:8px; }
+#q-text{ font-size:17px; color:#2b2b3a; line-height:1.6; font-weight:bold; }
+#options{ display:grid; gap:10px; margin-top:14px; }
+.option-btn{
+  display:flex; align-items:center; gap:12px; text-align:left;
+  background:#f4f8ff; border:2px solid #bcd0f5; border-radius:14px;
+  padding:12px 14px; font-size:15px; cursor:pointer; color:#2b2b3a;
+  font-family:inherit; transition: background .1s, transform .08s;
+}
+.option-btn:hover:not(:disabled){ background:#e3edff; }
+.option-btn:active:not(:disabled){ transform:scale(.98); }
+.option-btn:disabled{ cursor:default; }
+.opt-letter{
+  flex:none; width:30px; height:30px; border-radius:50%;
+  background:#4d96ff; color:#fff; font-weight:bold;
+  display:flex; align-items:center; justify-content:center;
+}
+.opt-text{ white-space:pre-wrap; line-height:1.4; }
+.option-btn.correct{ background:#d8f8e2; border-color:var(--good); }
+.option-btn.correct .opt-letter{ background:var(--good); }
+.option-btn.wrong{ background:#ffe0e0; border-color:var(--bad); }
+.option-btn.wrong .opt-letter{ background:var(--bad); }
+
+/* 回饋 */
+.feedback{
+  margin-top:14px; padding:12px 14px; border-radius:14px; font-size:14px; line-height:1.6;
+  min-height:20px; background:#f0f3f8; color:#555;
+}
+.feedback.ok{ background:#e6f9ee; color:#1d7a45; border:2px solid #9be15d; }
+.feedback.bad{ background:#fdecec; color:#b03030; border:2px solid #ff9a9a; }
+
+/* 雙人：兩位玩家各自獨立的作答區 */
+#questions-area{ display:flex; flex-direction:column; gap:12px; }
+.coop-q .q-text{ font-size:16px; color:#2b2b3a; line-height:1.6; font-weight:bold; margin-top:6px; }
+.coop-q .options{ display:grid; gap:10px; margin-top:14px; }
+.coop-tag{ font-size:12px; color:#4d96ff; font-weight:bold; }
+.coop-who{ font-weight:bold; }
+.coop-who.who-down{ color:#c0392b; }
+.q-disabled{ opacity:.55; }
+/* 橫屏空間較寬時，兩個作答區左右並排 */
+@media (orientation: landscape) and (min-width: 820px){
+  #questions-area{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
+}
+
+/* ---------- 單人作答區放大（僅單人；雙人 .coop-q 不受影響，維持原尺寸） ----------
+   全部選器皆為單人專用：#q-text / #options / #feedback 只在 solo 出現，
+   .q-box 以 :not(.coop-q) 排除雙人作答卡，確保只放大單人那一塊。 */
+#questions-area .q-box:not(.coop-q){
+  padding:22px; min-height:200px;
+  display:flex; flex-direction:column;
+}
+#q-text{ font-size:21px; line-height:1.75; }
+#options{ gap:14px; margin-top:18px; }
+#options .option-btn{
+  padding:16px 18px; font-size:17px; border-radius:16px; gap:14px;
+}
+#options .opt-letter{ width:38px; height:38px; font-size:18px; }
+#feedback{ font-size:15.5px; padding:14px 16px; margin-top:18px; line-height:1.7; }
+
+/* ============================================================
+   打敗魔王 / 結果畫面 — 置中的輕巧小卡（約縮小一半，含橫屏）
+   ============================================================ */
+/* 只有「顯示中」才變成置中 flex，避免影響其它畫面切換 */
+#screen-levelup.active, #screen-result.active{
+  display:flex; align-items:center; justify-content:center;
+  min-height: calc(100dvh - 150px);
+}
+.result-box{
+  text-align:center; padding: clamp(7px, 1.2vh, 11px) 10px;
+  width:100%; max-width: 320px; margin:0 auto;
+  /* 內容過高時在框內捲動，按鈕仍可滑到，不會被推出畫面 */
+  max-height: calc(100dvh - 100px); overflow:auto;
+}
+/* 標題 / 文字 / 按鈕：隨畫面高度縮放，直屏正常、橫屏自動縮小 */
+.result-title{ font-size: clamp(13px, 2.1vh, 16px); line-height:1.15; font-weight:bold; margin-bottom:4px; }
+.result-title.win{ color:#2e9e54; }
+.result-title.lose{ color:#c0392b; }
+#result-msg{ font-size: clamp(10px, 1.5vh, 12px); color:#555; margin-bottom:5px; line-height:1.4; }
+#result-stats{ font-size: clamp(9px, 1.35vh, 11px); color:#777; background:#f4f6fb; border-radius:8px; padding:6px 8px; margin-bottom:6px; line-height:1.45; }
+/* 按鈕改扁平、縮小，整塊更輕巧 */
+#screen-levelup .menu-btn, #screen-result .menu-btn{
+  padding: clamp(6px, 1.1vh, 9px); font-size: clamp(11px, 1.6vh, 13px); margin:4px 0;
+  border-radius:10px; box-shadow: 0 2px 0 rgba(0,0,0,.22);
+}
+#screen-levelup .menu-btn:active, #screen-result .menu-btn:active{ transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.22); }
+
+/* 升級畫面 */
+.lu-stats{ margin:4px 0 6px; display:flex; flex-direction:column; gap:3px; }
+.lu-row{ background:#eafaf0; border:1.5px solid #9be15d; border-radius:8px; padding:3px 7px; font-size: clamp(9px, 1.45vh, 11px); color:#1d7a45; line-height:1.3; }
+.lu-next{
+  background: linear-gradient(135deg,#fff4d6,#ffe9b0); border:1.5px dashed #e0a200;
+  border-radius:8px; padding:4px 7px; font-size: clamp(8px, 1.35vh, 10px); font-weight:bold; color:#9a6b00;
+  margin-bottom:6px; line-height:1.35;
+}
+
+/* 浮動傷害 */
+.float-dmg{
+  position:absolute; left:50%; top:30%; transform:translateX(-50%);
+  font-size:26px; font-weight:bold; pointer-events:none;
+  animation: floatUp 1s ease-out forwards; text-shadow:0 2px 3px rgba(0,0,0,.25);
+}
+.float-dmg.dmg-boss{ color:#ff3b3b; }
+.float-dmg.dmg-player{ color:#c0392b; }
+.float-dmg.heal{ color:#2ecc71; }
+.float-dmg.dmg-shield{ color:#5b8cff; text-shadow:0 0 8px rgba(91,140,255,.7), 0 2px 3px rgba(0,0,0,.3); }
+@keyframes floatUp{ from{opacity:1; transform:translate(-50%,0);} to{opacity:0; transform:translate(-50%,-46px);} }
+
+/* 震動 */
+.shake{ animation: shake .4s; }
+@keyframes shake{ 0%,100%{transform:translate(0,0);} 20%{transform:translate(-6px,3px);} 40%{transform:translate(6px,-3px);} 60%{transform:translate(-4px,2px);} 80%{transform:translate(4px,-2px);} }
+
+/* 彩帶 */
+#confetti{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:50; }
+.confetti-piece{
+  position:absolute; top:-20px; width:10px; height:16px; border-radius:2px;
+  animation: fall linear forwards;
+}
+@keyframes fall{ to{ transform: translateY(105vh) rotate(540deg); opacity:.9; } }
+
+.back-link{
+  display:inline-block; margin-top:8px; color:#4d96ff; cursor:pointer;
+  font-size:14px; text-decoration:underline; background:none; border:none; font-family:inherit;
+}
+
+/* ---------- 倒數計時條 ---------- */
+#timer-bar{
+  position:relative; height:20px; background:#e6e6e6; border-radius:11px;
+  overflow:hidden; border:2px solid #ccc; margin-bottom:10px;
+}
+#timer-fill{
+  height:100%; width:100%; border-radius:9px 0 0 9px;
+  background: linear-gradient(90deg,#3ec46d,#9be15d);
+  transition: width .1s linear;
+}
+#timer-bar.low #timer-fill{ background: linear-gradient(90deg,#ff5a5a,#ff9a3c); }
+#timer-text{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:bold; color:#222; text-shadow:0 1px 1px #fff;
+}
+
+/* ---------- 能量條 + 技能 ---------- */
+.energy-wrap{ display:flex; align-items:center; justify-content:center; gap:6px; margin:6px 0 4px; }
+.en-label{ font-size:12px; color:#8a6d1f; font-weight:bold; }
+.pips{ display:inline-flex; gap:4px; }
+.epip{
+  width:14px; height:14px; border-radius:50%;
+  background:#e2e2e2; border:2px solid #cfcfcf; transition: all .15s;
+}
+.epip.on{ background: radial-gradient(circle at 35% 30%, #ffe680, #ffb300); border-color:#e0a200;
+  box-shadow:0 0 6px rgba(255,179,0,.6); }
+.skill-btn{
+  display:block; width:100%; margin-top:4px; padding:9px;
+  font-size:13px; font-weight:bold; color:#fff; cursor:pointer;
+  border:none; border-radius:12px; font-family:inherit;
+  background:#9aa0a8; opacity:.6; transition: transform .08s, box-shadow .08s, opacity .15s;
+}
+.skill-btn.ready{
+  background: linear-gradient(135deg,#ff7b00,#ffd93d); opacity:1;
+  box-shadow:0 4px 0 #b86a00; animation: skillGlow 1s ease-in-out infinite;
+}
+.skill-btn.ready:active{ transform: translateY(3px); box-shadow:0 1px 0 #b86a00; }
+@keyframes skillGlow{ 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.18);} }
+
+/* ---------- 技能橫幅 ---------- */
+#skill-banner{
+  text-align:center; font-size:15px; font-weight:bold; color:#fff;
+  background: linear-gradient(135deg,#8e2de2,#4a00e0);
+  border-radius:12px; padding:0 12px; margin:0 0 10px; max-height:0; overflow:hidden;
+  opacity:0; transition: all .3s ease;
+}
+#skill-banner.show{ max-height:60px; padding:10px 12px; opacity:1; margin-bottom:10px; }
+
+/* ---------- 暴擊傷害數字 ---------- */
+.float-dmg.dmg-crit{ color:#ffcc00; font-size:34px; text-shadow:0 0 10px #ff8a00, 0 2px 3px rgba(0,0,0,.3); }
+
+/* ============================================================
+   直屏 / 橫屏 自適應佈局
+   ============================================================ */
+
+/* 直屏（預設）：垂直堆疊，由上而下閱讀 */
+#battle-layout{ display:block; }
+#battle-field{ display:block; }
+#battle-question{ display:block; }
+
+@media (orientation: portrait){
+  #battle-layout{ display:block; }
+}
+
+/* 橫屏：左右兩欄，整體按比例放大（遊戲視窗更寬、內部元素放大） */
+@media (orientation: landscape){
+  /* 整體放大：遊戲視窗加寬，善用寬螢幕 */
+  #app{ max-width: 1040px; }
+
+  #battle-layout{
+    display:grid;
+    /* 橫屏：作答區放「下面」——戰場(上) : 作答區(下) = 1:1，單人/雙人皆同 */
+    grid-template-rows: 1fr 1fr;
+    gap:14px;
+    height: calc(100dvh - 190px);
+  }
+  #battle-field{ display:flex; flex-direction:column; gap:10px; min-height:0; overflow:auto; }
+  #battle-question{ min-height:0; overflow:auto; display:flex; flex-direction:column; align-items:center; }
+  #battle-question > #questions-area{ align-self:start; width:100%; }
+  #boss-area{ padding:14px 12px; }
+  .boss-sprite svg{ width:96px; height:96px; }
+  #boss-name{ font-size:20px; margin:4px 0 8px; }
+  #players-panel{ gap:10px; }
+  .player-card{ min-width:0; }
+  .player-sprite svg{ width:64px; height:64px; }
+  #options{ gap:12px; }
+  .option-btn{ padding:13px 15px; font-size:16px; }
+  #q-text{ font-size:19px; }
+
+  /* 寬一點的橫屏：職業/階段卡排成 4 欄 */
+  @media (min-width: 760px){
+    #screen-class .card-grid, #screen-stage .card-grid{ grid-template-columns: repeat(4,1fr); }
+  }
+  /* 更寬螢幕：整體再放大一階 */
+  @media (min-width: 900px){
+    #app{ max-width: 1200px; }
+    .boss-sprite svg{ width:120px; height:120px; }
+    .player-sprite svg{ width:76px; height:76px; }
+    #q-text{ font-size:21px; }
+    #options .option-btn{ padding:15px 17px; font-size:17px; }
+  }
+
+  /* 作答區緊湊化：在 1:1 下半部即可完整顯示，不需內部捲動（單人/雙人皆同） */
+  #questions-area .q-box:not(.coop-q){ padding:12px; min-height:0; }
+  #q-text{ font-size:16px; line-height:1.45; }
+  #options{ gap:6px; margin-top:8px; }
+  #options .option-btn{ padding:8px 11px; font-size:14px; gap:9px; border-radius:12px; }
+  #options .opt-letter{ width:26px; height:26px; font-size:13px; }
+  #feedback{ margin-top:8px; padding:7px 9px; font-size:12px; line-height:1.45; }
+  /* 雙人作答面板同步緊湊 */
+  .coop-q .q-text{ font-size:13px; line-height:1.4; }
+  .coop-q .options{ gap:5px; margin-top:6px; }
+  .coop-q .option-btn{ padding:6px 8px; font-size:11px; gap:7px; }
+  .coop-q .opt-letter{ width:22px; height:22px; font-size:11px; }
+  .coop-q .feedback{ margin-top:5px; padding:5px 7px; font-size:10px; }
+}
+
+/* 橫屏且高度偏矮（例如手機橫放）：壓縮間距，盡量不捲動 */
+@media (orientation: landscape) and (max-height: 560px){
+  .screen{ padding:10px 12px 14px; }
+  .app-header{ padding:8px 10px; font-size:18px; }
+  .app-header small{ font-size:11px; }
+  #battle-layout{ gap:10px; height:auto; grid-template-rows:auto auto; }
+  #battle-field{ overflow:visible; }
+  #battle-question{ overflow:visible; }
+  #boss-area{ padding:8px; }
+  .boss-sprite svg{ width:62px; height:62px; }
+  #boss-name{ font-size:15px; margin:2px 0 4px; }
+  .boss-hp-label{ font-size:10px; }
+  #players-panel{ gap:8px; margin:8px 0; }
+  .player-card{ padding:6px 8px; }
+  .player-name{ font-size:12px; }
+  .player-atk{ font-size:11px; margin-top:3px; }
+  .player-card .hp-bar{ height:14px; }
+  .q-box{ padding:12px; }
+  #q-text{ font-size:15px; }
+  .feedback{ margin-top:8px; padding:8px 10px; font-size:13px; }
+  .menu-btn{ padding:12px; font-size:16px; margin:8px 0; }
+  .section-title{ font-size:18px; }
+  .home-hero{ padding:6px 0 2px; }
+  .home-hero .big{ font-size:40px; }
+  .home-hero h2{ font-size:18px; margin:6px 0 2px; }
+  /* 場景在矮橫屏下壓縮，保持一屏可玩 */
+  .battle-scene{ padding:8px 10px 10px; }
+  .vs-badge{ width:40px; height:40px; font-size:16px; }
+  .battle-scene #players-panel{ flex-direction:row; }
+  /* 矮橫屏：單人作答區回歸緊湊，避免超出一個畫面 */
+  #questions-area .q-box:not(.coop-q){ padding:12px; min-height:0; display:block; }
+  #q-text{ font-size:15px; line-height:1.4; }
+  #options{ gap:8px; margin-top:10px; }
+  #options .option-btn{ padding:10px 12px; font-size:14px; }
+  #options .opt-letter{ width:26px; height:26px; font-size:14px; }
+  #feedback{ font-size:13px; padding:8px 10px; margin-top:8px; }
+}
+
+/* 直屏窄手機（原本的 520 斷點仍保留，並補強題目可讀性） */
+@media (max-width:520px){
+  .card-grid{ grid-template-columns:1fr; }
+  .boss-sprite{ font-size:52px; }
+  #q-text{ font-size:16px; }
+  /* 場景：魔王與勇者同圖，窄直屏下讓勇者卡直排以免擠壓 */
+  .battle-scene{ padding:12px 10px 14px; }
+  .vs-badge{ width:44px; height:44px; font-size:17px; }
+  .battle-scene #players-panel{ flex-direction:column; max-width:50%; }
+  .battle-scene .player-card{ min-width:0; border:none; box-shadow:0 4px 10px rgba(0,0,0,.12); }
+}
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="app-header">
+    🐍 Python 勇者大冒險：魔王討伐戰
+    <small>小學六年級 Python 入門・選擇題複習遊戲</small>
+  </div>
+
+  <!-- 首頁 -->
+  <section id="screen-home" class="screen active">
+    <div class="home-hero">
+      <div class="big">🏰⚔️🐉</div>
+      <h2>歡迎來到程式勇者村！</h2>
+      <p>用你在 10 堂課學到的 Python 魔法指令，<br>答對選擇題就能攻擊魔王，把牠打倒吧！</p>
+    </div>
+    <button class="menu-btn" onclick="selectMode('solo')">🧍 單人冒險</button>
+    <button class="menu-btn alt" onclick="selectMode('coop')">👫 雙人合作</button>
+  </section>
+
+  <!-- 職業選擇 -->
+  <section id="screen-class" class="screen">
+    <div class="section-title" id="class-title">請選擇你的職業</div>
+    <div class="section-sub" id="class-sub">不同職業有不同血量與攻擊力，選一個你喜歡的！</div>
+    <div class="card-grid" id="class-cards"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="back-link" onclick="backHome()">← 回到首頁</button>
+    </div>
+  </section>
+
+  <!-- 階段選擇 -->
+  <section id="screen-stage" class="screen">
+    <div class="section-title">選擇挑戰的階段</div>
+    <div class="section-sub">題目對應 10 堂課（print → 變數 → 運算 → if → 迴圈 → 清單 → turtle → 專題），由易到難分成 4 個階段<br>🔥 第 4 階段「煉獄級」最難：巢狀迴圈、清單切片、字串方法、f-string、多步驟程式追蹤</div>
+    <div class="card-grid" id="stage-cards"></div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="back-link" onclick="beginClassSelection()">← 重新選職業</button>
+    </div>
+  </section>
+
+  <!-- 戰鬥 -->
+  <section id="screen-battle" class="screen">
+    <div class="battle-top" id="battle-sub"></div>
+
+    <div id="timer-bar"><div id="timer-fill"></div><span id="timer-text">⏱️ 15</span></div>
+
+    <div id="battle-layout">
+      <div id="battle-field">
+        <div class="battle-scene">
+          <div id="players-panel"></div>
+
+          <div class="vs-badge">VS</div>
+
+          <div id="boss-area">
+            <div class="boss-sprite" id="boss-sprite">👾</div>
+            <div id="boss-name">魔王</div>
+            <div class="boss-skill" id="boss-skill">👹 技能：—</div>
+            <div class="boss-progress" id="boss-progress">魔王 1 / 5</div>
+            <div class="hp-bar"><div class="hp-fill" id="boss-hp-fill" style="width:100%"></div>
+              <span class="hp-text" id="boss-hp-text">0/0</span></div>
+            <div class="boss-shield" id="boss-shield" style="display:none">🛡️ 護盾 <span id="boss-shield-val">0</span></div>
+            <div class="boss-hp-label">魔王血量（打掉就勝利！）</div>
+          </div>
+        </div>
+
+        <div id="skill-banner"></div>
+      </div>
+
+      <div id="battle-question">
+        <div id="questions-area"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 結果 -->
+  <section id="screen-result" class="screen">
+    <div class="result-box">
+      <div class="result-title" id="result-title"></div>
+      <div id="result-msg"></div>
+      <div id="result-stats"></div>
+      <button class="menu-btn" onclick="retryStage()">🔁 再挑戰一次</button>
+      <button class="menu-btn alt" onclick="backToStages()">🗺️ 選其他階段</button>
+      <button class="menu-btn" onclick="backHome()" style="background:linear-gradient(135deg,#95a5c6,#b6c0db);box-shadow:0 6px 0 #6b748f;">🏠 回到首頁</button>
+    </div>
+  </section>
+
+  <!-- 打敗魔王・升級畫面 -->
+  <section id="screen-levelup" class="screen">
+    <div class="result-box">
+      <div class="result-title win" id="levelup-title"></div>
+      <div id="levelup-msg"></div>
+      <div id="levelup-stats" class="lu-stats"></div>
+      <div id="levelup-next" class="lu-next"></div>
+      <button class="menu-btn" onclick="nextBoss()">⚔️ 挑戰下一隻魔王</button>
+      <button class="menu-btn" onclick="backHome()" style="background:linear-gradient(135deg,#95a5c6,#b6c0db);box-shadow:0 6px 0 #6b748f;">🏠 回到首頁</button>
+    </div>
+  </section>
+
+  <div id="confetti"></div>
+</div>
+
+<script>
+/* ===== 內嵌角色 / 魔王 SVG（原 sprites.js） ===== */
+/* ============================================================
+   Python 勇者大冒險 — 精美 SVG 角色與魔王圖
+   （以向量圖取代 emoji，色彩漸層 + 陰影，適合小學生）
+   ============================================================ */
+'use strict';
+
+const GROUND = '<ellipse cx="60" cy="110" rx="34" ry="6" fill="rgba(0,0,0,.18)"/>';
+
+/* -------------------- 四種職業勇者 -------------------- */
+const CLASS_SVG = {
+  /* 🛡️ 鐵壁騎士 */
+  knight: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    ${GROUND}
+    <defs><linearGradient id="kn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd9ff"/><stop offset="1" stop-color="#3a6fd8"/></linearGradient></defs>
+    <ellipse cx="60" cy="74" rx="30" ry="32" fill="url(#kn)" stroke="#2a4fa0" stroke-width="3"/>
+    <path d="M42 44 Q60 18 78 44 L78 58 Q60 72 42 58 Z" fill="#dcebff" stroke="#2a4fa0" stroke-width="3"/>
+    <rect x="48" y="46" width="24" height="9" rx="4" fill="#16357a"/>
+    <circle cx="53" cy="66" r="4.5" fill="#10224d"/><circle cx="67" cy="66" r="4.5" fill="#10224d"/>
+    <path d="M88 56 l9 -12 l4 2 l-7 14 Z" fill="#cdd6e6" stroke="#7a8aa8" stroke-width="2"/>
+    <rect x="90" y="44" width="6" height="38" rx="3" fill="#e8eef7" stroke="#7a8aa8" stroke-width="2"/>
+    <path d="M28 64 q-10 4 -6 18 q6 4 10 -6 Z" fill="#ffd93d" stroke="#b8860b" stroke-width="2"/>
+  </svg>`,
+
+  /* ⚔️ 狂戰勇士 */
+  warrior: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    ${GROUND}
+    <defs><linearGradient id="wr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a8a"/><stop offset="1" stop-color="#c0341f"/></linearGradient></defs>
+    <ellipse cx="60" cy="76" rx="30" ry="30" fill="url(#wr)" stroke="#7a1d10" stroke-width="3"/>
+    <path d="M40 46 Q60 22 80 46 L80 60 Q60 74 40 60 Z" fill="#5a2a22" stroke="#7a1d10" stroke-width="3"/>
+    <path d="M44 50 l16 6 M44 58 l16 -6" stroke="#ffd2c2" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="53" cy="66" r="4.5" fill="#fff"/><circle cx="67" cy="66" r="4.5" fill="#fff"/>
+    <circle cx="53" cy="67" r="2" fill="#3a0f08"/><circle cx="67" cy="67" r="2" fill="#3a0f08"/>
+    <path d="M84 30 l6 -22 l10 4 l-8 22 Z" fill="#d7dbe2" stroke="#8a8f9c" stroke-width="2"/>
+    <rect x="88" y="26" width="7" height="40" rx="3" fill="#eef1f6" stroke="#8a8f9c" stroke-width="2"/>
+    <rect x="82" y="22" width="22" height="12" rx="4" fill="#ffd93d" stroke="#b8860b" stroke-width="2"/>
+  </svg>`,
+
+  /* 🔥 炎爆法師 */
+  mage: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    ${GROUND}
+    <defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc078"/><stop offset="1" stop-color="#e8590c"/></linearGradient></defs>
+    <path d="M40 96 Q40 64 60 60 Q80 64 80 96 Z" fill="url(#mg)" stroke="#9c3d05" stroke-width="3"/>
+    <circle cx="60" cy="48" r="18" fill="#ffe8cc" stroke="#9c3d05" stroke-width="3"/>
+    <path d="M44 40 L60 10 L76 40 Z" fill="#e8590c" stroke="#9c3d05" stroke-width="3"/>
+    <circle cx="60" cy="14" r="5" fill="#ffd93d"/>
+    <circle cx="53" cy="50" r="4" fill="#5a230a"/><circle cx="67" cy="50" r="4" fill="#5a230a"/>
+    <rect x="86" y="40" width="5" height="56" rx="2" fill="#8a5a2b"/>
+    <path d="M88 40 q10 -14 0 -22 q-10 8 0 22Z" fill="#ff922b" stroke="#e8590c" stroke-width="2"/>
+    <circle cx="88" cy="16" r="6" fill="#ffe066"/>
+  </svg>`,
+
+  /* 🌟 聖輝賢者 */
+  sage: `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    ${GROUND}
+    <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9e5c0"/><stop offset="1" stop-color="#2b9e63"/></linearGradient></defs>
+    <path d="M40 96 Q40 64 60 60 Q80 64 80 96 Z" fill="url(#sg)" stroke="#1c6b43" stroke-width="3"/>
+    <circle cx="60" cy="48" r="18" fill="#e6fff0" stroke="#1c6b43" stroke-width="3"/>
+    <path d="M44 40 L60 14 L76 40 Z" fill="#2b9e63" stroke="#1c6b43" stroke-width="3"/>
+    <circle cx="60" cy="22" r="4" fill="#ffd93d"/>
+    <circle cx="53" cy="50" r="4" fill="#0f5032"/><circle cx="67" cy="50" r="4" fill="#0f5032"/>
+    <rect x="86" y="40" width="5" height="56" rx="2" fill="#3a7d5c"/>
+    <circle cx="88" cy="34" r="11" fill="#d6f5e6" stroke="#2b9e63" stroke-width="2"/>
+    <circle cx="88" cy="34" r="5" fill="#9be15d"/>
+  </svg>`,
+};
+
+/* -------------------- 15 隻魔王（每階段 5 隻） -------------------- */
+const BOSS_SVG = {
+  1: [
+    /* 史萊姆 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M22 90 Q16 50 60 48 Q104 50 98 90 Q98 100 60 100 Q22 100 22 90 Z" fill="#7ed957" stroke="#3f9e2e" stroke-width="3"/>
+      <ellipse cx="60" cy="74" rx="22" ry="13" fill="#c7f5b0" opacity=".6"/>
+      <circle cx="48" cy="70" r="7" fill="#fff" stroke="#3f9e2e" stroke-width="2"/><circle cx="72" cy="70" r="7" fill="#fff" stroke="#3f9e2e" stroke-width="2"/>
+      <circle cx="48" cy="71" r="3" fill="#223"/><circle cx="72" cy="71" r="3" fill="#223"/>
+      <path d="M52 84 Q60 90 68 84" stroke="#2c6b1f" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>`,
+    /* 蝙蝠精 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M60 50 Q20 30 14 56 Q34 50 44 60 Q34 70 18 78 Q54 70 60 64 Q66 70 102 78 Q86 70 76 60 Q86 50 106 56 Q100 30 60 50 Z" fill="#8e7cc3" stroke="#5b4a91" stroke-width="3"/>
+      <ellipse cx="60" cy="58" rx="18" ry="20" fill="#a692d8" stroke="#5b4a91" stroke-width="3"/>
+      <path d="M50 42 l-6 -14 M70 42 l6 -14" stroke="#5b4a91" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="54" cy="56" r="5" fill="#fff"/><circle cx="66" cy="56" r="5" fill="#fff"/>
+      <circle cx="54" cy="57" r="2.5" fill="#311"/><circle cx="66" cy="57" r="2.5" fill="#311"/>
+      <path d="M56 66 l4 6 l4 -6 Z" fill="#fff"/>
+    </svg>`,
+    /* 蘑菇怪 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M30 60 Q60 18 90 60 Q60 74 30 60 Z" fill="#e7483b" stroke="#a3251b" stroke-width="3"/>
+      <circle cx="46" cy="46" r="6" fill="#fff"/><circle cx="70" cy="42" r="5" fill="#fff"/><circle cx="60" cy="56" r="5" fill="#fff"/>
+      <rect x="48" y="58" width="24" height="34" rx="10" fill="#f3e3c3" stroke="#c9a86a" stroke-width="3"/>
+      <circle cx="54" cy="76" r="4" fill="#3a2a14"/><circle cx="66" cy="76" r="4" fill="#3a2a14"/>
+      <path d="M52 84 Q60 90 68 84" stroke="#3a2a14" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M44 92 l-4 8 M76 92 l4 8" stroke="#c9a86a" stroke-width="3" stroke-linecap="round"/>
+    </svg>`,
+    /* 石龜獸 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M52 36 q8 -10 16 0" fill="#7bbf5a" stroke="#3f7a2a" stroke-width="3"/>
+      <circle cx="56" cy="40" r="3" fill="#223"/><circle cx="68" cy="40" r="3" fill="#223"/>
+      <path d="M26 70 Q26 46 60 46 Q94 46 94 70 Q94 92 60 92 Q26 92 26 70 Z" fill="#6fae4f" stroke="#3f7a2a" stroke-width="3"/>
+      <path d="M40 56 h40 M32 70 h56 M40 84 h40 M60 46 v46" stroke="#3f7a2a" stroke-width="2" opacity=".6"/>
+      <circle cx="40" cy="90" r="6" fill="#7bbf5a" stroke="#3f7a2a" stroke-width="3"/>
+      <circle cx="80" cy="90" r="6" fill="#7bbf5a" stroke="#3f7a2a" stroke-width="3"/>
+    </svg>`,
+    /* 村莊守衛長 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <defs><linearGradient id="gd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfd6e0"/><stop offset="1" stop-color="#8a93a3"/></linearGradient></defs>
+      <ellipse cx="60" cy="84" rx="26" ry="30" fill="url(#gd)" stroke="#5a6275" stroke-width="3"/>
+      <path d="M44 50 Q60 30 76 50 L76 62 Q60 74 44 62 Z" fill="#e9edf3" stroke="#5a6275" stroke-width="3"/>
+      <rect x="50" y="52" width="20" height="8" rx="4" fill="#3a4254"/>
+      <circle cx="54" cy="68" r="4" fill="#223"/><circle cx="66" cy="68" r="4" fill="#223"/>
+      <path d="M30 70 q-8 6 -4 22 q6 2 8 -8 Z" fill="#ffd93d" stroke="#b8860b" stroke-width="2"/>
+      <rect x="86" y="40" width="6" height="54" rx="3" fill="#e9edf3" stroke="#5a6275" stroke-width="2"/>
+      <path d="M86 40 l16 6 l-16 8 Z" fill="#cfd6e0" stroke="#5a6275" stroke-width="2"/>
+    </svg>`,
+  ],
+  2: [
+    /* 洞窟蝙蝠王 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M60 48 Q14 24 8 54 Q32 48 44 60 Q32 72 14 82 Q56 72 60 66 Q64 72 106 82 Q88 72 76 60 Q88 48 112 54 Q106 24 60 48 Z" fill="#6a4fb0" stroke="#3f2d75" stroke-width="3"/>
+      <ellipse cx="60" cy="58" rx="20" ry="22" fill="#8368cf" stroke="#3f2d75" stroke-width="3"/>
+      <path d="M50 38 l-6 -14 M70 38 l6 -14" stroke="#3f2d75" stroke-width="4" stroke-linecap="round"/>
+      <path d="M48 32 l12 4 l12 -4 l-4 8 l-8 2 l-8 -2 Z" fill="#ffd93d" stroke="#b8860b" stroke-width="2"/>
+      <circle cx="53" cy="56" r="5" fill="#ffe14d"/><circle cx="67" cy="56" r="5" fill="#ffe14d"/>
+      <circle cx="53" cy="57" r="2.5" fill="#311"/><circle cx="67" cy="57" r="2.5" fill="#311"/>
+      <path d="M55 66 l5 7 l5 -7 Z" fill="#fff"/>
+    </svg>`,
+    /* 毒蛛 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <g stroke="#5b2d8a" stroke-width="4" stroke-linecap="round">
+        <path d="M60 60 Q30 40 18 52 M60 60 Q90 40 102 52"/>
+        <path d="M60 64 Q28 60 16 74 M60 64 Q92 60 104 74"/>
+        <path d="M60 70 Q32 80 22 96 M60 70 Q88 80 98 96"/>
+      </g>
+      <ellipse cx="60" cy="64" rx="22" ry="20" fill="#9b59b6" stroke="#5b2d8a" stroke-width="3"/>
+      <circle cx="52" cy="58" r="5" fill="#fff"/><circle cx="68" cy="58" r="5" fill="#fff"/>
+      <circle cx="52" cy="59" r="2.5" fill="#311"/><circle cx="68" cy="59" r="2.5" fill="#311"/>
+      <path d="M54 72 l3 6 l3 -6 M64 72 l3 6 l3 -6" stroke="#fff" stroke-width="3" fill="none"/>
+    </svg>`,
+    /* 骷髏兵 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <circle cx="60" cy="52" r="26" fill="#f2f2ee" stroke="#9a9a8c" stroke-width="3"/>
+      <circle cx="50" cy="50" r="8" fill="#2b2b2b"/><circle cx="70" cy="50" r="8" fill="#2b2b2b"/>
+      <path d="M52 66 l8 6 l8 -6" stroke="#9a9a8c" stroke-width="3" fill="none"/>
+      <rect x="44" y="34" width="6" height="14" rx="3" fill="#cfcfc4" stroke="#9a9a8c" stroke-width="2" transform="rotate(-20 47 41)"/>
+      <rect x="70" y="34" width="6" height="14" rx="3" fill="#cfcfc4" stroke="#9a9a8c" stroke-width="2" transform="rotate(20 73 41)"/>
+      <path d="M40 84 l16 -10 l16 10 l-16 10 Z" fill="#f2f2ee" stroke="#9a9a8c" stroke-width="3"/>
+    </svg>`,
+    /* 石巨人 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <rect x="30" y="36" width="60" height="62" rx="12" fill="#9aa0a8" stroke="#5e646c" stroke-width="3"/>
+      <rect x="40" y="46" width="40" height="26" rx="8" fill="#6f757d"/>
+      <circle cx="52" cy="58" r="6" fill="#46e0ff"/><circle cx="68" cy="58" r="6" fill="#46e0ff"/>
+      <path d="M50 80 h20" stroke="#5e646c" stroke-width="3" stroke-linecap="round"/>
+      <path d="M44 36 l8 10 M76 36 l-8 10 M40 64 l-8 6 M80 64 l8 6" stroke="#5e646c" stroke-width="3" stroke-linecap="round"/>
+    </svg>`,
+    /* 洞窟魔眼 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M44 96 q-6 14 -16 10 M60 100 q-4 16 -14 14 M76 96 q6 14 16 10" stroke="#b06fd0" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <circle cx="60" cy="58" r="30" fill="#fff" stroke="#8a4fb0" stroke-width="3"/>
+      <circle cx="60" cy="58" r="14" fill="#b06fd0" stroke="#5b2d75" stroke-width="3"/>
+      <circle cx="60" cy="58" r="6" fill="#311"/>
+      <circle cx="54" cy="52" r="3" fill="#fff"/>
+      <path d="M40 40 q20 -14 40 0 M40 76 q20 14 40 0" stroke="#5b2d75" stroke-width="3" fill="none"/>
+    </svg>`,
+  ],
+  3: [
+    /* 火龍兵 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M40 50 q-18 -6 -26 6 q14 4 22 12 Z" fill="#c0341f" stroke="#7a1d10" stroke-width="3"/>
+      <path d="M80 50 q18 -6 26 6 q-14 4 -22 12 Z" fill="#c0341f" stroke="#7a1d10" stroke-width="3"/>
+      <ellipse cx="60" cy="64" rx="30" ry="28" fill="#e8590c" stroke="#7a1d10" stroke-width="3"/>
+      <path d="M46 40 l-6 -16 l10 6 Z M74 40 l6 -16 l-10 6 Z" fill="#ffd93d" stroke="#b8860b" stroke-width="2"/>
+      <circle cx="50" cy="60" r="6" fill="#ffe066"/><circle cx="70" cy="60" r="6" fill="#ffe066"/>
+      <circle cx="50" cy="61" r="3" fill="#311"/><circle cx="70" cy="61" r="3" fill="#311"/>
+      <path d="M52 78 q8 8 16 0" stroke="#7a1d10" stroke-width="3" fill="none"/>
+      <path d="M58 84 q2 10 4 0" fill="#fff"/>
+    </svg>`,
+    /* 冰巫妖 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M40 96 Q40 64 60 60 Q80 64 80 96 Z" fill="#7fd3e8" stroke="#2c7d96" stroke-width="3" opacity=".9"/>
+      <circle cx="60" cy="48" r="18" fill="#d6f4fb" stroke="#2c7d96" stroke-width="3"/>
+      <path d="M44 40 l6 -16 l8 6 l8 -6 l6 16 Z" fill="#46c8e8" stroke="#2c7d96" stroke-width="3"/>
+      <circle cx="54" cy="48" r="4" fill="#0c4a5c"/><circle cx="66" cy="48" r="4" fill="#0c4a5c"/>
+      <rect x="86" y="34" width="5" height="62" rx="2" fill="#3a8aa3"/>
+      <path d="M88 34 q8 -12 -2 -18 q-2 10 2 18Z" fill="#bdeefb" stroke="#2c7d96" stroke-width="2"/>
+      <circle cx="88" cy="14" r="6" fill="#fff"/>
+    </svg>`,
+    /* 暗影騎士 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M34 40 Q60 18 86 40 L86 100 L34 100 Z" fill="#3a2a5a" stroke="#1c1230" stroke-width="3"/>
+      <ellipse cx="60" cy="56" rx="22" ry="24" fill="#4a3a6e" stroke="#1c1230" stroke-width="3"/>
+      <path d="M44 44 Q60 28 76 44 L76 56 Q60 70 44 56 Z" fill="#241836" stroke="#1c1230" stroke-width="3"/>
+      <circle cx="52" cy="56" r="5" fill="#b06bff"/><circle cx="68" cy="56" r="5" fill="#b06bff"/>
+      <rect x="86" y="36" width="6" height="56" rx="3" fill="#2a1d44" stroke="#1c1230" stroke-width="2"/>
+      <path d="M86 36 l16 8 l-16 8 Z" fill="#6a4fb0" stroke="#1c1230" stroke-width="2"/>
+    </svg>`,
+    /* 巨型傀儡 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <rect x="32" y="34" width="56" height="56" rx="10" fill="#b8c0cc" stroke="#6b7480" stroke-width="3"/>
+      <rect x="42" y="44" width="36" height="22" rx="6" fill="#2b2b33"/>
+      <circle cx="53" cy="55" r="5" fill="#46e0ff"/><circle cx="67" cy="55" r="5" fill="#46e0ff"/>
+      <circle cx="60" cy="76" r="6" fill="#ff5a5a" stroke="#a33030" stroke-width="2"/>
+      <rect x="56" y="22" width="8" height="14" rx="3" fill="#8a93a3" stroke="#6b7480" stroke-width="2"/>
+      <circle cx="60" cy="20" r="4" fill="#ffd93d"/>
+      <circle cx="38" cy="62" r="4" fill="#6b7480"/><circle cx="82" cy="62" r="4" fill="#6b7480"/>
+    </svg>`,
+    /* Python 大帝 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M30 96 q30 24 60 0 q6 -20 -10 -28 q-8 8 -16 2 q-6 10 -16 2 q-12 8 -18 24 Z" fill="#2e9e54" stroke="#1c6b43" stroke-width="3"/>
+      <circle cx="60" cy="50" r="22" fill="#3fbf6a" stroke="#1c6b43" stroke-width="3"/>
+      <path d="M44 34 l8 -4 l4 8 l8 -4 l4 8 l8 -4 l-2 12 q-18 -12 -38 0 Z" fill="#ffd93d" stroke="#b8860b" stroke-width="2"/>
+      <circle cx="52" cy="48" r="5" fill="#0f3a22"/><circle cx="68" cy="48" r="5" fill="#0f3a22"/>
+      <circle cx="53" cy="46" r="2" fill="#fff"/><circle cx="69" cy="46" r="2" fill="#fff"/>
+      <path d="M54 62 q6 6 12 0" stroke="#0f3a22" stroke-width="3" fill="none"/>
+      <path d="M58 64 l2 8 l4 0 l-2 -8Z" fill="#e7483b"/>
+    </svg>`,
+  ],
+  /* ---------- 第 4 階段：煉獄級 ---------- */
+  4: [
+    /* 煉獄犬 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M32 92 Q24 58 60 54 Q96 58 88 92 Q88 102 60 102 Q32 102 32 92 Z" fill="#3b2b2b" stroke="#1a1010" stroke-width="3"/>
+      <path d="M34 58 l-8 -22 l18 12 Z" fill="#3b2b2b" stroke="#1a1010" stroke-width="3"/>
+      <path d="M86 58 l8 -22 l-18 12 Z" fill="#3b2b2b" stroke="#1a1010" stroke-width="3"/>
+      <ellipse cx="60" cy="76" rx="24" ry="15" fill="#6b4141" opacity=".75"/>
+      <circle cx="49" cy="72" r="7" fill="#ff5722" stroke="#7a1d10" stroke-width="2"/><circle cx="71" cy="72" r="7" fill="#ff5722" stroke="#7a1d10" stroke-width="2"/>
+      <circle cx="49" cy="73" r="3" fill="#fff5e0"/><circle cx="71" cy="73" r="3" fill="#fff5e0"/>
+      <path d="M52 88 Q60 96 68 88" stroke="#ff5722" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M55 92 l5 9 l5 -9 Z" fill="#ffd93d"/>
+      <path d="M40 52 q6 -14 12 -4 M80 52 q-6 -14 -12 -4" stroke="#ff8a3d" stroke-width="3" fill="none"/>
+    </svg>`,
+    /* 熾炎巫師 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M36 100 Q36 62 60 58 Q84 62 84 100 Z" fill="#6b1f3a" stroke="#3d0f22" stroke-width="3"/>
+      <path d="M40 62 Q60 24 80 62 Q60 70 40 62 Z" fill="#8e2450" stroke="#3d0f22" stroke-width="3"/>
+      <ellipse cx="60" cy="52" rx="16" ry="16" fill="#2a0a16" stroke="#3d0f22" stroke-width="2"/>
+      <circle cx="54" cy="52" r="4" fill="#ffb300"/><circle cx="66" cy="52" r="4" fill="#ffb300"/>
+      <rect x="88" y="30" width="6" height="66" rx="3" fill="#4a2418" stroke="#2a140d" stroke-width="2"/>
+      <path d="M91 30 q10 -14 0 -22 q-10 8 0 22 Z" fill="#ff5722" stroke="#b71c1c" stroke-width="2"/>
+      <circle cx="91" cy="18" r="6" fill="#ffd93d"/>
+      <path d="M46 80 q14 8 28 0" stroke="#ffb300" stroke-width="2" fill="none"/>
+    </svg>`,
+    /* 噬魂鬼王 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M28 100 Q24 52 60 40 Q96 52 92 100 Q80 92 72 100 Q60 92 48 100 Q38 92 28 100 Z" fill="#4e5d6c" stroke="#22303d" stroke-width="3" opacity=".92"/>
+      <path d="M44 34 l6 -16 l10 10 l10 -10 l6 16 Z" fill="#ffd93d" stroke="#b8860b" stroke-width="2"/>
+      <circle cx="50" cy="66" r="7" fill="#7fffd4" stroke="#22303d" stroke-width="2"/><circle cx="70" cy="66" r="7" fill="#7fffd4" stroke="#22303d" stroke-width="2"/>
+      <circle cx="50" cy="67" r="3" fill="#0b1a14"/><circle cx="70" cy="67" r="3" fill="#0b1a14"/>
+      <path d="M52 84 q8 10 16 0 q-8 4 -16 0 Z" fill="#22303d"/>
+      <path d="M34 74 q-10 8 -2 18 M86 74 q10 8 2 18" stroke="#22303d" stroke-width="3" fill="none"/>
+    </svg>`,
+    /* 混沌巨龍 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M38 52 q-22 -10 -30 6 q18 2 26 14 Z" fill="#5b2a86" stroke="#2e1147" stroke-width="3"/>
+      <path d="M82 52 q22 -10 30 6 q-18 2 -26 14 Z" fill="#5b2a86" stroke="#2e1147" stroke-width="3"/>
+      <ellipse cx="60" cy="66" rx="30" ry="28" fill="#7d3c98" stroke="#2e1147" stroke-width="3"/>
+      <path d="M46 42 l-6 -18 l12 8 Z M74 42 l6 -18 l-12 8 Z" fill="#a569bd" stroke="#2e1147" stroke-width="2"/>
+      <circle cx="50" cy="62" r="6" fill="#ffd93d"/><circle cx="70" cy="62" r="6" fill="#ffd93d"/>
+      <circle cx="50" cy="63" r="3" fill="#2e1147"/><circle cx="70" cy="63" r="3" fill="#2e1147"/>
+      <path d="M50 82 q10 10 20 0" stroke="#2e1147" stroke-width="3" fill="none"/>
+      <path d="M56 88 l3 10 l6 0 l-3 -10 Z" fill="#ffd93d"/>
+      <path d="M44 96 l-6 10 M76 96 l6 10" stroke="#7d3c98" stroke-width="3" stroke-linecap="round"/>
+    </svg>`,
+    /* 滅世魔尊 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <circle cx="60" cy="58" r="40" fill="#1b1b2f" opacity=".35"/>
+      <path d="M30 100 Q30 60 60 54 Q90 60 90 100 Z" fill="#2d1b4e" stroke="#150c26" stroke-width="3"/>
+      <ellipse cx="60" cy="46" rx="20" ry="20" fill="#3d2a63" stroke="#150c26" stroke-width="3"/>
+      <path d="M42 34 l4 -18 l8 12 l6 -12 l6 12 l8 -12 l4 18 Z" fill="#c0392b" stroke="#7b2418" stroke-width="2"/>
+      <circle cx="52" cy="46" r="5" fill="#e74c3c"/><circle cx="68" cy="46" r="5" fill="#e74c3c"/>
+      <circle cx="52" cy="47" r="2" fill="#fff"/><circle cx="68" cy="47" r="2" fill="#fff"/>
+      <path d="M52 62 q8 8 16 0" stroke="#e74c3c" stroke-width="2" fill="none"/>
+      <path d="M26 76 l14 -6 l-10 14 Z" fill="#e74c3c" opacity=".85"/>
+      <path d="M94 76 l-14 -6 l10 14 Z" fill="#e74c3c" opacity=".85"/>
+      <rect x="56" y="96" width="8" height="12" rx="3" fill="#c0392b"/>
+    </svg>`,
+  ],
+};
+
+</script>
+<script>
+/* ===== 內嵌遊戲邏輯（原 game.js） ===== */
+'use strict';
+
+/* ============================================================
+   Python 勇者大冒險：魔王討伐戰（進化版 v3）
+   小學六年級 Python 入門 — 選擇題複習遊戲
+   ※ 每階段 5 隻魔王，血量遞增；打敗魔王全體升級！
+   ※ 題目由模板隨機生成（數字/問句每次不同，絕不重複循環）
+   ※ 同一場遊戲題目絕不重複（跨魔王、跨階段、重試皆然），回首頁重新選模式才換新題庫
+   ※ 全部程式碼為正確英文 Python
+   ※ 主動技能需集滿 3 點能量（答對 3 題）才能釋放
+   ※ 每題倒數：第 1 隻魔王 15 秒，逐隻遞減，第 5 隻 8 秒
+   ============================================================ */
+
+/* ---------- 小工具 ---------- */
+function $(id){ return document.getElementById(id); }
+function randint(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+/* 產生 4 個「不重複」的選項：第 1 個是正確答案，其餘從候選錯誤值補齊 */
+function numOpts(correct, cands){
+  const out = [String(correct)];
+  for(const c of cands){ if(out.length>=4) break; const s=String(c); if(!out.includes(s)) out.push(s); }
+  let pad = 1;
+  while(out.length < 4){
+    const s = String(Number(correct) + pad);
+    if(!out.includes(s)) out.push(s);
+    pad++;
+  }
+  return out;
+}
+function escapeHtml(t){
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ---------- 職業資料（名稱與職業相關 + 主動技能） ---------- */
+const CLASSES = {
+  knight:  { key:'knight',  name:'鐵壁騎士', hp:120, atk:18, def:3,
+             hpGain:22, atkGain:4, defGain:3, color:'#4a90d9',
+             skillName:'盾牆守護', skillEffect:'block',
+             skillDesc:'下一題答錯也不會受傷（擋下攻擊）',
+             passive:'被攻擊受到的傷害減半；升級時血量與防禦成長最高' },
+  warrior: { key:'warrior', name:'狂戰勇士', hp:90,  atk:24, def:1,
+             hpGain:18, atkGain:7, defGain:1, color:'#e74c3c',
+             skillName:'狂暴斬', skillEffect:'crit2',
+             skillDesc:'下一題答對造成 2 倍傷害',
+             passive:'攻擊成長最快：每次升級攻擊力大幅提升' },
+  mage:    { key:'mage',    name:'炎爆法師', hp:70,  atk:28, def:1,
+             hpGain:14, atkGain:8, defGain:1, color:'#e67e22',
+             skillName:'炎爆術', skillEffect:'crit3',
+             skillDesc:'下一題答對造成 3 倍傷害',
+             passive:'爆發型：攻擊最高、升級更猛，但血量較少' },
+  sage:    { key:'sage',    name:'聖輝賢者', hp:100, atk:20, def:2,
+             hpGain:20, atkGain:4, defGain:2, color:'#27ae60',
+             skillName:'聖光治癒', skillEffect:'healSelf30',
+             skillDesc:'只回復自己「目前最大血量的 30%」（牧師不治療隊友，也不能復活任何人）',
+             passive:'每答對數題回血；升級後回得更多更頻繁' },
+};
+
+/* ---------- 階段 / 魔王（每階段 5 隻，血量一隻比一隻多） ---------- */
+const STAGES = {
+  1: {
+    id:1, name:'新手村', sub:'入門基礎：print、變數、運算（第 1–3 課）', color:'#7ed957',
+    bosses:[
+      { name:'史萊姆',     hp:120, atk:12, skill:{ name:'黏液分裂', type:'heal',   power:15, desc:'分裂回復自身血量' } },
+      { name:'蝙蝠精',     hp:165, atk:13, skill:{ name:'超聲波',   type:'aoe',    power:8,  desc:'對全體勇者造成傷害' } },
+      { name:'蘑菇怪',     hp:210, atk:14, skill:{ name:'毒孢子',   type:'aoe',    power:10, desc:'散播毒物，全體受創' } },
+      { name:'石龜獸',     hp:255, atk:15, skill:{ name:'龜殼防護', type:'shield', power:25, desc:'展開護盾抵擋傷害' } },
+      { name:'村莊守衛長', hp:300, atk:16, skill:{ name:'守衛號令', type:'buff',   power:4,  desc:'提升自身攻擊力' } },
+    ],
+  },
+  2: {
+    id:2, name:'迷霧洞窟', sub:'流程控制：if 判斷、for / while 迴圈（第 4–7 課）', color:'#b0a08f',
+    bosses:[
+      { name:'洞窟蝙蝠王', hp:200, atk:15, skill:{ name:'暗影突襲', type:'aoe',    power:12, desc:'突襲全體勇者' } },
+      { name:'毒蛛',       hp:250, atk:16, skill:{ name:'劇毒之咬', type:'aoe',    power:14, desc:'毒液侵襲全體' } },
+      { name:'骷髏兵',     hp:300, atk:17, skill:{ name:'骨之盾',   type:'shield', power:30, desc:'召喚骨盾抵擋傷害' } },
+      { name:'石巨人',     hp:360, atk:18, skill:{ name:'巨石投擲', type:'aoe',    power:16, desc:'投擲巨石重創全體' } },
+      { name:'洞窟魔眼',   hp:420, atk:19, skill:{ name:'凝視強化', type:'buff',   power:5,  desc:'凝視提升攻擊力' } },
+    ],
+  },
+  3: {
+    id:3, name:'魔王城', sub:'進階挑戰：清單、turtle 繪圖、綜合專題（第 8–10 課）', color:'#e74c3c',
+    bosses:[
+      { name:'火龍兵',   hp:260, atk:18, skill:{ name:'烈焰吐息', type:'aoe',    power:18, desc:'噴出烈焰重創全體' } },
+      { name:'冰巫妖',   hp:330, atk:19, skill:{ name:'寒冰壁壘', type:'shield', power:35, desc:'築起寒冰護盾' } },
+      { name:'暗影騎士', hp:420, atk:20, skill:{ name:'暗影斬',   type:'aoe',    power:20, desc:'暗影斬擊全體' } },
+      { name:'巨型傀儡', hp:510, atk:21, skill:{ name:'鋼鐵修復', type:'heal',   power:40, desc:'修復鋼體回血' } },
+      { name:'Python 大帝', hp:600, atk:22, skill:{ name:'終極代碼', type:'aoe', power:24, desc:'釋放終極代碼重創全體' } },
+    ],
+  },
+  /* ---------- 第 4 階段：煉獄級（最難，題目需要多步驟思考） ---------- */
+  4: {
+    id:4, name:'煉獄級', sub:'地獄試煉：巢狀迴圈、清單切片、字串方法、f-string、多步驟追蹤（第 8–10 課進階）', color:'#8e44ad',
+    bosses:[
+      { name:'煉獄犬',     hp:380, atk:22, skill:{ name:'地獄火咬', type:'aoe',    power:22, desc:'噴吐地獄火重創全體' } },
+      { name:'熾炎巫師',   hp:470, atk:23, skill:{ name:'炎之壁壘', type:'shield', power:48, desc:'築起炎之護盾抵擋傷害' } },
+      { name:'噬魂鬼王',   hp:570, atk:24, skill:{ name:'噬魂回復', type:'heal',   power:55, desc:'吞噬靈魂修復自身' } },
+      { name:'混沌巨龍',   hp:690, atk:25, skill:{ name:'混沌吐息', type:'aoe',    power:26, desc:'吐出混沌烈焰重創全體' } },
+      { name:'滅世魔尊',   hp:820, atk:27, skill:{ name:'毀滅代碼', type:'aoe',    power:30, desc:'釋放毀滅代碼重創全體' } },
+    ],
+  },
+};
+/* 魔王每 N 題（答完後）施放一次技能 */
+const BOSS_SKILL_EVERY = 3;
+
+/* ---------- 課程主題（對應 10 堂課，由易到難，使用者指定次序） ---------- */
+const LESSON_TOPICS = {
+  1:'認識 Python 與 print()',
+  2:'變數與 input()',
+  3:'數字運算與型別轉換',
+  4:'if 判斷（單向）',
+  5:'if-else / elif（多向）',
+  6:'for 循環',
+  7:'while 循環與猜數字',
+  8:'列表（清單）',
+  9:'turtle 繪圖（綜合應用）',
+  10:'綜合小專題',
+};
+
+/* ---------- 題目模板（每階段多個，隨機生成，絕不重複） ---------- */
+const TEMPLATES = {
+  1: [
+    () => ({ lesson:1, q:'在 Python 裡，要把文字印到螢幕上，要用下列哪一行程式？',
+      options:[`show("Hello")`,`print("Hello")`,`echo("Hello")`,`write("Hello")`], answer:1,
+      explain:'print() 是 Python 的「印出」指令，會把括號裡的內容顯示在螢幕上。' }),
+    () => { const a=randint(10,99); return { lesson:2, q:`下面哪一行程式可以正確把數字 ${a} 存進變數 x？`,
+      options:[`x = ${a}`,`${a} = x`,`let x = ${a}`,`x == ${a}`], answer:0,
+      explain:'「=」是指派，把右邊的值放進左邊的變數，變數要寫在左邊。' }; },
+    () => ({ lesson:3, q:'想讓使用者輸入資料，應該用下列哪一行程式？',
+      options:[`name = input("Name:")`,`name = print("Name:")`,`name = ask("Name:")`,`name = get()`], answer:0,
+      explain:'input() 會暫停程式等使用者打字，並把打的字存起來。' }),
+    () => ({ lesson:3, q:'在 Python 中，乘法要用哪個符號？',
+      options:[`×`,`*`,`x`,`#`], answer:1,
+      explain:'程式裡不能用 ×，要用半形的 * 表示乘法。' }),
+    () => { const a=randint(4,9), b=randint(2,a-1), r=a%b; return { lesson:3, q:`下面哪一行會算出 ${a} 除以 ${b} 的「餘數」？`,
+      options:[`${a} / ${b}`,`${a} // ${b}`,`${a} % ${b}`,`${a} ** ${b}`], answer:2,
+      explain:'% 是取餘數運算子，'+a+' % '+b+' = '+r+'（'+a+' = '+Math.floor(a/b)+'×'+b+' + '+r+'）。' }; },
+    () => ({ lesson:1, q:'下列哪一個是 Python「註釋」（寫給人看、不會被執行）的正確寫法？',
+      options:[`// comment`,`# comment`,`/* comment */`,`-- comment`], answer:1,
+      explain:'Python 用 # 開頭來寫註釋，方便做筆記。' }),
+    () => { const a=randint(3,9), b=randint(3,9), s=a+b; return { lesson:3, q:`下面這段程式會在螢幕印出什麼？\nx = ${a}\ny = ${b}\nprint(x + y)`,
+      options:[`${a}${b}`,`${s}`,`x + y`,`${a} ${b}`], answer:1,
+      explain:'x + y 是 '+a+' + '+b+' = '+s+'，數字相加會真的算出結果。' }; },
+    () => { const a=randint(2,9); return { lesson:3, q:`下面這段程式會印出什麼？\na = "Hi"\nb = "${a}"\nprint(a + b)`,
+      options:[`Hi${a}`,`Hi ${a}`,`${a}`,`Hi + ${a}`], answer:0,
+      explain:'兩個文字用 + 連接，會變成 "Hi" + "'+a+'" = "Hi'+a+'"（文字相加是接在一起）。' }; },
+    () => ({ lesson:3, q:'input() 抓到的內容預設是「文字」，要拿來算數學前通常要先做什麼？',
+      options:[`int(input(...)) 把文字轉成數字`,`str(...) 再轉一次文字`,`什麼都不用做`,`print(...) 印出來`], answer:0,
+      explain:'int() 可以把文字數字（如 "10"）轉成真正的數字 10 才能計算。' }),
+    () => { const a=randint(2,4), r=a*a; return { lesson:3, q:`在 Python 中，要計算 ${a} 的 2 次方（${a} × ${a}），要用哪個符號？`,
+      options:[`${a} ^ 2`,`${a} ** 2`,`${a} ^^ 2`,`${a} pow 2`], answer:1,
+      explain:'** 是次方（冪）運算子，'+a+' ** 2 = '+r+'。' }; },
+    () => { const a=randint(7,15), b=randint(2,5), f=Math.floor(a/b); return { lesson:3, q:`下面哪一行會算出 ${a} 除以 ${b} 的「商（取整數）」？`,
+      options:[`${a} / ${b}`,`${a} // ${b}`,`${a} % ${b}`,`round(${a} / ${b})`], answer:1,
+      explain:'// 是取整數除法（無條件捨去小數），'+a+' // '+b+' = '+f+'。' }; },
+    () => ({ lesson:2, q:'下面哪一行程式可以印出變數 score 裡的值？',
+      options:[`print(score)`,`print("score")`,`show score`,`echo(score)`], answer:0,
+      explain:'print(變數名) 會印出該變數裡的值；如果加引號 "score" 則只會印出文字 score。' }),
+    () => ({ lesson:2, q:'在 Python 中，儲存文字（字串）的資料型態叫做？',
+      options:[`int`,`str`,`float`,`bool`], answer:1,
+      explain:'str 是 string（字串）的縮寫，用來裝文字；int 裝整數、float 裝小數。' }),
+    () => ({ lesson:2, q:'在 Python 中，儲存有小數點的數字（如 3.14）的資料型態叫做？',
+      options:[`int`,`str`,`float`,`text`], answer:2,
+      explain:'float 用來裝有小數點的數字，例如 3.14。' }),
+
+    /* --- 更多隨機變化題（數字/字母/詞彙每次都不同） --- */
+    () => { const n=randint(2,9); return { lesson:1, q:`下面這行程式會印出什麼？\nprint("I have " + str(${n}) + " books")`,
+      options:[`I have ${n} books`, `I have str(${n}) books`, `I have + ${n} + books`, `會出錯`], answer:0,
+      explain:'str() 把數字變成文字，再用 + 接起來，結果是 I have '+n+' books。' }; },
+    () => ({ lesson:2, q:'下列哪一個是「合法」的 Python 變數名稱？',
+      options:[`2name`,`my name`,`my_name`,`my-name`], answer:2,
+      explain:'變數不能用數字開頭、不能有空格或減號；用底線 _ 連接是合法的。' }),
+    () => ({ lesson:1, q:'在 Python 中，文字（字串）要用什麼包起來？',
+      options:[`單引號或雙引號都可以`,`只能用單引號`,`只能用雙引號`,`不需要任何符號`], answer:0,
+      explain:'"Hello" 和 \'Hello\' 都可以，但一定要成雙成對。' }),
+    () => { const a=randint(2,9), b=randint(10,19); return { lesson:2, q:`下面這段程式最後會印出什麼？\nx = ${a}\nx = ${b}\nprint(x)`,
+      options:[`${a}`,`${b}`,`${a+b}`,`${a} ${b}`], answer:1,
+      explain:'後來的指派會覆蓋前面的值，所以最後 x 是 '+b+'。' }; },
+    () => { const a=randint(2,9), b=randint(2,9), s=a+b; return { lesson:3, q:`使用者輸入 ${a} 和 ${b} 時，下面這段程式會印出什麼？\na = int(input())\nb = int(input())\nprint(a + b)`,
+      options:[`${a}${b}`,`${s}`,`a + b`,`會出錯`], answer:1,
+      explain:'int() 把輸入的文字轉成數字，'+a+' + '+b+' = '+s+'。' }; },
+    () => { const a=randint(2,9), b=randint(2,9); return { lesson:3, q:`下面這段程式會印出什麼？\na = "${a}"\nb = "${b}"\nprint(a + b)`,
+      options:[`${a+b}`,`${a}${b}`,`a + b`,`會出錯`], answer:1,
+      explain:'兩個文字用 + 是「接在一起」，變成 '+a+b+'，不是做加法。' }; },
+    () => { const a=randint(2,9), b=randint(2,9); return { lesson:1, q:`下面這行程式會印出什麼？\nprint("Hi", ${a}, ${b})`,
+      options:[`Hi${a}${b}`,`Hi ${a} ${b}`,`Hi, ${a}, ${b}`,`會出錯`], answer:1,
+      explain:'print() 用逗號分隔時，中間會自動加上空白。' }; },
+    () => ({ lesson:2, q:'想知道某個變數是什麼資料型態，可以用？',
+      options:[`type(x)`,`kind(x)`,`datatype(x)`,`check(x)`], answer:0,
+      explain:'type() 會告訴你是 int、str、float 還是其他型態。' }),
+    () => ({ lesson:2, q:'Python 的變數名稱大小寫有差別嗎？',
+      options:[`有差，score 和 Score 是不同變數`,`沒差，是同一個變數`,`只有第一個字母有差`,`只有最後一個字母有差`], answer:0,
+      explain:'Python 會區分大小寫，score 和 Score 是兩個不同的變數。' }),
+    () => { const n=randint(10,99); return { lesson:1, q:`下面兩行程式印出來的「內容」是否相同？\nprint(${n})\nprint("${n}")`,
+      options:[`相同，螢幕上都顯示 ${n}`,`不同，一個是數字一個是文字`,`第一行會出錯`,`第二行會出錯`], answer:0,
+      explain:'不管裡面是數字還是文字，print() 顯示出來都是 '+n+'。' }; },
+    () => { const a=randint(20,60), b=randint(5,19), d=a-b; return { lesson:3, q:`下面這段程式會印出什麼？\nx = ${a}\ny = ${b}\nprint(x - y)`,
+      options:numOpts(d,[a+b, a*b, b-a]), answer:0,
+      explain:'減法用 -，'+a+' - '+b+' = '+d+'。' }; },
+    () => { const a=randint(11,29), b=randint(2,5), f=Math.floor(a/b); return { lesson:3, q:`print(${a} // ${b}) 會印出什麼？`,
+      options:numOpts(f,[f+1, f+2, a%b]), answer:0,
+      explain:'// 是取整數除法（捨去小數），'+a+' // '+b+' = '+f+'。' }; },
+    () => { const a=randint(11,29), b=randint(2,6), r=a%b; return { lesson:3, q:`print(${a} % ${b}) 會印出什麼？`,
+      options:numOpts(r,[Math.floor(a/b), a, r+1]), answer:0,
+      explain:'% 是取餘數：'+a+' 除以 '+b+' 商 '+Math.floor(a/b)+' 餘 '+r+'。' }; },
+    () => { const a=randint(3,5), p=randint(2,3), v=Math.pow(a,p); return { lesson:3, q:`print(${a} ** ${p}) 會印出什麼？`,
+      options:numOpts(v,[a*p, a+p, v*2]), answer:0,
+      explain:'** 是次方運算子：'+a+' 的 '+p+' 次方 = '+v+'。' }; },
+
+    /* --- 新增題庫：print / 變數 / 運算（隨機數字，每次都不同） --- */
+    () => ({ lesson:1, q:'print("A", "B", "C") 會印出什麼？（逗號分隔時預設用空白隔開）',
+      options:[`A B C`,`ABC`,`A,B,C`,`會出錯`], answer:0,
+      explain:'print() 用逗號分隔多個內容時，中間會自動加一個空白，所以印出 A B C。' }),
+    () => ({ lesson:1, q:'在 Python 中，要在印出的文字裡「換行」，要在字串中放哪一個跳脫字元？',
+      options:[`\\n`,`\\t`,`\\b`,`/n`], answer:0,
+      explain:'\\n 是換行字元，例如 print("A\\nB") 會分成兩行印出 A 和 B。' }),
+    () => { const a=randint(5,20); return { lesson:2, q:`執行下面程式後，y 的值會是？\nx = ${a}\ny = x + 3\nprint(y)`,
+      options:numOpts(a+3,[a, a-3, a*2]), answer:0,
+      explain:'x 是 '+a+'，y = x + 3 = '+(a+3)+'。' }; },
+    () => { const a=randint(10,40); return { lesson:3, q:`int("${a}") 的結果是什麼資料型態？`,
+      options:[`整數 int（值 ${a}）`,`字串 str`,`小數 float`,`布林 bool`], answer:0,
+      explain:'int() 把長得像數字的文字轉成真正的整數 '+a+'，才能拿來計算。' }; },
+    () => ({ lesson:3, q:'要把文字 "3.5" 轉成可以計算的小數，應該用？',
+      options:[`int("3.5")`,`float("3.5")`,`str("3.5")`,`bool("3.5")`], answer:1,
+      explain:'有小數點要用 float()；int() 只能處理沒有小數點的整數字串。' }),
+    () => { const a=randint(2,6), b=randint(2,6), c=randint(2,6); return { lesson:3, q:`print(${a} + ${b} * ${c}) 會印出什麼？`,
+      options:numOpts(a+b*c,[(a+b)*c, a*b+c, a+b+c]), answer:0,
+      explain:'先乘除後加減：'+b+' × '+c+' = '+(b*c)+'，再加 '+a+' = '+(a+b*c)+'。' }; },
+    () => { const a=randint(2,6), b=randint(2,6), c=randint(2,6); return { lesson:3, q:`print((${a} + ${b}) * ${c}) 會印出什麼？`,
+      options:numOpts((a+b)*c,[a+b*c, a*b+c, a+b+c]), answer:0,
+      explain:'括號先算：'+a+' + '+b+' = '+(a+b)+'，再乘 '+c+' = '+((a+b)*c)+'。' }; },
+    () => ({ lesson:2, q:'下列哪一個變數名稱在 Python 中「不合法」？',
+      options:[`_score`,`score2`,`2score`,`score_2`], answer:2,
+      explain:'變數不能用數字開頭；底線開頭、中間有數字或底線都是合法的。' }),
+    () => { const a=randint(6,30), b=randint(2,9); return { lesson:1, q:`print(${a} * ${b}) 會印出什麼？`,
+      options:numOpts(a*b,[a+b, a-b, a+b*2]), answer:0,
+      explain:'* 是乘法，'+a+' × '+b+' = '+(a*b)+'。' }; },
+    () => { const a=randint(3,9), b=randint(3,9); return { lesson:3, q:`下面這段程式會印出什麼？\na = int("${a}")\nb = ${b}\nprint(a + b)`,
+      options:numOpts(a+b,[a*b, a-b, b-a]), answer:0,
+      explain:'int() 把文字變數字，'+a+' + '+b+' = '+(a+b)+'；如果沒轉型，兩個文字會被接在一起而不是相加。' }; },
+    () => ({ lesson:2, q:'name = input("請輸入名字：") 這行裡，括號中的文字有什麼作用？',
+      options:[`顯示提示訊息，等使用者輸入`,`把答案存成數字`,`印出 name 的值`,`完全沒有作用`], answer:0,
+      explain:'input() 括號裡的字串會先顯示出來當提示，然後等使用者打字並按 Enter。' }),
+    () => { const b=pick([2,4,5]); let a=randint(10,40); if(a%b===0) a+=1; return { lesson:3, q:`print(${a} / ${b}) 會印出什麼？`,
+      options:[`${a/b}`,`${Math.floor(a/b)}`,`${a-b}`,`${a*b}`], answer:0,
+      explain:'/ 是一般除法，結果是帶小數的 float：'+a+' / '+b+' = '+(a/b)+'；只要整數部分要用 //。' }; },
+    () => ({ lesson:1, q:'下面哪一行程式會印出一個「空行」？',
+      options:[`print()`,`print("")`,`以上兩個都會`,`以上都不會`], answer:2,
+      explain:'print() 不帶內容、或 print("") 放空字串，兩者都會印出一個空白行。' }),
+    () => { const a=randint(2,9), b=randint(10,19); return { lesson:2, q:`執行 a, b = ${a}, ${b} 之後，print(b) 會印出什麼？`,
+      options:numOpts(b,[a, a+b, b-a]), answer:0,
+      explain:'逗號指派會依序對應：a = '+a+'、b = '+b+'，所以 print(b) 印出 '+b+'。' }; },
+    () => { const a=randint(11,49); const r=a%2; return { lesson:3, q:`print(${a} % 2) 會印出 ${r}，這表示 ${a} 是？`,
+      options:[`偶數`,`奇數`,`質數`,`小數`], answer:(r===0)?0:1,
+      explain:'除以 2 餘 0 是偶數、餘 1 是奇數；'+a+' % 2 = '+r+'，所以 '+a+' 是'+((r===0)?'偶數':'奇數')+'。' }; },
+    () => { const a=randint(10,99); return { lesson:3, q:`下面這行程式會印出什麼？\nprint("總分：" + str(${a}))`,
+      options:[`總分：${a}`,`總分： + str(${a})`,`會出錯`,`總分：str(${a})`], answer:0,
+      explain:'str() 把數字 '+a+' 變成文字，再用 + 接在「總分：」後面，結果是「總分：'+a+'」。' }; },
+    () => { const a=randint(2,9); return { lesson:1, q:`下面這段程式會印出什麼？\n# print("隱藏")\nprint("${a}")`,
+      options:[`${a}`,`隱藏`,`隱藏 ${a}`,`什麼都不印`], answer:0,
+      explain:'# 開頭的是註釋，不會被執行，所以只有第二行 print("'+a+'") 會印出 '+a+'。' }; },
+    () => { const b=randint(3,7), q=randint(2,6), r=randint(1,b-1), a=q*b+r; return { lesson:3, q:`${a} // ${b} 和 ${a} % ${b} 分別會得到什麼？`,
+      options:[`${q} 和 ${r}`,`${q+1} 和 ${r}`,`${q} 和 ${r+1}`,`${q+1} 和 ${r+1}`], answer:0,
+      explain:a+' = '+q+' × '+b+' + '+r+'，所以 // 取商 '+q+'、% 取餘數 '+r+'。' }; },
+  ],
+  2: [
+    () => ({ lesson:4, q:'if 後面的條件後面，一定要加哪個符號？',
+      options:[`.`,`;`,`:`,`,`], answer:2,
+      explain:'Python 用冒號 : 表示「下面的縮排區塊是我的判斷內容」。' }),
+    () => ({ lesson:4, q:'下列哪一個比較運算子代表「大於等於」？',
+      options:[`=>`,`>=`,`=<`,`><`], answer:1,
+      explain:'> 是大於、= 是等於，合起來 >= 就是大於等於。' }),
+    () => { const s=randint(50,95); return { lesson:4, q:`下面哪一段會在分數大於等於 60 時印出 "Pass"？`,
+      options:[`if score >= 60: print("Pass")`,`if score = 60: print("Pass")`,`if score => 60 print("Pass")`,`if score >= 60 print("Pass")`], answer:0,
+      explain:'條件要用 >=（不是單獨 =），而且後面要有冒號 :。' }; },
+    () => ({ lesson:5, q:'當有很多不同的情況要一一判斷時，會用到下列哪一種？',
+      options:[`elf`,`elif`,`else if`,`eif`], answer:1,
+      explain:'elif 是 else + if，用來檢查「不然如果」的另一個條件。' }),
+    () => ({ lesson:5, q:'如果 if 的條件不成立，想要執行「否則」的程式，要用哪個關鍵字？',
+      options:[`else`,`elif`,`otherwise`,`then`], answer:0,
+      explain:'else 表示「否則」，當 if 不成立時就執行 else 裡的內容。' }),
+    () => { const n=randint(3,6); return { lesson:6, q:`下面這個 for 迴圈會把數字印出幾次？\nfor i in range(${n}):\n    print(i)`,
+      options:[`${n-1} 次`,`${n} 次`,`${n+1} 次`,`無限次`], answer:1,
+      explain:'range('+n+') 會數 0、1、…、'+(n-1)+' 共 '+n+' 個數字，所以重複 '+n+' 次。' }; },
+    () => { const a=randint(1,3), b=randint(5,9); return { lesson:6, q:`range(${a}, ${b}) 會產生下列哪一組數字？`,
+      options:[`${a}, ${a+1}, ..., ${b}`,`${a}, ${a+1}, ..., ${b-1}`,`${a-1}, ..., ${b}`,`從 ${a} 到 ${b}（包含 ${b}）`], answer:1,
+      explain:'range(開始, 結束) 從 '+a+' 數到「結束的前一個」也就是 '+(b-1)+'，不含 '+b+'。' }; },
+    () => ({ lesson:7, q:'下面哪一種迴圈是「先檢查條件，條件成立才重複」？',
+      options:[`for`,`while`,`repeat`,`loop`], answer:1,
+      explain:'while 會一直重複，直到條件變成 False 才停下來。' }),
+    () => ({ lesson:5, q:'要同時滿足「年紀 > 12」而且「分數 > 90」，兩個條件之間要用？',
+      options:[`or`,`and`,`not`,`+`], answer:1,
+      explain:'and 表示「而且」，兩個都要成立才算成立。' }),
+    () => ({ lesson:5, q:'只要「是週末」或「是假日」其中一個成立就執行，兩個條件之間要用？',
+      options:[`and`,`or`,`not`,`&`], answer:1,
+      explain:'or 表示「或者」，只要其中一個成立就算成立。' }),
+    () => ({ lesson:7, q:'在 while 迴圈裡，如果忘記讓條件變成 False，會發生什麼事？',
+      options:[`程式自動停止`,`產生無限迴圈`,`電腦關機`,`沒事`], answer:1,
+      explain:'條件永遠成立就會一直重複，變成無限迴圈，要小心！' }),
+    () => ({ lesson:7, q:'在迴圈或判斷裡，break 的作用是？',
+      options:[`暫停一下程式`,`立刻跳出（結束）這個迴圈`,`把變數刪掉`,`印出東西`], answer:1,
+      explain:'break 像緊急出口，可以馬上離開迴圈。' }),
+    () => ({ lesson:4, q:'下列哪一個是「不等於」的比較運算子？',
+      options:[`=<`,`!=`,`==!`,`<>`], answer:1,
+      explain:'!= 表示「不等於」；== 才是「等於」。' }),
+    () => ({ lesson:7, q:'在迴圈裡，continue 的作用是？',
+      options:[`結束整個程式`,`跳過這一次，直接進入下一次迴圈`,`把變數清空`,`什麼都不做`], answer:1,
+      explain:'continue 會跳過這一輪剩下的指令，立刻回到迴圈開頭做下一輪。' }),
+    () => { const s=randint(70,100); const res = s>=90?'A':(s>=60?'B':'C'); return { lesson:5, q:`下面這段程式，當 score = ${s} 時會印出什麼？\nif score >= 90:\n    print("A")\nelif score >= 60:\n    print("B")\nelse:\n    print("C")`,
+      options:[`A`,`B`,`C`,`什麼都不印`], answer:['A','B','C'].indexOf(res),
+      explain:'程式會從上往下檢查，第一個成立的條件就執行並跳出；score='+s+' 時印出 "'+res+'"。' }; },
+
+    /* --- 更多隨機變化題（數字/詞彙每次都不同） --- */
+    () => ({ lesson:4, q:'要判斷「x 等於 10」，if 後面的條件要怎麼寫？',
+      options:[`if x = 10:`,`if x == 10:`,`if x === 10:`,`if x equals 10:`], answer:1,
+      explain:'判斷相等要用兩個等號 ==；一個 = 是「指派」，不是比較。' }),
+    () => ({ lesson:5, q:'「如果不是下雨天」要怎麼寫？（rainy 是布林值）',
+      options:[`if not rainy:`,`if !rainy:`,`if no rainy:`,`if rainy == false:`], answer:0,
+      explain:'Python 用 not 表示「不是／反向」，寫成 if not rainy:。' }),
+    () => { const n=randint(3,7); return { lesson:7, q:`下面這段程式會印出數字幾次？\ncount = 0\nwhile count < ${n}:\n    print(count)\n    count = count + 1`,
+      options:[`${n-1} 次`,`${n} 次`,`${n+1} 次`,`無限次`], answer:1,
+      explain:'count 從 0 數到 '+(n-1)+'，一共 '+n+' 次後停止。' }; },
+    () => { const a=randint(1,3), b=randint(8,12), c=randint(2,4); const seq=[]; for(let i=a;i<b;i+=c) seq.push(i); return { lesson:6, q:`range(${a}, ${b}, ${c}) 會產生下列哪一組數字？`,
+      options:[seq.join(', '), `${a}, ${a+c}, ..., ${b}`, `${a}, ${a+1}, ..., ${b-1}`, `${a}, ${a+2}, ..., ${b-1}`], answer:0,
+      explain:'第三個數字是「每次加多少」，從 '+a+' 開始每次加 '+c+'，直到小於 '+b+' 為止。' }; },
+    () => ({ lesson:4, q:'關於 else 的寫法，下列哪一個正確？',
+      options:[`else: 後面不需要寫條件`,`else x > 5: 要寫條件`,`else (x > 5):`,`else then:`], answer:0,
+      explain:'else 是「其他所有情況」，後面直接加冒號就可以了。' }),
+    () => ({ lesson:4, q:'在 Python 中，if 區塊裡的程式要怎麼表示？',
+      options:[`要向右縮排（通常是 4 個空格）`,`用大括號 { } 包起來`,`放在 if 的同一行`,`不用特別處理`], answer:0,
+      explain:'Python 靠縮排判斷程式屬於哪個區塊，縮排錯了結果就錯了。' }),
+    () => ({ lesson:7, q:'要做出「一直重複，直到使用者輸入 q 才停止」，最常用的寫法是？',
+      options:[`while True: 搭配 break`,`for i in range(10):`,`if ... elif`,`只用一次 print`], answer:0,
+      explain:'while True 是無限迴圈，用 break 跳出是最經典的寫法。' }),
+    () => { const items=pick([['apple','banana','cherry'],['red','green','blue'],['cat','dog','bird']]); const lit="['"+items.join("', '")+"']"; return { lesson:6, q:`下面這段程式會印出什麼？\nfor x in ${lit}:\n    print(x)`,
+      options:[`依序印出 ${items.join('、')}`,`一次印出整個串列`,`印出 1、2、3`,`什麼都不印`], answer:0,
+      explain:'for 會把串列裡的東西一個一個拿出來，所以依序印出每個元素。' }; },
+    () => ({ lesson:5, q:'比較運算的結果（例如 5 > 3）是什麼資料型態？',
+      options:[`bool（布林值 True / False）`,`int（整數）`,`str（字串）`,`float（小數）`], answer:0,
+      explain:'比較的結果只有 True 或 False 兩種，這就是 bool 布林值。' }),
+    () => { const n=randint(2,6); return { lesson:6, q:`for i in range(${n}): 裡面的 i，第一次的值是多少？`,
+      options:numOpts(0,[1, n, n+1]), answer:0,
+      explain:'range('+n+') 從 0 開始數，所以第一次 i 是 0。' }; },
+    () => ({ lesson:7, q:'如果 while 的條件一開始就不成立，裡面的程式會執行幾次？',
+      options:[`0 次，一次都不會執行`,`1 次`,`2 次`,`無限次`], answer:0,
+      explain:'while 是「先檢查條件」，一開始不成立就直接跳過，一次都不執行。' }),
+    () => { const a=randint(45,95), p=randint(50,80); const r=(a>=p)?"True":"False"; return { lesson:4, q:`score = ${a}，請問 print(score >= ${p}) 會印出什麼？`,
+      options:[`True`,`False`,`score >= ${p}`,`會出錯`], answer: r==="True"?0:1,
+      explain:'score 是 '+a+'，判斷 '+a+' >= '+p+' 的結果是 '+r+'。' }; },
+    () => { const n=randint(2,5), t=pick(['cat','dog','bird','fish']); return { lesson:6, q:`下面這段程式會印出幾行？\nfor i in range(${n}):\n    print("${t}")`,
+      options:[`${n} 行`,`${n+1} 行`,`1 行`,`0 行`], answer:0,
+      explain:'range('+n+') 重複 '+n+' 次，所以印出 '+n+' 行 "'+t+'"。' }; },
+
+    /* --- 第 7 課主題：while 迴圈與猜數字（隨機變化題） --- */
+    () => ({ lesson:7, q:'想做一個「猜數字」小遊戲：電腦想一個神祕數字，玩家一直猜直到猜中，最適合哪一種迴圈？',
+      options:[`while 迴圈（條件成立就重複）`,`for 迴圈`,`if 判斷`,`def 函式`], answer:0,
+      explain:'猜數字要在「還沒猜中」時一直重複，while 最適合這種「直到…才停止」的情況。' }),
+    () => { const s=randint(30,90); return { lesson:7, q:`下面這段猜數字程式，當玩家猜 ${s} 但答案其實更大時，應該印出什麼提示？\nif guess > answer:\n    print("太大了")\nelif guess < answer:\n    print("太小了")\nelse:\n    print("猜中了")`,
+      options:[`太小了`,`太大了`,`猜中了`,`程式錯誤`], answer:0,
+      explain:'guess='+s+' 比 answer 大，所以走 guess > answer 的分支，印出「太小了」請玩家往小猜。' } },
+    () => ({ lesson:7, q:'猜數字遊戲中，玩家一猜中就該結束迴圈，通常搭配哪個指令跳出 while？',
+      options:[`break`,`continue`,`pass`,`exit`], answer:0,
+      explain:'猜中時用 break 立刻跳出 while 迴圈，遊戲結束。' }),
+
+    /* --- 新增題庫：判斷式 / 迴圈 / 猜數字（隨機數字，每次都不同） --- */
+    () => ({ lesson:4, q:'"a" in "cat" 這個判斷式會得到什麼結果？',
+      options:[`True`,`False`,`會出錯`,`1`], answer:0,
+      explain:'in 用來檢查「有沒有包含」，a 確實出現在 cat 裡，所以得到 True。' }),
+    () => { const a=randint(10,20), b=randint(10,20); const both = a>15 && b>15; return { lesson:4, q:`a = ${a}、b = ${b}，下面程式會印出什麼？\nif a > 15:\n    if b > 15:\n        print("YES")\n    else:\n        print("NO")`,
+      options:[`YES`,`NO`,`什麼都不印`,`會出錯`], answer: both?0:(a>15?1:2),
+      explain:'外層先判斷 a > 15（a='+a+'），只有成立才進到內層；結果是「'+(both?'YES':(a>15?'NO':'什麼都不印'))+'」。' }; },
+    () => { const a=randint(8,20); return { lesson:5, q:`x = ${a}，print(x > 10 and x < 18) 會印出什麼？`,
+      options:[`True`,`False`,`${a}`,`會出錯`], answer:(a>10&&a<18)?0:1,
+      explain:'and 要兩邊都成立：'+a+' > 10 是 '+(a>10)+'、'+a+' < 18 是 '+(a<18)+'，結果是 '+((a>10&&a<18)?'True':'False')+'。' }; },
+    () => ({ lesson:5, q:'print(not True) 會印出什麼？',
+      options:[`True`,`False`,`None`,`會出錯`], answer:1,
+      explain:'not 會把布林值反過來：not True 就是 False。' }),
+    () => ({ lesson:5, q:'關於 if / elif / else，下列哪一個說法正確？',
+      options:[`elif 可以接很多個，else 最多一個且放最後`,`elif 只能有一個`,`else 一定要寫`,`if 後面一定要接 elif`], answer:0,
+      explain:'可以視需要用多個 elif 檢查不同情況；else 可有可無，且只能放在最後。' }),
+    () => ({ lesson:6, q:'for i in range(0): 裡面的 print(i) 會執行幾次？',
+      options:[`0 次`,`1 次`,`2 次`,`無限次`], answer:0,
+      explain:'range(0) 是空的，一個數字都沒有，所以迴圈一次都不執行。' }),
+    () => { const w=pick(['cat','sun','pen','dog']); return { lesson:6, q:`下面這段程式會印出幾行？\nfor ch in "${w}":\n    print(ch)`,
+      options:[`${w.length} 行`,`1 行`,`${w.length+1} 行`,`0 行`], answer:0,
+      explain:'for 會把字串一個字元一個字元取出，'+w+' 共有 '+w.length+' 個字，所以印出 '+w.length+' 行。' }; },
+    () => { const n=randint(2,5); let s=0; for(let i=1;i<=n;i++) s+=i*2; return { lesson:6, q:`下面這段程式會印出什麼？\ntotal = 0\nfor i in range(1, ${n+1}):\n    total = total + i * 2\nprint(total)`,
+      options:numOpts(s,[n, n*2, s+2]), answer:0,
+      explain:'每次把 i×2 加進 total：2 + 4 + … + '+(n*2)+' = '+s+'。' }; },
+    () => { const a=randint(2,6), b=randint(10,16); return { lesson:6, q:`len(range(${a}, ${b})) 會得到多少？`,
+      options:numOpts(b-a,[b-a+1, b, a]), answer:0,
+      explain:'range(開始, 結束) 不含結束，從 '+a+' 數到 '+(b-1)+'，共 '+(b-a)+' 個數字。' }; },
+    () => { const n=randint(3,7); return { lesson:7, q:`下面這段程式結束時，print(count) 會印出什麼？\ncount = 0\nwhile count < ${n}:\n    count = count + 1\nprint(count)`,
+      options:numOpts(n,[n-1, n+1, 0]), answer:0,
+      explain:'count 從 0 每次加 1，直到不再小於 '+n+' 為止，最後正好是 '+n+'。' }; },
+    () => ({ lesson:7, q:'猜數字遊戲裡，要讓程式「每一輪都重新問一次」，input() 應該放在哪裡？',
+      options:[`while 迴圈裡面`,`只寫在迴圈外面一次`,`print 的括號裡`,`註解裡`], answer:0,
+      explain:'把 input() 放進 while 迴圈，每輪都會重新問一次，直到猜中用 break 跳出。' }),
+    () => ({ lesson:4, q:'print("apple" == "banana") 會印出什麼？',
+      options:[`True`,`False`,`apple`,`會出錯`], answer:1,
+      explain:'== 比較兩邊是否一模一樣；apple 和 banana 不同，所以是 False。' }),
+    () => { const a=randint(1,20); return { lesson:5, q:`n = ${a}，print(n < 5 or n > 15) 會印出什麼？`,
+      options:[`True`,`False`,`${a}`,`會出錯`], answer:(a<5||a>15)?0:1,
+      explain:'or 只要其中一邊成立就是 True；'+a+' < 5 是 '+(a<5)+'、'+a+' > 15 是 '+(a>15)+'，結果 '+((a<5||a>15)?'True':'False')+'。' }; },
+    () => ({ lesson:6, q:'下面這段程式總共會印出幾行？\nfor i in range(2):\n    for j in range(3):\n        print("Hi")',
+      options:[`2 行`,`3 行`,`5 行`,`6 行`], answer:3,
+      explain:'外層跑 2 次，每次內層跑 3 次，2 × 3 = 6，所以印出 6 行。' }),
+    () => ({ lesson:7, q:'在 while 迴圈中使用 continue 時，要特別小心什麼？',
+      options:[`別忘了在 continue 之前更新控制條件，否則可能變成無限迴圈`,`continue 會把程式整個關掉`,`continue 只能用在 for`,`完全沒有風險`], answer:0,
+      explain:'continue 會直接跳到下一輪；如果控制變數沒先更新，條件永遠不變就會卡在無限迴圈。' }),
+    () => ({ lesson:4, q:'下列哪一段 if 的寫法「完全正確」？',
+      options:[`if x > 5:\n    print("big")`,`if x > 5\n    print("big")`,`if (x > 5) { print("big") }`,`if x > 5: print "big"`], answer:0,
+      explain:'條件後要有冒號 :，裡面的程式要縮排，而且 print 是函式要加括號。' }),
+    () => { const s=randint(0,100); const r=s>=80?'A':(s>=50?'B':'C'); return { lesson:5, q:`score = ${s}，下面這段程式會印出什麼？\nif score >= 80:\n    print("A")\nelif score >= 50:\n    print("B")\nelse:\n    print("C")`,
+      options:[`A`,`B`,`C`,`A 和 B 都印`], answer:['A','B','C'].indexOf(r),
+      explain:'if / elif / else 只執行「第一個成立」的區塊；score='+s+' 得到 '+r+'。' }; },
+  ],
+  3: [
+    () => ({ lesson:8, q:'下面哪一行程式可以建立一個裝水果的「串列（list）」？',
+      options:[`fruits = ["apple","banana","orange"]`,`fruits = ("apple","banana")`,`fruits = "apple","banana"`,`fruits = {apple, banana}`], answer:0,
+      explain:'串列用中括號 [ ] 包起來，裡面可以放很多東西。' }),
+    () => ({ lesson:8, q:'想在串列 fruits 的最後面加入 "watermelon"，要用？',
+      options:[`fruits.add("watermelon")`,`fruits.append("watermelon")`,`fruits.put("watermelon")`,`fruits.join("watermelon")`], answer:1,
+      explain:'append() 意思是「接在後面」，是最常用的加法。' }),
+    () => { const a=randint(3,9), b=randint(11,19), c=randint(22,30); return { lesson:8, q:`串列 nums = [${a}, ${b}, ${c}]，那 nums[0] 的值是？`,
+      options:[`${a}`,`${b}`,`${c}`,`會出錯`], answer:0,
+      explain:'電腦從 0 開始數，nums[0] 是第一個，也就是 '+a+'。' }; },
+    () => { const a=randint(3,9), b=randint(11,19), c=randint(22,30); return { lesson:8, q:`串列 nums = [${a}, ${b}, ${c}]，那 nums[2] 的值是？`,
+      options:[`${a}`,`${b}`,`${c}`,`會出錯`], answer:2,
+      explain:'電腦從 0 開始數：nums[0]='+a+'、nums[1]='+b+'、nums[2]='+c+'。' }; },
+    () => ({ lesson:8, q:'想知道串列裡有幾個東西，可以用？',
+      options:[`size(list)`,`len(list)`,`count(list)`,`length(list)`], answer:1,
+      explain:'len() 是 length（長度）的縮寫，會告訴你有幾個。' }),
+    () => { const a=randint(2,5); return { lesson:8, q:`下面這段程式會印出什麼？\nnums = [1, 2, 3]\nnums.append(${a})\nprint(len(nums))`,
+      options:[`3`,`4`,`1,2,3,${a}`,`會出錯`], answer:1,
+      explain:'原本 3 個，append 加 1 個變 4 個，len 算出 4。' }; },
+    () => ({ lesson:9, q:'想用 Python 畫圖，第一步要先載入「海龜繪圖」模組，要寫哪一行？',
+      options:[`import turtle`,`include turtle`,`use turtle`,`from draw`], answer:0,
+      explain:'import turtle 把海龜繪圖模組載進來，之後才能使用 turtle.forward() 等指令。' }),
+    () => ({ lesson:9, q:'turtle.forward(100) 這一行會讓海龜做什麼？',
+      options:[`向前走 100 步並畫出一條線`,`向右轉 100 度`,`把畫筆顏色變成 100`,`什麼都不做`], answer:0,
+      explain:'forward 是「前進」，數字代表走幾步；海龜邊走會邊畫出線條。' }),
+    () => ({ lesson:9, q:'要讓海龜「向右轉 90 度」準備畫直角，要用哪個指令？',
+      options:[`turtle.right(90)`,`turtle.turn(90)`,`turtle.rotate(90)`,`turtle.spin(90)`], answer:0,
+      explain:'right(角度) 會讓海龜原地向右轉，right(90) 就是轉一個直角。' }),
+    () => ({ lesson:9, q:'turtle.left(45) 會讓海龜怎麼轉？',
+      options:[`向左轉 45 度`,`向左走 45 步`,`把畫筆抬向左邊`,`向左畫 45 個圓`], answer:0,
+      explain:'left(角度) 是向左轉，left(45) 就是向左轉 45 度。' }),
+    () => ({ lesson:10, q:'做「猜數字」小遊戲時，想要「電腦先想一個祕密數字、玩家一直猜到對為止」，最需要用到下列哪一組？',
+      options:[`while 迴圈 + if 判斷 + break`,`只有 print`,`只有 def`,`只有 list`], answer:0,
+      explain:'猜數字要在「還沒猜中」時一直重複（while），並用 if 判斷太大或太小，猜中就用 break 跳出。' }),
+    () => { const n=randint(3,7), s=n*(n+1)/2; return { lesson:10, q:`下面這段程式會印出什麼？\ntotal = 0\nfor i in range(1, ${n+1}):\n    total = total + i\nprint(total)`,
+      options:[`${s}`,`${n}`,`${n+1}`,`0`], answer:0,
+      explain:'用 for 把 1 到 '+n+' 一個一個加進 total，結果是 1+2+…+'+n+' = '+s+'。' } },
+    () => ({ lesson:8, q:'串列 pets = ["cat", "dog", "fish"]，要取出第 2 個（"dog"）要用？',
+      options:[`pets[1]`,`pets[2]`,`pets[0]`,`pets["dog"]`], answer:0,
+      explain:'電腦從 0 開始數：pets[0]="cat"、pets[1]="dog"，所以取 "dog" 用 pets[1]。' }),
+    () => ({ lesson:8, q:'想對串列裡的每個東西都做一次動作，最適合用？',
+      options:[`if 判斷`,`for 迴圈`,`while True`,`def 函式`], answer:1,
+      explain:'for 迴圈很適合「對清單每個項目都做一遍」這類工作。' }),
+    () => { const items=pick([['80','90','75'],['60','70','85'],['100','95','88']]); const lit="["+items.join(", ")+"]"; const sum=items.reduce((a,b)=>a+Number(b),0); return { lesson:10, q:`下面這段程式會印出什麼？\nscores = ${lit}\nfor s in scores:\n    print(s)`,
+      options:[`依序印出 ${items.join('、')}`,`一次印出整個串列`,`印出 ${sum}`,`什麼都不印`], answer:0,
+      explain:'for 會把串列裡的成績一個一個拿出來，所以依序印出 '+items.join('、')+'。' } },
+
+    /* --- 更多隨機變化題（數字/串列內容每次都不同） --- */
+    () => { const items=pick([['red','green','blue'],['cat','dog','fish'],['one','two','three']]); const lit="['"+items.join("', '")+"']"; return { lesson:8, q:`串列 a = ${lit}，要取出「最後一個」元素要用？`,
+      options:[`a[${items.length}]`,`a[${items.length-1}]`,`a[-0]`,`a.last()`], answer:1,
+      explain:'長度是 '+items.length+'，但從 0 開始數，最後一個的編號是 '+(items.length-1)+'。' }; },
+    () => { const n=randint(3,6); const items=Array.from({length:n},(_,i)=>i*2+1); return { lesson:8, q:`串列 nums = ${JSON.stringify(items)}，len(nums) 會得到？`,
+      options:numOpts(n,[n-1, items[n-1], n+1]), answer:0,
+      explain:'len() 數的是「有幾個元素」，這裡一共 '+n+' 個。' }; },
+    () => { const n=randint(2,5); return { lesson:8, q:`下面這段程式會印出什麼？\nnums = [1] * ${n}\nnums.append(9)\nprint(len(nums))`,
+      options:numOpts(n+1,[n, n+9, n+2]), answer:0,
+      explain:'[1] * '+n+' 有 '+n+' 個，append 再加 1 個變成 '+(n+1)+'。' }; },
+    () => ({ lesson:9, q:'想畫一個半徑 50 的圓，要用哪個指令？',
+      options:[`turtle.circle(50)`,`turtle.round(50)`,`turtle.oval(50)`,`turtle.arc(50)`], answer:0,
+      explain:'circle(半徑) 會畫出一個圓，數字是半徑的大小。' }),
+    () => ({ lesson:9, q:'想先把畫筆顏色設成紅色，要寫？',
+      options:[`turtle.color("red")`,`turtle.paint("red")`,`turtle.set("red")`,`turtle.brush(red)`], answer:0,
+      explain:'color() 可以設定畫筆（和填色）的顏色，紅色就寫 "red"。' }),
+    () => ({ lesson:10, q:'下面這段程式會根據年齡印出什麼？\nage = int(input("年齡："))\nif age >= 18:\n    print("成人")\nelse:\n    print("未成年")',
+      options:[`輸入 20 印「成人」、輸入 12 印「未成年」`,`都印「成人」`,`都印「未成年」`,`程式錯誤`], answer:0,
+      explain:'input 抓到的文字先用 int() 轉成數字，再用 if 判斷：18 以上印成人，否則印未成年。' }),
+    () => { const items=pick([[10,20,5,30],[3,8,15,2],[25,7,40,12]]); const lit="["+items.join(", ")+"]"; const big=items.filter(x=>x>10); return { lesson:10, q:`下面這段程式會印出什麼？\nnums = ${lit}\nfor n in nums:\n    if n > 10:\n        print(n)`,
+      options:[`印出大於 10 的數（${big.join('、')}）`,`印出所有數`,`印出小於 10 的數`,`什麼都不印`], answer:0,
+      explain:'for 走遍每個數，再用 if 只挑出大於 10 的印出來，所以只印 '+big.join('、')+'。' }; },
+    () => { const n=randint(2,4); const items=Array.from({length:n},(_,i)=>i+1); return { lesson:8, q:`串列 a = ${JSON.stringify(items)}（長度 ${n}），如果寫 a[${n}] 會怎樣？`,
+      options:[`得到 ${n}`,`出現 IndexError（索引超出範圍）`,`得到 0`,`自動新增一個元素`], answer:1,
+      explain:'最大索引是 '+(n-1)+'，a['+n+'] 超出範圍，會出現 IndexError 錯誤。' }; },
+    () => ({ lesson:8, q:'Python 的串列（list）裡面可以放什麼？',
+      options:[`數字、文字都可以，也能混在一起放`,`只能放數字`,`只能放文字`,`只能放同一種資料`], answer:0,
+      explain:'串列很自由，例如 [1, "apple", True] 混著放也完全沒問題。' }),
+    () => ({ lesson:9, q:'turtle.penup() 的作用是？',
+      options:[`把筆抬起來，移動時不會畫線`,`把筆壓下去開始畫線`,`把海龜刪掉`,`把畫面清空`], answer:0,
+      explain:'penup 像把筆拿離紙面，之後移動海龜就不會留下線條；要再畫就用 pendown。' }),
+    () => { const a=randint(20,60), b=randint(30,80); return { lesson:9, q:`下面這段程式會在螢幕上畫出什麼？\nimport turtle\nturtle.begin_fill()\nturtle.forward(${a})\nturtle.right(90)\nturtle.forward(${b})\nturtle.end_fill()`,
+      options:[`一個填滿顏色的 ${a} × ${b} 長方形`,`一條 ${a} 步的直線`,`一個半徑 ${a} 的圓`,`什麼都不會畫`], answer:0,
+      explain:'begin_fill 開始記錄形狀、end_fill 把中間填滿，向前走 '+a+' 再右轉走 '+b+' 就畫出一個填滿的長方形。' }; },
+    () => ({ lesson:10, q:'想要「用迴圈重複 4 次畫出正方形」，下面哪段程式最合適？',
+      options:[`for i in range(4):\n    turtle.forward(100)\n    turtle.right(90)`,`for i in range(4):\n    turtle.forward(100)`,`while True:\n    turtle.forward(100)`,`turtle.square(100)`], answer:0,
+      explain:'正方形有 4 條邊，用 for 重複 4 次「前進 100 再右轉 90 度」就畫得出来。' }),
+
+    /* --- 新增題庫：串列 / turtle / 綜合專題（隨機內容，每次都不同） --- */
+    () => { const items=pick([['a','b','c','d'],['10','20','30','40'],['red','blue','green']]); const lit='["'+items.join('", "')+'"]'; const last=items[items.length-1]; return { lesson:8, q:`串列 a = ${lit}，a[-1] 會得到什麼？`,
+      options:[`${last}`,`${items[0]}`,`會出錯`,`0`], answer:0,
+      explain:'負索引從後面數：a[-1] 是最後一個元素，也就是 '+last+'。' }; },
+    () => { const n=randint(3,6); const items=Array.from({length:n},(_,i)=>i+1); const v=randint(20,50); return { lesson:8, q:`下面這段程式執行後會印出什麼？\na = ${JSON.stringify(items)}\na[0] = ${v}\nprint(a)`,
+      options:[`[${v}, ${items.slice(1).join(', ')}]`,`${JSON.stringify(items)}`,`[${v}]`,`會出錯`], answer:0,
+      explain:'串列可以用索引直接改值：a[0] 被改成 '+v+'，其餘元素不變。' }; },
+    () => ({ lesson:8, q:'想把串列 nums 的「最後一個」元素移除並取得它，要用？',
+      options:[`nums.pop()`,`nums.remove()`,`nums.delete()`,`nums.clear()`], answer:0,
+      explain:'pop() 會移除並回傳最後一個元素；不帶參數時就是移除末尾。' }),
+    () => ({ lesson:8, q:'想把數字串列由小到大排好，最簡單的寫法是？',
+      options:[`nums.sort()`,`nums.order()`,`sorted.print(nums)`,`nums.reverse(asc)`], answer:0,
+      explain:'sort() 會直接把串列由小到大排序。' }),
+    () => { const items=Array.from({length:5},(_,i)=>i*3+2); return { lesson:8, q:`串列 a = ${JSON.stringify(items)}，a[1:3] 會得到？`,
+      options:[`[${items[1]}, ${items[2]}]`,`[${items[0]}, ${items[1]}]`,`[${items[1]}, ${items[2]}, ${items[3]}]`,`[${items[2]}, ${items[3]}]`], answer:0,
+      explain:'切片 [開始:結束] 含開始、不含結束，取索引 1 和 2，共 2 個元素。' }; },
+    () => { const a=randint(2,4); const rep=Array.from({length:a},()=>'1, 2').join(', '); return { lesson:8, q:`print([1, 2] * ${a}) 會印出什麼？`,
+      options:[`[${rep}]`,`[1, 2]`,`[${a}, ${2*a}]`,`會出錯`], answer:0,
+      explain:'串列乘上數字會把內容重複；[1, 2] * '+a+' = ['+rep+']。' }; },
+    () => ({ lesson:9, q:'turtle.pendown() 的作用是？',
+      options:[`把畫筆放下，移動時會畫線`,`把畫筆抬起`,`把畫面清空`,`結束繪圖`], answer:0,
+      explain:'penup 之後想再畫線，就要用 pendown 把筆放回紙面。' }),
+    () => ({ lesson:9, q:'turtle 程式最後常加 turtle.done()，它的作用是？',
+      options:[`讓繪圖視窗保持開啟、不要馬上關掉`,`把圖擦掉`,`把海龜移到原點`,`加快畫圖速度`], answer:0,
+      explain:'done() 會讓視窗停留在畫面上，程式不會畫完就立刻關閉。' }),
+    () => ({ lesson:9, q:'用 turtle 畫正方形時，每畫完一邊要轉幾度？',
+      options:[`90 度`,`60 度`,`120 度`,`45 度`], answer:0,
+      explain:'正方形每個角是直角 90 度，重複 4 次「前進 + 右轉 90」就能畫出來。' }),
+    () => ({ lesson:9, q:'想讓海龜直接移動到座標 (50, 30)，要用哪個指令？',
+      options:[`turtle.goto(50, 30)`,`turtle.move(50, 30)`,`turtle.forward(50, 30)`,`turtle.jump(50, 30)`], answer:0,
+      explain:'goto(x, y) 會把海龜移到指定座標；移動時是否畫線由 penup / pendown 決定。' }),
+    () => ({ lesson:9, q:'想把海龜畫出來的線條變粗，要用哪個指令？',
+      options:[`turtle.pensize(5)`,`turtle.big(5)`,`turtle.line(5)`,`turtle.bold(5)`], answer:0,
+      explain:'pensize(粗細) 可以設定畫筆寬度，數字越大線越粗。' }),
+    () => { const items=pick([[3,9,2,7],[12,5,18,4],[6,11,8,15]]); const lit='['+items.join(', ')+']'; const mx=Math.max(...items); return { lesson:10, q:`下面這段程式會印出什麼？\nnums = ${lit}\nbig = nums[0]\nfor n in nums:\n    if n > big:\n        big = n\nprint(big)`,
+      options:numOpts(mx,[Math.min(...items), items[0], items.reduce((a,b)=>a+b,0)]), answer:0,
+      explain:'用 for 走過每個數，遇到更大的就更新 big，最後印出最大值 '+mx+'。' }; },
+    () => { const items=pick([[10,20,30],[5,15,25,35],[2,4,6,8]]); const lit='['+items.join(', ')+']'; const sum=items.reduce((a,b)=>a+b,0); return { lesson:10, q:`scores = ${lit}，print(sum(scores) / len(scores)) 會印出什麼？`,
+      options:[`${sum/items.length}`,`${sum}`,`${items.length}`,`會出錯`], answer:0,
+      explain:'sum() 全部加起來是 '+sum+'，len() 是 '+items.length+'，相除得到平均 '+(sum/items.length)+'。' }; },
+    () => { const items=pick([[1,2,3,4,5],[2,4,6,8],[5,10,15,20]]); const lit='['+items.join(', ')+']'; const cnt=items.filter(x=>x%2===0).length; return { lesson:10, q:`下面這段程式會印出什麼？\nnums = ${lit}\ncount = 0\nfor n in nums:\n    if n % 2 == 0:\n        count = count + 1\nprint(count)`,
+      options:numOpts(cnt,[items.length, items.length-cnt, 0]), answer:0,
+      explain:'用 % 2 == 0 挑出偶數並計數，'+lit+' 裡共有 '+cnt+' 個偶數。' }; },
+    () => ({ lesson:10, q:'想用 for 迴圈畫出「正三角形」，下面哪段最合適？',
+      options:[`for i in range(3):\n    turtle.forward(100)\n    turtle.left(120)`,`for i in range(3):\n    turtle.forward(100)\n    turtle.left(90)`,`for i in range(4):\n    turtle.forward(100)`,`while True:\n    turtle.circle(50)`], answer:0,
+      explain:'正三角形有 3 邊，每次轉 120 度（外角），重複 3 次即可。' }),
+    () => ({ lesson:8, q:'要檢查 "apple" 有沒有在串列 fruits 裡，條件要怎麼寫？',
+      options:[`if "apple" in fruits:`,`if fruits has "apple":`,`if "apple" of fruits:`,`if fruits.find("apple"):`], answer:0,
+      explain:'in 可以檢查某個元素是否出現在串列中，成立會得到 True。' }),
+    () => ({ lesson:8, q:'想一次在串列 nums 後面加入兩個元素 7 和 8，可以用？',
+      options:[`nums.extend([7, 8])`,`nums.add([7, 8])`,`nums.append(7, 8)`,`nums.push(7, 8)`], answer:0,
+      explain:'extend() 會把另一個串列的內容逐個接在後面；append() 一次只能加一個。' }),
+  ],
+
+  /* ================= 第 4 階段：煉獄級（最難，需要多步驟思考） ================= */
+  4: [
+    /* --- 巢狀（雙層）迴圈 --- */
+    () => { const n=randint(2,4), m=randint(2,5), total=n*m; return { lesson:10, q:`下面這段程式一共會印出幾個 "*"？\nfor i in range(${n}):\n    for j in range(${m}):\n        print("*")`,
+      options:numOpts(total,[n+m, n, m]), answer:0,
+      explain:'雙層迴圈：外層跑 '+n+' 次，每跑一次內層就跑 '+m+' 次，所以共 '+n+' × '+m+' = '+total+' 次。' }; },
+
+    /* --- range 起訖值累加 --- */
+    () => { const a=randint(1,5), b=randint(a+2,a+6); let s=0; for(let i=a;i<b;i++) s+=i; return { lesson:10, q:`下面這段程式會印出什麼？\ntotal = 0\nfor i in range(${a}, ${b}):\n    total = total + i\nprint(total)`,
+      options:numOpts(s,[s+b, s+a, b-a]), answer:0,
+      explain:'range('+a+', '+b+') 會從 '+a+' 跑到 '+(b-1)+'（不含最後的 '+b+'），加起來是 '+s+'。' }; },
+
+    /* --- while + break 計數 --- */
+    () => { const t=randint(3,6); return { lesson:10, q:`下面這段程式會印出什麼？\ncount = 0\nwhile True:\n    count = count + 1\n    if count == ${t}:\n        break\nprint(count)`,
+      options:numOpts(t,[t-1, t+1, 0]), answer:0,
+      explain:'每次都加 1，一旦 count 等於 '+t+' 就 break 跳出迴圈，所以最後印出 '+t+'。' }; },
+
+    /* --- 字串方法 .upper() --- */
+    () => { const w=pick(['python','hello','banana','turtle']); return { lesson:10, q:`print("${w}".upper()) 會印出什麼？`,
+      options:[`${w.toUpperCase()}`,`${w}`,`${w[0].toUpperCase()+w.slice(1)}`,`會出錯`], answer:0,
+      explain:'.upper() 會把字串裡的字母全部轉成大寫，所以是 '+w.toUpperCase()+'。' }; },
+
+    /* --- f-string 格式化 --- */
+    () => { const n=randint(2,9); return { lesson:10, q:`name = "Amy"，age = ${n}，想印出「Amy is ${n} years old」，要用哪一行？`,
+      options:[`print(f"{name} is {age} years old")`,`print("name is age years old")`,`print("{name} is {age} years old")`,`print(f"name is age years old")`], answer:0,
+      explain:'字串前面加上 f，再把變數放進大括號 {} 裡，Python 就會自動把變數的值代入。' }; },
+
+    /* --- range 的「間隔」(step) --- */
+    () => { const st=randint(2,4); const nums=[]; for(let i=0;i<10;i+=st) nums.push(i); return { lesson:6, q:`下面這段程式，變數 i 依序會是哪些數字？\nfor i in range(0, 10, ${st}):`,
+      options:[`${nums.join(', ')}`,`0, 1, 2, ..., 9`,`${st}, ${st*2}, ${st*3}`,`1, 2, 3, ..., 10`], answer:0,
+      explain:'range 的第三個數字是「間隔」，每次加 '+st+'，所以是 '+nums.join(', ')+'。' }; },
+
+    /* --- 負數索引 --- */
+    () => { const it=pick([[10,20,30,40],[5,10,15],[2,4,6,8,10]]); const lit='['+it.join(', ')+']'; return { lesson:8, q:`nums = ${lit}，print(nums[-1]) 會印出什麼？`,
+      options:numOpts(it[it.length-1],[it[0], it.length, it.length-1]), answer:0,
+      explain:'索引 -1 代表「倒數第一個」，'+lit+' 的最後一個元素是 '+it[it.length-1]+'。' }; },
+
+    /* --- 清單切片 --- */
+    () => ({ lesson:8, q:`nums = [1, 2, 3, 4, 5, 6]，print(nums[1:4]) 會印出什麼？`,
+      options:[`[2, 3, 4]`,`[1, 2, 3, 4]`,`[1, 2, 3]`,`[2, 3, 4, 5]`], answer:0,
+      explain:'切片 [1:4] 從索引 1 取到索引 3（後面的 4 不算），所以是 [2, 3, 4]。' }),
+
+    /* --- for + if 篩選到新清單 --- */
+    () => { const it=pick([[3,8,12,7],[4,9,14,6,11],[10,5,20,15]]); const lit='['+it.join(', ')+']';
+      const big=it.filter(x=>x>7); const bs='['+big.join(', ')+']';
+      return { lesson:10, q:`下面這段程式會印出什麼？\nnums = ${lit}\nresult = []\nfor n in nums:\n    if n > 7:\n        result.append(n)\nprint(result)`,
+      options:[`${bs}`,`${lit}`,`[]`,`[${it.slice(0,2).join(', ')}]`], answer:0,
+      explain:'只有大於 7 的才會 append 進 result，'+lit+' 裡符合的是 '+bs+'。' }; },
+
+    /* --- while 猜數字流程 --- */
+    () => ({ lesson:10, q:'下面這段猜數字程式，玩家猜中時會發生什麼事？\nwhile True:\n    guess = int(input())\n    if guess == answer:\n        print("Bingo!")\n        break',
+      options:[`印出 Bingo! 然後 break 跳出迴圈`,`一直重複直到程式當掉`,`先 break 跳出，才印出 Bingo!`,`什麼都不會發生`], answer:0,
+      explain:'== 比較成立時，先執行 print("Bingo!")，再執行 break 跳出 while 迴圈，遊戲結束。' }),
+
+    /* --- turtle 多邊形轉角計算 --- */
+    () => { const s=pick([5,6,8]); const ang=Math.round(360/s); return { lesson:9, q:`想用 turtle 畫出「正 ${s} 邊形」，每次前進後要轉幾度？`,
+      options:numOpts(ang,[90, ang+10, 360-s]), answer:0,
+      explain:'繞一圈剛好 360 度，正 '+s+' 邊形每一邊的外角 = 360 ÷ '+s+' = '+ang+' 度。' }; },
+
+    /* --- 清單乘法與 len() --- */
+    () => { const w=pick(['python','turtle','banana','dragon']); const n=randint(2,4); return { lesson:8, q:`words = ["${w}"] * ${n}，print(len(words)) 會印出什麼？`,
+      options:numOpts(n,[w.length, n*w.length, 1]), answer:0,
+      explain:'清單乘上數字會把內容複製，["'+w+'"] × '+n+' 變成 '+n+' 個元素，len() 得到 '+n+'。' }; },
+
+    /* --- for + if 篩選偶數求和 --- */
+    () => { const n=randint(4,9); let s=0; for(let i=2;i<=n;i+=2) s+=i; return { lesson:10, q:`下面這段程式會印出什麼？\ntotal = 0\nfor i in range(1, ${n+1}):\n    if i % 2 == 0:\n        total = total + i\nprint(total)`,
+      options:numOpts(s,[s+1, n*(n+1)/2, Math.max(0,s-2)]), answer:0,
+      explain:'range(1, '+(n+1)+') 是 1 到 '+n+'，用 % 2 == 0 挑出偶數再加起來，得到 '+s+'。' }; },
+
+    /* --- 找程式錯誤（語法） --- */
+    () => ({ lesson:10, q:'下面這段程式有一個錯誤，錯在哪裡？\nfor i in range(5)\n    print(i)',
+      options:[`range(5) 後面少了冒號 :`,`print 要改成大寫 Print`,`i 不能當變數`,`range 要寫成 Range`], answer:0,
+      explain:'for 那一行的最後一定要加冒號 :，少了冒號 Python 會出現語法錯誤。' }),
+
+    /* --- and / or 邏輯判斷 --- */
+    () => { const a=randint(2,9); return { lesson:5, q:`score = ${a}，下面哪一個條件會成立（True）？`,
+      options:[`score > 0 and score < 10`,`score > 0 and score > 100`,`score < 0 or score > 10`,`score == 0`], answer:0,
+      explain:'and 要兩邊都成立才算 True：'+a+' > 0 成立、'+a+' < 10 也成立，所以整體是 True。' }; },
+
+    /* --- 追蹤 append 建立的清單 --- */
+    () => { const n=randint(3,5); const arr=[]; for(let i=1;i<=n;i++) arr.push(i*2);
+      return { lesson:10, q:`下面這段程式會印出什麼？\nresult = []\nfor i in range(1, ${n+1}):\n    result.append(i * 2)\nprint(result)`,
+      options:[`[${arr.join(', ')}]`,`[${arr.slice(0,arr.length-1).join(', ')}]`,`${n*2}`,`[1, 2, 3, 4]`], answer:0,
+      explain:'i 從 1 到 '+n+'，每次把 i × 2 加進清單，結果是 ['+arr.join(', ')+']。' }; },
+
+    /* --- turtle 填色 --- */
+    () => ({ lesson:9, q:'想用 turtle 畫出一個「實心紅色的圓」，下面哪一段最完整？',
+      options:[`turtle.color("red")\nturtle.begin_fill()\nturtle.circle(50)\nturtle.end_fill()`,`turtle.color("red")\nturtle.circle(50)`,`turtle.begin_fill()\nturtle.circle(50)`,`turtle.circle(50)\nturtle.fill("red")`], answer:0,
+      explain:'要先設定顏色，再用 begin_fill() 和 end_fill() 把畫圖的範圍包起來，中間畫的圖形才會被填滿顏色。' }),
+
+    /* --- 及格計數（if 門檻） --- */
+    () => { const it=pick([[55,88,72],[90,45,60],[100,80,95]]); const lit='['+it.join(', ')+']';
+      const pass=it.filter(x=>x>=60).length;
+      return { lesson:10, q:`下面這段程式會印出什麼？\nscores = ${lit}\ncount = 0\nfor s in scores:\n    if s >= 60:\n        count = count + 1\nprint(count)`,
+      options:numOpts(pass,[it.length, it.length-pass, it[0]]), answer:0,
+      explain:'逐一檢查是否 >= 60（及格），'+lit+' 裡共有 '+pass+' 個及格。' }; },
+
+    /* --- 字串 .count() --- */
+    () => { const p=pick([['banana','a',3],['apple','p',2],['python','n',1],['turtle','t',2]]); return { lesson:10, q:`print("${p[0]}".count("${p[1]}")) 會印出什麼？`,
+      options:numOpts(p[2],[p[2]+1, p[0].length, 0]), answer:0,
+      explain:'.count("'+p[1]+'") 會數出 "'+p[1]+'" 在 "'+p[0]+'" 裡出現了 '+p[2]+' 次。' }; },
+
+    /* --- elif 多重判斷 --- */
+    () => { const s=pick([25,55,75,92]); const g = s>=90?'A':(s>=70?'B':(s>=60?'C':'F'));
+      const rest=['A','B','C','F'].filter(x=>x!==g);
+      return { lesson:5, q:`score = ${s}，下面這段程式會印出什麼？\nif score >= 90:\n    print("A")\nelif score >= 70:\n    print("B")\nelif score >= 60:\n    print("C")\nelse:\n    print("F")`,
+      options:[g, ...rest], answer:0,
+      explain:'elif 會由上往下比對，'+s+' 符合的條件會印出 '+g+'（前面的條件成立就不會再往下比）。' }; },
+
+    /* --- 以下為大量隨機變化題，讓整場遊戲題目充足、絕不重複 --- */
+    () => { const a=randint(2,9), b=randint(2,9), c=randint(2,9); return { lesson:10, q:`下面這段程式會印出什麼？\na = ${a}\nb = ${b}\nc = ${c}\na = b + c\nprint(a)`,
+      options:numOpts(b+c,[a+b, a+c, a+b+c]), answer:0,
+      explain:'a 被重新指派成 b + c = '+(b+c)+'，原本的 '+a+' 已被覆蓋，所以印出 '+(b+c)+'。' }; },
+
+    () => { const w=pick(['Hi','OK','Go','Py','ABC']), n=randint(2,6); return { lesson:10, q:`print("${w}" * ${n}) 會印出什麼？`,
+      options:[`${w.repeat(n)}`,`${w.repeat(n-1)}`,`${w} ${n}`,`${w.length*n}`], answer:0,
+      explain:'字串乘上數字會把內容重複接起來，"'+w+'" 重複 '+n+' 次。' }; },
+
+    () => { const n=randint(4,9); const arr=[]; for(let i=n;i>=1;i--) arr.push(i); return { lesson:6, q:`下面這段程式會依序印出什麼？\nfor i in range(${n}, 0, -1):\n    print(i)`,
+      options:[`${arr.join(', ')}`,`1, 2, ..., ${n}`,`${n}, ${n-1}, ..., 0`,`${n}, ${n-1}`], answer:0,
+      explain:'range('+n+', 0, -1) 是「倒著數」，每次減 1，從 '+n+' 數到 1（不含 0）。' }; },
+
+    () => { const n=randint(4,7); const it=[]; for(let i=0;i<n;i++) it.push(randint(1,99)); const lit='['+it.join(', ')+']';
+      const mx=Math.max(...it), mn=Math.min(...it);
+      return { lesson:8, q:`nums = ${lit}，print(max(nums)) 會印出什麼？`,
+      options:numOpts(mx,[mn, it[0], it[n-1]]), answer:0,
+      explain:'max() 會找出串列裡最大的數，'+lit+' 裡面最大的是 '+mx+'。' }; },
+
+    () => { const it=[]; for(let i=0;i<5;i++) it.push(randint(2,50)); const k=randint(0,4); const lit='['+it.join(', ')+']';
+      return { lesson:8, q:`nums = ${lit}，print(nums[${k}]) 會印出什麼？`,
+      options:numOpts(it[k],[it[k]+1, it[(k+1)%5], k]), answer:0,
+      explain:'索引從 0 開始，nums['+k+'] 是第 '+(k+1)+' 個元素 = '+it[k]+'。' }; },
+
+    () => { const a=randint(2,20), b=randint(2,12), S=a+b;
+      const wrongs=[]; const seenW=new Set([S]);
+      for(const cand of [S+1, a*b, 2*S]){
+        if(wrongs.length<2 && !seenW.has(cand)){ seenW.add(cand); wrongs.push(cand); }
+      }
+      return { lesson:10,
+      q:'a = '+a+'，b = '+b+'，print(f"{a} + {b} = {a+b}") 會印出什麼？',
+      options:[a+' + '+b+' = '+S, ...wrongs.map(w=>a+' + '+b+' = '+w), 'a + b = '+S], answer:0,
+      explain:'f-string 會把大括號裡的變數與運算結果直接算出來：'+a+' + '+b+' = '+S+'。' }; },
+
+    () => { const p=pick([['banana','a','o'],['hello','l','x'],['apple','p','b'],['turtle','t','d']]);
+      const all=p[0].split(p[1]).join(p[2]), first=p[0].replace(p[1],p[2]);
+      return { lesson:10, q:`print("${p[0]}".replace("${p[1]}", "${p[2]}")) 會印出什麼？`,
+      options:[all, p[0], first, p[0]+p[2]], answer:0,
+      explain:'replace() 會把「全部」符合的字換掉（不只第一個），所以得到 '+all+'。' }; },
+
+    () => { const s=pick(['apple,banana,cherry','red,green,blue','one,two,three,four','cat,dog,bird,fish,ant']); const c=s.split(',').length;
+      return { lesson:10, q:`print(len("${s}".split(","))) 會印出什麼？`,
+      options:numOpts(c,[s.length, c+1, Math.max(0,c-1)]), answer:0,
+      explain:'split(",") 會用逗號切開變成串列，共切成 '+c+' 段，len() 得到 '+c+'。' }; },
+
+    () => { const p=pick([[3,120],[4,90],[5,72],[6,60],[8,45],[9,40],[10,36],[12,30]]); const s=p[0], ang=p[1];
+      return { lesson:9, q:`想用 turtle 搭配 for 畫出「正 ${s} 邊形」，下面哪一段正確？`,
+      options:[`for i in range(${s}):\n    turtle.forward(60)\n    turtle.left(${ang})`,`for i in range(${s}):\n    turtle.forward(60)\n    turtle.left(${ang+15})`,`for i in range(${ang}):\n    turtle.forward(60)\n    turtle.left(${s})`,`for i in range(${s}):\n    turtle.forward(60)`], answer:0,
+      explain:'正 '+s+' 邊形有 '+s+' 條邊，每次轉 360 ÷ '+s+' = '+ang+' 度，重複 '+s+' 次。' }; },
+
+    () => { const a=randint(2,20), b=randint(2,20); const r=(a+b>15)?'True':'False';
+      return { lesson:10, q:`a = ${a}，b = ${b}，print(a + b > 15) 會印出什麼？`,
+      options:[r, r==='True'?'False':'True', String(a+b), '會出錯'], answer:0,
+      explain:'先算 a + b = '+(a+b)+'，再判斷是否大於 15，結果是 '+r+'（這是一個布林值）。' }; },
+  ],
+};
+
+const TIME_LIMITS = [15, 13, 11, 9, 8]; // 第 1~5 隻魔王的思考秒數
+
+/* ---------- 遊戲狀態 ---------- */
+let state = {
+  mode:'solo', players:[], current:0,
+  stage:null, bosses:[], bossIndex:0,
+  bossName:'', bossAtk:0, bossMax:0, bossHp:0, bossShield:0,
+  questions:[], qIndex:0,
+  answered:false, timeLimit:15, timeLeft:15,
+  result:false,
+};
+let timerId = null;
+let usedSigs = new Set();      // 本場遊戲已出過的題目特徵值
+let usedSigOrder = [];         // 依出現順序記錄，題庫抽乾時可淘汰最舊的紀錄
+
+/* ---------- 玩家 ---------- */
+function makePlayer(name, clsKey){
+  const c = CLASSES[clsKey];
+  return { name, cls:c, level:1, hp:c.hp, maxHp:c.hp, atk:c.atk, def:c.def,
+           correct:0, alive:true, energy:0, pendingSkill:null,
+           healEvery:3, healAmount:15, picked:-1, done:false };
+}
+function allDown(){ return state.players.every(p=>!p.alive); }
+function nextAlive(idx){
+  const n = state.players.length;
+  for(let step=1; step<=n; step++){
+    const i = (idx+step)%n;
+    if(state.players[i].alive) return i;
+  }
+  return idx;
+}
+function levelUp(p){
+  p.level++;
+  p.maxHp += p.cls.hpGain; p.hp = p.maxHp;
+  p.atk += p.cls.atkGain; p.def += p.cls.defGain;
+  p.pendingSkill = null; p.energy = 0;
+  if(p.cls.key==='sage'){ p.healEvery = Math.max(2, p.healEvery-1); p.healAmount += 8; }
+  p.alive = true;
+}
+
+/* ---------- 題目生成（隨機模板，整場遊戲絕不重複） ---------- */
+function genQuestion(stageId){
+  const pool = TEMPLATES[stageId];
+  for(let attempt=0; attempt<300; attempt++){
+    const q = pick(pool)();
+    const sig = q.q + '|' + q.options.join('|');
+    if(!usedSigs.has(sig)){
+      usedSigs.add(sig); usedSigOrder.push(sig);
+      const opts = q.options.map((t,i)=>({ text:t, correct: i===q.answer }));
+      return { lesson:q.lesson, q:q.q, shuffled:shuffle(opts), explain:q.explain };
+    }
+  }
+  // 極端情況（題庫接近抽乾）：淘汰「最舊的一半」紀錄再抽，
+  // 讓題目能繼續變化，且仍不會與近期出現過的題目重複。
+  const drop = usedSigOrder.splice(0, Math.floor(usedSigOrder.length/2));
+  drop.forEach(s=>usedSigs.delete(s));
+  for(let attempt=0; attempt<200; attempt++){
+    const q = pick(pool)();
+    const sig = q.q + '|' + q.options.join('|');
+    if(!usedSigs.has(sig)){
+      usedSigs.add(sig); usedSigOrder.push(sig);
+      const opts = q.options.map((t,i)=>({ text:t, correct: i===q.answer }));
+      return { lesson:q.lesson, q:q.q, shuffled:shuffle(opts), explain:q.explain };
+    }
+  }
+  const q = pick(pool)();
+  const opts = q.options.map((t,i)=>({ text:t, correct: i===q.answer }));
+  return { lesson:q.lesson, q:q.q, shuffled:shuffle(opts), explain:q.explain };
+}
+
+/* ---------- 音效 ---------- */
+let audioCtx = null;
+function playSound(type){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    if(type==='hit'){ o.type='square'; o.frequency.value=620; }
+    else if(type==='win'){ o.type='triangle'; o.frequency.value=880; }
+    else if(type==='skill'){ o.type='triangle'; o.frequency.value=1040; }
+    else { o.type='sawtooth'; o.frequency.value=150; }
+    g.gain.setValueAtTime(0.07, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.22);
+    o.start(); o.stop(audioCtx.currentTime+0.22);
+  }catch(e){ /* 忽略音效錯誤 */ }
+}
+
+/* ---------- 畫面切換 ---------- */
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('screen-'+name).classList.add('active');
+}
+
+/* ---------- 首頁 / 模式 ---------- */
+let pickOrder = [];
+function selectMode(m){
+  state.mode = m;
+  // 「同一場遊戲」由此開始：只有在首頁重新選擇模式時才換一套全新題庫，
+  // 之後不論換魔王、換階段或再挑戰一次，都不會出現重複題目。
+  usedSigs = new Set();
+  usedSigOrder = [];
+  beginClassSelection();
+}
+
+/* ---------- 職業選擇 ---------- */
+function beginClassSelection(){
+  pickOrder = [];
+  renderClassScreen();
+  showScreen('class');
+}
+function renderClassScreen(){
+  if(state.mode==='coop'){
+    if(pickOrder.length===0){
+      $('class-title').textContent = '👉 玩家 1 請選擇職業';
+      $('class-sub').textContent = '第一棒先選，選完會輪到玩家 2 選。';
+    } else {
+      const first = CLASSES[pickOrder[0]];
+      $('class-title').textContent = '👉 玩家 2 請選擇職業';
+      $('class-sub').textContent = `✅ 玩家 1 已選擇：${first.name}。現在輪到玩家 2！`;
+    }
+  } else {
+    $('class-title').textContent = '請選擇你的職業';
+    $('class-sub').textContent = '不同職業有不同血量與攻擊力，選一個你喜歡的！';
+  }
+  $('class-cards').innerHTML = Object.values(CLASSES).map(c=>`
+    <button class="class-card" style="--c:${c.color}" onclick="pickClass('${c.key}')">
+      <div class="class-icon">${CLASS_SVG[c.key]}</div>
+      <div class="class-name">${c.name}</div>
+      <div class="class-stats">
+        <span>❤️ ${c.hp}</span><span>⚔️ ${c.atk}</span><span>🛡️ ${c.def}</span>
+      </div>
+      <div class="class-skill"><b>🔥 ${c.skillName}</b>：${c.skillDesc}</div>
+    </button>`).join('');
+}
+function pickClass(clsKey){
+  pickOrder.push(clsKey);
+  if(state.mode==='coop' && pickOrder.length<2){
+    renderClassScreen();
+    return;
+  }
+  const names = state.mode==='coop' ? ['玩家 1','玩家 2'] : ['勇者'];
+  state.players = pickOrder.map((k,i)=>makePlayer(names[i],k));
+  renderStageScreen();
+  showScreen('stage');
+}
+
+/* ---------- 階段選擇 ---------- */
+function renderStageScreen(){
+  $('stage-cards').innerHTML = Object.values(STAGES).map(s=>{
+    const hps = s.bosses.map(b=>b.hp);
+    const min = Math.min(...hps), max = Math.max(...hps);
+    return `<button class="stage-card" style="--c:${s.color}" onclick="startStage(${s.id})">
+      <div class="stage-boss">${BOSS_SVG[s.id][0]}</div>
+      <div class="stage-name">第 ${s.id} 階段・${s.name}</div>
+      <div class="stage-sub">${s.sub}</div>
+      <div class="stage-bossname">👹 5 隻魔王連戰（血量 ${min}→${max}）</div>
+      <div class="stage-qcount">📝 無限題庫・隨機生成不重複</div>
+    </button>`;
+  }).join('');
+}
+
+/* ---------- 開始戰鬥 / 載入魔王 ---------- */
+function startStage(id){
+  state.stage = STAGES[id];
+  state.bosses = STAGES[id].bosses;
+  state.bossIndex = 0;
+  state.players = state.players.map(p => makePlayer(p.name, p.cls.key));
+  state.questions = [];
+  state.qIndex = 0;
+  state.current = 0;
+  // 注意：這裡「不」重置 usedSigs —— 去重範圍是「整場遊戲」，
+  // 所以重挑戰、換階段也不會抽到剛剛出現過的題目。
+  loadBoss(0);
+  showScreen('battle');
+  renderBattle();
+}
+function loadBoss(index){
+  const b = state.bosses[index];
+  state.bossMax = b.hp; state.bossHp = b.hp;
+  state.bossAtk = b.atk; state.bossName = b.name;
+  state.bossShield = 0;
+  state.timeLimit = TIME_LIMITS[Math.min(index, TIME_LIMITS.length-1)];
+  // 注意：這裡「不」重置 usedSigs，去重範圍涵蓋整場遊戲（含所有魔王與階段）
+}
+function nextBoss(){
+  state.bossIndex++;
+  loadBoss(state.bossIndex);
+  state.questions = [];
+  state.qIndex = 0;
+  state.current = 0;
+  showScreen('battle');
+  renderBattle();
+}
+
+/* ---------- 渲染戰鬥 ---------- */
+function pipsHtml(p){
+  return [0,1,2].map(k=>`<span class="epip ${k<p.energy?'on':''}"></span>`).join('');
+}
+function skillReady(i,p){
+  return p.alive && p.energy>=3 && !state.answered && (state.mode==='coop' ? true : i===state.current);
+}
+function renderBattle(){
+  const s = state.stage;
+  $('battle-sub').textContent = `第 ${s.id} 階段・${s.name}（${s.sub}）`;
+  $('boss-sprite').innerHTML = BOSS_SVG[s.id][state.bossIndex];
+  $('boss-name').textContent = `${state.bossName}`;
+  const sk = state.bosses[state.bossIndex].skill;
+  $('boss-skill').textContent = `👹 技能：${sk.name}`;
+  $('boss-skill').title = sk.desc;
+  $('boss-progress').textContent = `魔王 ${state.bossIndex+1} / ${state.bosses.length}（本題 ${state.timeLimit} 秒）`;
+  $('players-panel').innerHTML = state.players.map((p,i)=>`
+    <div class="player-card ${(state.mode!=='coop'? i===state.current : p.alive)?'active':''} ${p.alive?'':'down'}" id="player-${i}">
+      <div class="player-sprite">${CLASS_SVG[p.cls.key]}</div>
+      <div class="player-name">${p.name}（${p.cls.name}）<span class="level-badge">Lv.${p.level}</span></div>
+      <div class="player-skill">🔥 技能：${p.cls.skillName}</div>
+      <div class="hp-bar"><div class="hp-fill" id="php-${i}" style="width:${p.hp/p.maxHp*100}%"></div>
+        <span class="hp-text" id="phpt-${i}">${p.hp}/${p.maxHp}</span></div>
+      <div class="player-atk">⚔️ 攻擊 ${p.atk}　🛡️ 防禦 ${p.def}</div>
+      <div class="energy-wrap"><span class="en-label">⚡能量</span><span class="pips" id="pips-${i}">${pipsHtml(p)}</span></div>
+      <button class="skill-btn ${skillReady(i,p)?'ready':''}" id="skill-${i}" onclick="activateSkill(${i})" ${skillReady(i,p)?'':'disabled'}>🔥 ${p.cls.skillName}</button>
+      ${p.alive?'':'<div class="down-tag">😵 昏倒</div>'}
+    </div>`).join('');
+  renderQuestion();
+  updateBars();
+}
+/* 確保每位玩家在「當前回合」都有自己的題目
+   （雙人：兩題由不同模板產生，且同一回合兩位玩家題目保證不同） */
+function ensureQuestions(){
+  state.players.forEach((p,i)=>{
+    if(!state.questions[i]) state.questions[i] = [];
+    while(state.questions[i].length <= state.qIndex){
+      let q = genQuestion(state.stage.id);
+      // 雙人：若與「同一回合其他玩家」的題目相同就重新抽（保證兩人題目不一樣）
+      let tries = 0;
+      while(tries++ < 60 && state.questions.some((arr,j)=> j!==i && arr[state.qIndex] && arr[state.qIndex].q===q.q)){
+        q = genQuestion(state.stage.id);
+      }
+      state.questions[i].push(q);
+    }
+  });
+}
+/* 作答區自動縮放：測量內容自然高度，若超出所在格子高度則整體縮小，
+   使作答區永遠不需捲動（依畫面大小自動調整比例；單人/雙人皆適用） */
+function fitAnswerArea(){
+  const box  = document.getElementById('battle-question');
+  const area = document.getElementById('questions-area');
+  if(!box || !area) return;
+  area.style.zoom = '1';                       // 先還原，取得自然高度
+  const avail = box.clientHeight;              // 作答區所在格的高度（橫屏=下半部）
+  const nat   = area.getBoundingClientRect().height;
+  if(avail > 0 && nat > avail + 1){
+    const s = Math.max(0.4, Math.min(1, avail / nat));   // 只縮不放，最多 0.4
+    area.style.zoom = String(s);
+  }
+}
+
+function renderQuestion(){
+  ensureQuestions();
+  state.answered = false;
+  // 每輪開始：重置每位玩家的作答狀態（已昏倒者視為完成，不佔用回合）
+  state.players.forEach(p=>{ p.done = !p.alive; p.picked = -1; });
+  const letters = ['A','B','C','D'];
+
+  if(state.mode!=='coop'){
+    // 單人：單一題目框（維持原結構與 ID）
+    const q = state.questions[0][state.qIndex];
+    $('questions-area').innerHTML = `
+      <div class="q-box">
+        <div class="q-meta"><span id="progress">第 ${state.qIndex+1} 題（隨機生成）</span><span id="q-lesson">📚 第 ${q.lesson} 課・${LESSON_TOPICS[q.lesson]}</span></div>
+        <div id="q-text">${escapeHtml(q.q).replace(/\n/g,'<br>')}</div>
+        <div id="options">${q.shuffled.map((o,i)=>`
+          <button class="option-btn" id="opt-${i}" onclick="answer(${i})">
+            <span class="opt-letter">${letters[i]}</span>
+            <span class="opt-text">${escapeHtml(o.text)}</span>
+          </button>`).join('')}</div>
+        <div class="feedback" id="feedback"></div>
+      </div>`;
+  } else {
+    // 雙人：每位玩家各自獨立的題目與作答區域（雙方題目由不同模板產生，保證不會一樣）
+    $('questions-area').innerHTML = state.players.map((p,i)=>{
+      const q = state.questions[i][state.qIndex];
+      return `
+      <div class="q-box coop-q ${p.alive?'':'q-disabled'}" id="coop-q-${i}">
+        <div class="q-meta">
+          <span class="coop-who ${p.alive?'':'who-down'}">${p.alive?'🙋':'😵'} ${p.name}</span>
+          <span class="coop-tag">玩家 ${i+1} 的題目（第 ${q.lesson} 課・${LESSON_TOPICS[q.lesson]}）</span>
+        </div>
+        <div class="q-text" id="q-text-${i}">${escapeHtml(q.q).replace(/\n/g,'<br>')}</div>
+        <div class="options" id="options-${i}">${q.shuffled.map((o,j)=>`
+          <button class="option-btn" id="opt-${i}-${j}" onclick="answer(${j}, ${i})" ${p.alive?'':'disabled'}>
+            <span class="opt-letter">${letters[j]}</span>
+            <span class="opt-text">${escapeHtml(o.text)}</span>
+          </button>`).join('')}</div>
+        <div class="feedback" id="feedback-${i}"></div>
+      </div>`;
+    }).join('');
+  }
+  $('boss-progress').textContent = `魔王 ${state.bossIndex+1} / ${state.bosses.length}（本題 ${state.timeLimit} 秒）`;
+  $('skill-banner').classList.remove('show');
+  refreshControls();
+  startTime();
+  requestAnimationFrame(fitAnswerArea);   // 題目渲染後，依畫面自動縮放作答區
+}
+function updateBars(){
+  $('boss-hp-fill').style.width = (state.bossHp/state.bossMax*100)+'%';
+  $('boss-hp-text').textContent = `${state.bossHp}/${state.bossMax}`;
+  const sb = $('boss-shield');
+  if(sb){
+    if(state.bossShield>0){ sb.style.display='inline-block'; $('boss-shield-val').textContent = state.bossShield; }
+    else sb.style.display='none';
+  }
+  state.players.forEach((p,i)=>{
+    const fill = $('php-'+i), txt = $('phpt-'+i);
+    if(fill) fill.style.width = (p.hp/p.maxHp*100)+'%';
+    if(txt)  txt.textContent = `${p.hp}/${p.maxHp}`;
+  });
+}
+
+/* ---------- 倒數計時 ---------- */
+function startTime(){
+  stopTime();
+  state.timeLeft = state.timeLimit;
+  updateTimerUI();
+  timerId = setInterval(()=>{
+    state.timeLeft -= 0.1;
+    if(state.timeLeft <= 0){
+      state.timeLeft = 0; updateTimerUI();
+      stopTime();
+      handleTimeout();
+    } else {
+      updateTimerUI();
+    }
+  }, 100);
+}
+function stopTime(){ if(timerId){ clearInterval(timerId); timerId=null; } }
+function updateTimerUI(){
+  const pct = state.timeLimit>0 ? Math.max(0, state.timeLeft/state.timeLimit*100) : 0;
+  const fill = $('timer-fill'); if(fill) fill.style.width = pct+'%';
+  const txt = $('timer-text'); if(txt) txt.textContent = '⏱️ '+Math.ceil(state.timeLeft);
+  const bar = $('timer-bar'); if(bar) bar.classList.toggle('low', state.timeLeft<=5);
+}
+
+/* ---------- 主動技能（需 3 點能量） ---------- */
+function activateSkill(i){
+  const p = state.players[i];
+  if(!p.alive || p.energy<3 || state.answered) return;
+  p.energy = 0;
+  if(p.cls.skillEffect==='healSelf30'){
+    /* 牧師／賢者：只補自己，回復「目前最大血量的 30%」。
+       不碰任何其他玩家 → 隊友不會被治療，倒下的人也不會復活。 */
+    const amount = Math.round(p.maxHp * 0.3);
+    const before = p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + amount);
+    const gained = p.hp - before;
+    showSkillBanner(`🌟 ${p.name} 施放【${p.cls.skillName}】！只回復自身最大血量 30%（+${gained}），無法復活隊友`);
+    if(gained > 0){ floatDamage($('player-'+i), '+'+gained, 'heal'); healFlash(i); }
+    playSound('skill');
+  } else {
+    p.pendingSkill = p.cls.skillEffect; // 'block' | 'crit2' | 'crit3'
+    showSkillBanner(`✨ ${p.name} 準備【${p.cls.skillName}】！下一題生效！`);
+    playSound('skill');
+  }
+  refreshControls();
+  updateBars();
+}
+function showSkillBanner(text){
+  const b = $('skill-banner');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(()=>b.classList.remove('show'), 1800);
+}
+function refreshControls(){
+  state.players.forEach((p,i)=>{
+    const pips = $('pips-'+i);
+    if(pips) pips.innerHTML = pipsHtml(p);
+    const btn = $('skill-'+i);
+    if(btn){
+      const ready = skillReady(i,p);
+      btn.disabled = !ready;
+      btn.classList.toggle('ready', ready);
+    }
+  });
+}
+
+/* ---------- 作答 ---------- */
+function answer(idx, pi){
+  if(state.answered) return;
+  // 單人模式：pi 省略時視為當前玩家
+  if(pi===undefined) pi = state.current;
+  const p = state.players[pi];
+  if(!p || !p.alive || p.done) return;
+  p.picked = idx; p.done = true;
+  markOptions(pi, idx);                 // 鎖定這位玩家的選項並標示對錯
+  if(state.mode!=='coop'){
+    resolveRound();                     // 單人：立即結算
+  } else if(state.players.every(pl=>pl.done)){
+    setTimeout(resolveRound, 500);      // 雙人：兩人都答完才結算
+  }
+}
+function markOptions(pi, idx){
+  const q = state.questions[pi][state.qIndex];
+  const box = $(state.mode==='coop' ? `options-${pi}` : 'options');
+  if(!box) return;
+  box.querySelectorAll('.option-btn').forEach((b,j)=>{
+    b.disabled = true;
+    if(j===idx) b.classList.add(q.shuffled[j].correct ? 'correct' : 'wrong');
+    if(q.shuffled[j].correct) b.classList.add('correct');
+  });
+}
+function handleTimeout(){
+  if(state.answered) return;
+  // 還沒作答的玩家視同答錯
+  state.players.forEach((p,i)=>{ if(!p.done){ p.picked=-1; p.done=true; markOptions(i,-1); } });
+  resolveRound();
+}
+function resolveRound(){
+  if(state.answered) return;            // 防止重複結算
+  state.answered = true;
+  stopTime();
+
+  // 逐位結算存活玩家（雙人：兩人都獨立計算攻擊 / 受傷，題目各自不同）
+  state.players.forEach((p,i)=>{
+    if(!p.alive) return;
+    const q = state.questions[i][state.qIndex];
+    const correct = p.picked>=0 && q.shuffled[p.picked].correct;
+    const playerEl = $('player-'+i);
+    const fbEl = state.mode==='coop' ? $('feedback-'+i) : $('feedback');
+
+    if(correct){
+      p.correct++;
+      p.energy = Math.min(3, p.energy+1);
+      let mult = 1, crit = false;
+      if(p.pendingSkill==='crit2'){ mult=2; crit=true; p.pendingSkill=null; }
+      else if(p.pendingSkill==='crit3'){ mult=3; crit=true; p.pendingSkill=null; }
+      const dmg = Math.round(p.atk * mult);
+      let real = dmg;
+      if(state.bossShield > 0){
+        const absorb = Math.min(state.bossShield, real);
+        state.bossShield -= absorb; real -= absorb;
+        if(absorb>0) floatDamage($('boss-area'), '🛡️-'+absorb, 'dmg-shield');
+      }
+      state.bossHp = Math.max(0, state.bossHp - real);
+      if(real>0) floatDamage($('boss-area'), '-'+real, crit?'dmg-crit':'dmg-boss');
+      bossHit(crit);
+      playSound('hit');
+      let msg = `✅ ${p.name} 答對！對 ${state.bossName} 造成 ${dmg} 點傷害` + (crit?'（暴擊！）':'') + '！';
+      if(p.cls.key==='sage' && p.correct % p.healEvery === 0 && p.hp < p.maxHp){
+        const before = p.hp;
+        p.hp = Math.min(p.maxHp, p.hp + p.healAmount);
+        floatDamage(playerEl, '+'+(p.hp-before), 'heal');
+        healFlash(i);
+        msg += ` 💚 賢者治癒 +${p.hp-before} 血！`;
+      }
+      msg += ' 📘 ' + q.explain;
+      if(fbEl){ fbEl.textContent = msg; fbEl.className = 'feedback ok'; }
+    } else {
+      let blocked = false;
+      if(p.pendingSkill==='block'){ blocked = true; p.pendingSkill = null; }
+      let dmg = Math.max(1, state.bossAtk - p.def);
+      if(p.cls.key==='knight') dmg = Math.ceil(dmg/2);
+      if(blocked) dmg = 0;
+      p.hp = Math.max(0, p.hp - dmg);
+      if(p.hp===0) p.alive = false;
+      if(blocked){
+        floatDamage(playerEl, '🛡️BLOCK', 'heal');
+        if(fbEl){ fbEl.textContent = `❌ ${p.name} 答錯，但🛡️盾牆擋下了攻擊！📘 ` + q.explain; fbEl.className = 'feedback bad'; }
+      } else {
+        floatDamage(playerEl, '-'+dmg, 'dmg-player');
+        playerHit(i); shakeScreen(); playSound('hurt');
+        const correctText = q.shuffled.find(o=>o.correct).text;
+        if(fbEl){ fbEl.textContent = `❌ ${p.name} 答錯！${state.bossName} 反擊 ${dmg} 點。正確答案是：${correctText}。📘 ` + q.explain; fbEl.className = 'feedback bad'; }
+      }
+    }
+  });
+
+  // 魔王技能：每 BOSS_SKILL_EVERY 題施放一次（魔王仍存活、仍有勇者站立時）
+  if(state.bossHp>0 && state.players.some(p=>p.alive) && (state.qIndex+1) % BOSS_SKILL_EVERY === 0){
+    useBossSkill();
+  }
+
+  refreshControls();
+  updateBars();
+
+  setTimeout(()=>{
+    if(state.bossHp<=0){
+      state.players.forEach(p=>levelUp(p));
+      if(state.bossIndex < state.bosses.length-1){
+        showBossDefeated();
+      } else {
+        showResult('stageClear');
+      }
+      return;
+    }
+    if(allDown()){ showResult('lose'); return; }
+    state.qIndex++;
+    renderBattle();
+  }, 2200);
+}
+
+/* ---------- 魔王技能 ---------- */
+function useBossSkill(){
+  const sk = state.bosses[state.bossIndex].skill;
+  const area = $('boss-area');
+  showSkillBanner(`👹 ${state.bossName} 施放【${sk.name}】！${sk.desc}！`);
+  bossCastEffect(sk.type);
+  playSound('skill');
+  switch(sk.type){
+    case 'heal':{
+      const before = state.bossHp;
+      state.bossHp = Math.min(state.bossMax, state.bossHp + sk.power);
+      floatDamage(area, '+'+(state.bossHp-before), 'heal');
+      break;
+    }
+    case 'buff':{
+      state.bossAtk += sk.power;
+      floatDamage(area, '⚔️+'+sk.power, 'dmg-crit');
+      break;
+    }
+    case 'shield':{
+      state.bossShield += sk.power;
+      floatDamage(area, '🛡️+'+sk.power, 'dmg-shield');
+      break;
+    }
+    case 'aoe':{
+      state.players.forEach((p,i)=>{
+        if(!p.alive) return;
+        const dmg = Math.max(1, sk.power - Math.floor(p.def/2));   // 防禦略減技能傷害
+        p.hp = Math.max(0, p.hp - dmg);
+        if(p.hp===0) p.alive = false;
+        floatDamage($('player-'+i), '-'+dmg, 'dmg-player');
+        playerHit(i);
+      });
+      shakeScreen(); playSound('hurt');
+      break;
+    }
+  }
+}
+
+/* ---------- 特效 ---------- */
+function showFeedback(msg, cls){
+  const f = $('feedback'); f.textContent = msg; f.className = 'feedback ' + cls;
+}
+function floatDamage(container, text, cls){
+  if(!container) return;
+  const el = document.createElement('div');
+  el.className = 'float-dmg ' + cls; el.textContent = text;
+  container.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+function shakeScreen(){
+  const b = $('screen-battle'); b.classList.add('shake');
+  setTimeout(()=>b.classList.remove('shake'), 420);
+}
+function bossHit(crit){
+  const b = $('boss-sprite');
+  if(!b) return;
+  b.classList.add('boss-hit','flash');
+  if(crit) b.classList.add('crit');
+  setTimeout(()=>{ b.classList.remove('boss-hit','flash','crit'); }, crit?700:420);
+}
+function playerHit(i){
+  const el = $('player-'+i);
+  if(!el) return;
+  el.classList.add('player-hit');
+  setTimeout(()=>el.classList.remove('player-hit'), 420);
+}
+function healFlash(i){
+  const el = $('player-'+i);
+  if(!el) return;
+  el.classList.add('heal-flash');
+  setTimeout(()=>el.classList.remove('heal-flash'), 600);
+}
+/* 魔王施放技能時的視覺特效：蓄力放大 + 彩色衝擊波光環 + 區域染色 */
+function bossCastEffect(type){
+  const colors = { heal:'#2ecc71', buff:'#f1c40f', shield:'#3498db', aoe:'#e74c3c' };
+  const color = colors[type] || '#e74c3c';
+  const sprite = $('boss-sprite');
+  if(sprite){
+    sprite.style.setProperty('--cast-color', color);
+    sprite.classList.remove('casting'); void sprite.offsetWidth;  // 重啟動畫
+    sprite.classList.add('casting');
+    setTimeout(()=>sprite.classList.remove('casting'), 650);
+  }
+  const area = $('boss-area');
+  if(area){
+    area.style.setProperty('--cast-color', color);
+    area.classList.add('casting');
+    setTimeout(()=>area.classList.remove('casting'), 650);
+    const ring = document.createElement('div');
+    ring.className = 'cast-ring';
+    ring.style.setProperty('--cast-color', color);
+    area.appendChild(ring);
+    setTimeout(()=>ring.remove(), 760);
+  }
+}
+
+/* ---------- 打敗魔王（中場升級畫面） ---------- */
+function showBossDefeated(){
+  showScreen('levelup');
+  const next = state.bosses[state.bossIndex+1];
+  $('levelup-title').textContent = `🎉 你打敗了 ${state.bossName}！`;
+  $('levelup-msg').textContent = '全體勇者升級了！能力全面提升，血量回滿！';
+  $('levelup-stats').innerHTML = state.players.map(p=>`
+    <div class="lu-row">${CLASS_SVG[p.cls.key]} ${p.name} → <b>Lv.${p.level}</b>　❤️${p.maxHp}　⚔️${p.atk}　🛡️${p.def}</div>`).join('');
+  $('levelup-next').textContent = `⚔️ 下一隻魔王：第 ${state.bossIndex+2} / ${state.bosses.length} 隻 — ${next.name}（${next.hp} 血，思考 ${TIME_LIMITS[state.bossIndex+1]} 秒）`;
+}
+function retryStage(){ startStage(state.stage.id); }
+function backToStages(){ renderStageScreen(); showScreen('stage'); }
+function backHome(){ showScreen('home'); }
+
+/* ---------- 結果 ---------- */
+function showResult(type){
+  stopTime();
+  showScreen('result');
+  const total = state.players.reduce((s,p)=>s+p.correct,0);
+  const names = state.players.map(p=>`${p.name}（${p.cls.name}）答對 ${p.correct} 題`).join('　|　');
+  if(type==='stageClear'){
+    playSound('win');
+    $('result-title').textContent = '🏆 階段通關！5 隻魔王全滅！';
+    $('result-title').className = 'result-title win';
+    $('result-msg').textContent = `太厲害了！你們打倒了 ${state.stage.name} 的所有魔王！`;
+    confetti();
+  } else {
+    $('result-title').textContent = '💀 勇者倒下了…';
+    $('result-title').className = 'result-title lose';
+    $('result-msg').textContent = '魔王太強了，升級練功後再來挑戰吧！';
+  }
+  $('result-stats').textContent = `${names}　→　總共答對 ${total} 題`;
+}
+function confetti(){
+  const box = $('confetti');
+  box.innerHTML = '';
+  const colors = ['#ff6b6b','#ffd93d','#6bcB77','#4d96ff','#c780fa'];
+  for(let i=0;i<60;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.style.left = Math.random()*100+'%';
+    c.style.background = colors[i%colors.length];
+    c.style.animationDelay = (Math.random()*0.6)+'s';
+    c.style.animationDuration = (1.4+Math.random()*1.2)+'s';
+    box.appendChild(c);
+  }
+  setTimeout(()=>{ box.innerHTML=''; }, 3200);
+}
+
+window.addEventListener('DOMContentLoaded', ()=>{ showScreen('home'); });
+
+// 視窗/方向變化時，若在戰鬥畫面就重新自動縮放作答區
+window.addEventListener('resize', ()=>{
+  const battle = document.getElementById('screen-battle');
+  if(battle && battle.classList.contains('active')) fitAnswerArea();
+});
+
+</script>
+</body>
+</html>
