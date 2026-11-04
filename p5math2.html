@@ -1,0 +1,2788 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>代數雙人對決大作戰 ⚔️</title>
+<style>
+  :root{
+    --sky-1:#aee4ff; --sky-2:#e8f8ff; --ink:#2b3a4a; --card:#ffffff;
+    --accent:#ff7a59; --accent-d:#ef5a36; --good:#37c871; --warn:#ffb02e;
+    --blue:#3b82d6; --blue-d:#2a5fa8; --red:#e85d4a; --red-d:#c03a28;
+    --shadow:0 10px 24px rgba(40,60,90,.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;}
+  body{
+    font-family:"PingFang TC","Microsoft YaHei","Hiragino Sans TC",system-ui,sans-serif;
+    background:linear-gradient(180deg,#cdeeff 0%,#eafaff 60%,#f6fbff 100%);
+    color:var(--ink); display:flex; height:100vh; overflow:hidden; padding:14px;
+  }
+  .wrap{width:100%; max-width:1180px; margin:auto; height:100%;}
+  .panel{
+    background:var(--card); border-radius:22px; box-shadow:var(--shadow);
+    overflow:hidden; height:100%; display:flex; flex-direction:column;
+  }
+
+  /* ── HUD ── */
+  .hud{
+    display:flex; align-items:center; gap:10px; padding:10px 16px; flex-wrap:wrap;
+    background:linear-gradient(90deg,#ffd66b,#ffb02e); color:#5a3b00; font-weight:800; flex:none;
+  }
+  .hud .title{font-size:19px; font-weight:900; letter-spacing:1px;}
+  .hud .pill{
+    background:rgba(255,255,255,.85); border-radius:999px; padding:5px 12px;
+    display:flex; align-items:center; gap:6px; font-size:14px;
+    box-shadow:0 2px 6px rgba(0,0,0,.08);
+  }
+  .hud .grow{flex:1;}
+  .stage-chip{
+    background:#5a3b00; color:#ffd66b; border-radius:999px; padding:5px 12px;
+    font-size:14px; font-weight:900; white-space:nowrap;
+  }
+
+  /* ── 上半屏：戰場（與作答區 1:2） ── */
+  .battle{
+    flex:1 1 0; min-height:0; position:relative; overflow:hidden; background:#bfeaff;
+  }
+  .battle .bg{
+    position:absolute; inset:0; width:100%; height:100%; display:block;
+  }
+  /* 角色 */
+  .fighter{
+    position:absolute; bottom:4%; height:64%; max-height:220px; width:auto; max-width:26%; aspect-ratio:1/1.18;
+    filter:drop-shadow(0 8px 10px rgba(30,50,80,.3)); background:transparent;
+    z-index:2; transition:transform .18s ease;
+  }
+  .fighter svg{width:100%; height:100%; display:block; overflow:visible;}
+  .fighter.fx1{left:8%;}
+  .fighter.fx2{right:8%;}
+  .fighter.attack-l{animation:lungeR .55s ease;}
+  .fighter.attack-r{animation:lungeL .55s ease;}
+  .fighter.hurt{animation:shake .5s ease;}
+  @keyframes lungeR{
+    0%{transform:translateX(0);} 40%{transform:translateX(min(24vw,270px)) scale(1.06);} 100%{transform:translateX(0);}
+  }
+  @keyframes lungeL{
+    0%{transform:translateX(0);} 40%{transform:translateX(max(-24vw,-270px)) scale(1.06);} 100%{transform:translateX(0);}
+  }
+  @keyframes shake{
+    0%,100%{margin-left:0;} 20%{margin-left:-8px;} 40%{margin-left:8px;} 60%{margin-left:-6px;} 80%{margin-left:6px;}
+  }
+  /* 魔王攻擊動畫 */
+  .fighter.fx3.attack-boss{animation:bossLunge .6s ease;}
+  @keyframes bossLunge{
+    0%{transform:translateX(0);} 35%{transform:translateX(-22%) scale(1.05);} 100%{transform:translateX(0);}
+  }
+  /* 玩家攻擊魔王：向右突進 + 金色飛彈 */
+  .fighter.atk-right{animation:lungeBoss .55s ease;}
+  @keyframes lungeBoss{
+    0%{transform:translateX(0);} 35%{transform:translateX(42%) scale(1.07);} 100%{transform:translateX(0);}
+  }
+  .bolt.bp{left:18%; background:radial-gradient(circle at 40% 35%, #fff6c2, #ffc63a 70%); animation:flyToBoss .5s ease-in forwards;}
+  @keyframes flyToBoss{
+    0%{opacity:1; transform:scale(.6);} 100%{opacity:1; transform:scale(1.2); left:76%;}
+  }
+  /* 魔王受傷：金色閃光 + 被擊退反應 */
+  .flash.bosshit{background:radial-gradient(circle at 78% 60%, rgba(255,220,120,0) 22%, rgba(255,200,90,.62));}
+  .fighter.fx3.hurt-boss{animation:bossHurtReact .55s ease;}
+  @keyframes bossHurtReact{
+    0%{transform:translateX(0);}
+    18%{transform:translateX(7%) rotate(4deg);}
+    38%{transform:translateX(-4%) rotate(-3deg);}
+    58%{transform:translateX(3%) rotate(2deg);}
+    78%{transform:translateX(-2%) rotate(-1deg);}
+    100%{transform:translateX(0);}
+  }
+  /* 角色頭頂狀態膠囊 */
+  .pHud{
+    position:absolute; top:9%; width:31%; max-width:300px; z-index:3;
+    background:rgba(255,255,255,.92); border-radius:14px; padding:7px 10px 8px;
+    box-shadow:0 4px 14px rgba(30,50,80,.22);
+  }
+  .pHud.p1{left:3%;}
+  .pHud.p2{right:3%;}
+  .pHudTop{display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:13px; font-weight:900;}
+  .pHud.p1 .pHudTop b{color:var(--blue-d);} .pHud.p2 .pHudTop b{color:var(--red-d);}
+  .pHudTop span{color:#5a6a7a; font-size:12px; white-space:nowrap;}
+  .pHud .hpbar{width:100%; height:12px; background:rgba(0,0,0,.08); border-radius:999px; overflow:hidden; margin:5px 0 4px;}
+  .pHud .hpbar > i{display:block; height:100%; width:100%; border-radius:999px;
+    background:linear-gradient(90deg,#37c871,#7ed957); transition:width .5s ease;}
+  .pHud .hpbar > i.mid{background:linear-gradient(90deg,#ffb02e,#ffd66b);}
+  .pHud .hpbar > i.low{background:linear-gradient(90deg,#e85d4a,#ff8a70);}
+  .pHudFoot{display:flex; gap:6px; align-items:center; font-size:12px; font-weight:800; color:#4a5a6a;}
+  .pHudFoot .st{color:var(--accent-d); margin-left:auto; white-space:nowrap;}
+  .vs{
+    position:absolute; left:50%; top:34%; transform:translate(-50%,-50%);
+    font-size:46px; font-weight:900; color:#fff; z-index:3;
+    text-shadow:0 4px 0 rgba(220,90,40,.9), 0 8px 18px rgba(0,0,0,.25);
+    pointer-events:none;
+  }
+  .stageName{
+    position:absolute; left:50%; top:6%; transform:translateX(-50%); z-index:3;
+    background:rgba(255,255,255,.88); border-radius:999px; padding:4px 16px;
+    font-weight:900; font-size:14px; color:#5a3b00; box-shadow:0 3px 10px rgba(0,0,0,.15);
+    white-space:nowrap; pointer-events:none;
+  }
+  .raceTip{
+    position:absolute; left:50%; top:56%; transform:translateX(-50%); z-index:3;
+    background:rgba(255,255,255,.92); border-radius:999px; padding:5px 18px;
+    font-weight:900; font-size:15px; color:var(--accent-d);
+    box-shadow:0 4px 14px rgba(0,0,0,.18); white-space:nowrap; pointer-events:none;
+    animation:tipPulse 1.2s ease-in-out infinite;
+  }
+  @keyframes tipPulse{
+    0%,100%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.07);}
+  }
+  .dmg{
+    position:absolute; z-index:4; font-size:34px; font-weight:900; color:#fff;
+    text-shadow:0 3px 0 rgba(0,0,0,.3); pointer-events:none; opacity:0;
+  }
+  .dmg.show{animation:dmgPop 1s ease forwards;}
+  @keyframes dmgPop{
+    0%{transform:translateY(0) scale(.4); opacity:0;}
+    25%{transform:translateY(-14px) scale(1.15); opacity:1;}
+    75%{transform:translateY(-30px) scale(1); opacity:1;}
+    100%{transform:translateY(-52px) scale(.85); opacity:0;}
+  }
+  .flash{
+    position:absolute; inset:0; z-index:1; pointer-events:none; opacity:0; transition:opacity .15s;
+  }
+  .flash.hit{opacity:.55;}
+  .flash.p1flash{background:radial-gradient(circle at 20% 60%, rgba(59,130,214,.0) 30%, rgba(59,130,214,.55));}
+  .flash.p2flash{background:radial-gradient(circle at 80% 60%, rgba(232,93,74,.0) 30%, rgba(232,93,74,.55));}
+  /* 攻擊飛彈 */
+  .bolt{
+    position:absolute; top:56%; width:32px; height:32px; border-radius:50%; z-index:3;
+    pointer-events:none; opacity:0;
+  }
+  .bolt::after{content:""; position:absolute; inset:-9px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,255,255,.9), transparent 70%);}
+  .bolt.b1{left:20%; background:radial-gradient(circle at 35% 35%, #9cc8ff, #3b82d6 70%); animation:flyR .5s ease-in forwards;}
+  .bolt.b2{left:80%; background:radial-gradient(circle at 65% 35%, #ffb59f, #e85d4a 70%); animation:flyL .5s ease-in forwards;}
+  @keyframes flyR{
+    0%{opacity:1; transform:scale(.6);} 100%{opacity:1; transform:scale(1.15); left:68%;}
+  }
+  @keyframes flyL{
+    0%{opacity:1; transform:scale(.6);} 100%{opacity:1; transform:scale(1.15); left:32%;}
+  }
+  /* 魔王攻擊：紫色飛彈 + 紫色閃光 + 提示 */
+  .bolt.b3{left:78%; background:radial-gradient(circle at 35% 35%, #e9c6ff, #7b2fb0 70%); animation:flyBoss .5s ease-in forwards;}
+  @keyframes flyBoss{
+    0%{opacity:1; transform:scale(.6);} 100%{opacity:1; transform:scale(1.25); left:24%;}
+  }
+  .flash.bossflash{background:radial-gradient(circle at 28% 62%, rgba(123,47,176,0) 25%, rgba(123,47,176,.55));}
+  .bossAtk{
+    position:absolute; left:50%; top:30%; transform:translate(-50%,-50%); z-index:6;
+    font-size:30px; font-weight:900; color:#fff; background:rgba(123,47,176,.92);
+    padding:6px 18px; border-radius:999px; box-shadow:0 6px 18px rgba(0,0,0,.3);
+    opacity:0; pointer-events:none; white-space:nowrap;
+  }
+  .bossAtk.show{animation:bossAtkPop 1.2s ease forwards;}
+  @keyframes bossAtkPop{
+    0%{opacity:0; transform:translate(-50%,-50%) scale(.6);}
+    15%{opacity:1; transform:translate(-50%,-50%) scale(1);}
+    80%{opacity:1;}
+    100%{opacity:0; transform:translate(-50%,-50%) scale(1.05);}
+  }
+
+  /* ── 下半屏：作答區 ── */
+  .answer{
+    flex:1 1 0; min-height:0; display:grid; grid-template-columns:1fr 1.15fr 1fr; gap:10px;
+    padding:8px 12px 10px; border-top:3px dashed #ffe0a3; background:#fff;
+  }
+  .zoneCol{display:flex; flex-direction:column; gap:7px; min-height:0;}
+  .zoneTitle{
+    text-align:center; font-size:13px; font-weight:900; padding:4px 10px; border-radius:999px;
+  }
+  .p1col .zoneTitle{background:#e8f1ff; color:var(--blue-d);}
+  .p2col .zoneTitle{background:#ffeae5; color:var(--red-d);}
+  .zone{display:grid; grid-template-columns:1fr 1fr; gap:6px; flex:1;}
+  .choice{
+    display:flex; align-items:center; justify-content:center; gap:6px; border:none; border-radius:12px;
+    padding:7px 6px; font-size:15px; font-weight:800; cursor:pointer;
+    transition:transform .05s, box-shadow .05s, background .2s; user-select:none;
+    font-family:inherit; min-height:40px;
+  }
+  .choice i{
+    width:20px; height:20px; border-radius:6px; background:#fff; font-style:normal;
+    display:grid; place-items:center; font-size:11px; font-weight:900; flex:none;
+  }
+  .p1col .choice{background:#eef4fb; color:var(--ink); box-shadow:0 4px 0 #b9cfe8;}
+  .p1col .choice i{color:var(--blue-d);}
+  .p1col .choice:hover{background:#e2edfb;}
+  .p2col .choice{background:#fdeee9; color:var(--ink); box-shadow:0 4px 0 #e8b9ac;}
+  .p2col .choice i{color:var(--red-d);}
+  .p2col .choice:hover{background:#fbe2da;}
+  .choice:active{transform:translateY(3px); box-shadow:0 1px 0 #b9cfe8;}
+  .choice.correct{background:var(--good) !important; color:#fff !important; box-shadow:0 4px 0 #168f49 !important; animation:winPulse .5s ease;}
+  .choice.correct i{color:#168f49;}
+  .choice.wrong{background:var(--red) !important; color:#fff !important; box-shadow:0 4px 0 #a52c1c !important;}
+  .choice.wrong i{color:#a52c1c;}
+  .choice:disabled{cursor:default; opacity:.92;}
+  .choice.correct:disabled, .choice.wrong:disabled{opacity:1;}
+  @keyframes winPulse{
+    0%{transform:scale(1);} 50%{transform:scale(1.06);} 100%{transform:scale(1);}
+  }
+  .pstat{text-align:center; font-size:13px; font-weight:900; min-height:20px;}
+  .pstat.bad{color:var(--red-d);}
+  .pstat.good{color:#168f49;}
+
+  /* 中間題目欄 */
+  .qCol{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    min-height:0; padding:4px 6px;
+  }
+  .question{
+    text-align:center; font-size:26px; font-weight:800; color:var(--ink);
+    line-height:1.35;
+  }
+  .question .hl{color:var(--accent-d);}
+  .explain{
+    text-align:center; font-size:14px; color:#7a8a9a; font-weight:600; line-height:1.5;
+  }
+  .explain.ok{color:var(--good);} .explain.no{color:var(--red-d);}
+  .hint{font-size:12px; color:#8aa0b4; text-align:center;}
+
+  /* 合作模式：題目移到各自作答區，中間欄作為戰況播報 */
+  .answer.coop .coopQ{display:block; margin-bottom:6px;}
+  .answer:not(.coop) .coopQ{display:none;}
+  .answer.coop #question{display:none;}
+  .answer.coop #qCol{ justify-content:flex-start; padding-top:12px; }
+
+  /* ── 覆蓋層 ── */
+  .overlay{
+    position:fixed; inset:0; z-index:50; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; gap:14px;
+    background:rgba(20,40,70,.55); backdrop-filter:blur(3px); padding:24px; overflow:auto;
+  }
+  .overlay.hidden{display:none;}
+  .hidden{display:none;}
+  .card{
+    background:linear-gradient(180deg,#ffffff 0%,#fff6ef 100%); border-radius:24px; padding:22px 26px;
+    max-width:760px; box-shadow:0 18px 44px rgba(40,60,90,.28); border:3px solid #ffe0c2;
+  }
+  .card h1{margin:0 0 6px; font-size:30px; color:var(--accent-d);}
+  .card h2{margin:0 0 8px; font-size:26px;}
+  .card p{margin:6px 0; font-size:16px; line-height:1.6; color:#4a5a6a;}
+  .duo{display:flex; gap:16px; justify-content:center; align-items:flex-end; margin:10px 0 4px; flex-wrap:wrap;}
+  .duo .who{
+    display:flex; flex-direction:column; align-items:center; gap:6px; width:170px;
+    border-radius:18px; padding:12px 8px; box-shadow:0 6px 16px rgba(40,60,90,.14);
+  }
+  .duo .who.p1{background:linear-gradient(180deg,#e3f0ff,#cfe5ff);}
+  .duo .who.p2{background:linear-gradient(180deg,#ffece7,#ffd9d0);}
+  .duo .who .char{width:130px; height:150px; display:block;}
+  .duo .who b{font-size:16px;}
+  .duo .who small{color:#8aa0b4; font-weight:700;}
+  .modeRow{display:flex; gap:12px; justify-content:center; margin:6px 0 2px; flex-wrap:wrap;}
+  .modeBtn{
+    border:3px solid #ffd9b0; background:#fff; border-radius:16px; padding:10px 16px;
+    font-weight:900; font-size:16px; cursor:pointer; color:var(--accent-d);
+    font-family:inherit; display:flex; flex-direction:column; align-items:center; gap:2px;
+    transition:transform .08s;
+  }
+  .modeBtn small{font-size:11px; color:#b08a6a; font-weight:700;}
+  .modeBtn:active{transform:translateY(2px);}
+  .modeBtn.active{background:linear-gradient(90deg,#ff7a59,#ef5a36); color:#fff; border-color:#ef5a36; box-shadow:0 5px 0 #c8451f;}
+  .modeBtn.active small{color:#ffe6d8;}
+  .rules{
+    text-align:left; background:#f4faff; border-radius:14px; padding:12px 16px; margin:10px 0 0;
+    font-size:15px; line-height:1.8; color:#44586c;
+  }
+  .btn{
+    margin-top:14px; border:none; border-radius:16px; padding:14px 34px; font-size:20px; font-weight:900;
+    background:linear-gradient(90deg,#ff7a59,#ef5a36); color:#fff; cursor:pointer;
+    box-shadow:0 5px 0 #c8451f; letter-spacing:1px; font-family:inherit;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:0 2px 0 #c8451f;}
+  .tag{display:inline-block; background:#fff3e6; color:var(--accent-d); border-radius:999px; padding:4px 12px; font-weight:800; font-size:14px;}
+  .banner{background:transparent; box-shadow:none; border:none;}
+  .banner .big{
+    font-size:52px; font-weight:900; color:#fff; margin:0;
+    text-shadow:0 5px 0 rgba(220,90,40,.95), 0 12px 30px rgba(0,0,0,.35);
+    animation:bannerIn .6s ease;
+  }
+  .banner .sub{
+    display:inline-block; background:#fff; border-radius:999px; padding:8px 22px;
+    font-weight:900; font-size:20px; color:var(--accent-d); margin-top:10px;
+    box-shadow:0 8px 20px rgba(0,0,0,.25);
+  }
+  @keyframes bannerIn{
+    0%{transform:scale(.4); opacity:0;} 60%{transform:scale(1.12);} 100%{transform:scale(1); opacity:1;}
+  }
+  .winnerImg{
+    width:170px; height:200px; border:6px solid #ffd66b; border-radius:20px;
+    background:transparent; box-shadow:0 10px 26px rgba(40,60,90,.3);
+    animation:bannerIn .6s ease; position:relative; overflow:hidden;
+  }
+  .winnerImg svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
+  .statRow{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:8px;}
+  .statRow .s{
+    background:#fff; border-radius:14px; padding:8px 16px; font-weight:800; color:#44586c;
+    box-shadow:0 4px 12px rgba(40,60,90,.12); font-size:15px;
+  }
+
+  /* ── 直屏（portrait） ── */
+  @media (orientation:portrait){
+    body{height:100vh; overflow:auto; padding:8px;}
+    .wrap{height:100%;}
+    .panel{height:100%;}
+    .hud{padding:6px 10px; gap:6px;}
+    .hud .title{font-size:15px;}
+    .hud .pill, .hud .stage-chip{font-size:11px; padding:3px 8px;}
+    .battle{flex:1 1 0;}
+    .fighter{height:40%; max-height:180px; width:auto; max-width:33%; bottom:5%;}
+    .fighter.fx1{left:6%;} .fighter.fx2{right:6%;}
+    .pHud{width:45%; top:3%; padding:5px 8px 6px; border-radius:12px;}
+    .pHudTop{font-size:11px;}
+    .pHudTop span{font-size:10px;}
+    .pHud .hpbar{height:9px; margin:3px 0 2px;}
+    .pHudFoot{font-size:10px;}
+    .vs{font-size:30px; top:40%;}
+    .stageName{top:3%; font-size:12px; padding:3px 10px;}
+    .raceTip{top:54%; font-size:12px; padding:4px 12px;}
+    .dmg{font-size:26px;}
+    .answer{grid-template-columns:1fr 1fr; gap:8px; padding:8px 10px 10px;}
+    .qCol{grid-column:1 / -1; order:-1; gap:3px; padding:2px 4px;}
+    .question{font-size:19px;}
+    .explain{font-size:11px;}
+    .hint{display:none;}
+    .zoneTitle{font-size:11px; padding:2px 8px;}
+    .zone{gap:6px;}
+    .choice{font-size:14px; min-height:38px; padding:6px 4px; border-radius:10px;}
+    .choice i{width:19px; height:19px; font-size:10px;}
+    .pstat{font-size:11px; min-height:15px;}
+    .overlay{padding:14px;}
+    .overlay .card{max-width:92vw; padding:18px 16px;}
+    .duo{gap:10px;}
+    .duo .who{width:140px;}
+    .duo .who .char{width:100px; height:120px;}
+    .card h1{font-size:24px;}
+    .rules{font-size:13px; line-height:1.7;}
+    .modeBtn{font-size:14px; padding:8px 12px;}
+  }
+
+  /* ── 窄螢幕橫屏 ── */
+  @media (max-width:820px) and (orientation:landscape){
+    body{padding:8px;}
+    .hud{padding:6px 10px;}
+    .hud .title{font-size:16px;}
+    .battle{flex:1 1 0;}
+    .fighter{max-height:48%; bottom:4%;}
+    .answer{gap:8px; padding:8px 10px;}
+    .question{font-size:20px;}
+    .explain{font-size:12px;}
+    .choice{font-size:13px; min-height:36px; padding:5px 4px;}
+    .hint{display:none;}
+  }
+
+  /* ── 主動技能 ── */
+  .skillRow{ display:flex; gap:5px; margin-top:3px; }
+  .skillBtn{
+    flex:1; border:none; border-radius:11px; padding:5px 2px 4px; cursor:pointer; font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; gap:1px;
+    background:#eef3ff; box-shadow:0 3px 0 #c3d2ea; transition:transform .05s, box-shadow .05s; position:relative;
+  }
+  .skillBtn .si{ font-size:18px; line-height:1; }
+  .skillBtn .sn{ font-size:11px; font-weight:900; color:#33445a; }
+  .skillBtn .sc{ font-size:10px; font-weight:900; color:#fff; background:#ef5a36; border-radius:999px; padding:1px 6px; min-width:16px; display:inline-block; }
+  .skillBtn:active{ transform:translateY(2px); box-shadow:0 1px 0 #c3d2ea; }
+  .skillBtn:disabled{ opacity:.5; cursor:default; }
+  .skillBtn:disabled .sc{ background:#9aa6b2; }
+  .skillBtn.ready{ background:linear-gradient(180deg,#fff3e6,#ffe2c6); box-shadow:0 3px 0 #e0a86a; }
+  .skillBtn.ready .sn{ color:#c8451f; }
+  .skillBtn.ready .si{ animation:skillReady 1.4s ease-in-out infinite; }
+  @keyframes skillReady{ 0%,100%{filter:drop-shadow(0 0 0 #ffb02e);} 50%{filter:drop-shadow(0 0 4px #ffb02e);} }
+  /* 已啟動（buff 等待生效）：金色硬邊發光，覆蓋 disabled 的變暗 */
+  .skillBtn.armed{ opacity:1; background:linear-gradient(180deg,#fff7d6,#ffe39a); box-shadow:0 0 0 3px #ffd24a, 0 3px 0 #c8451f; }
+  .skillBtn.armed .sn{ color:#a8341a; }
+  .skillBtn.armed .sc{ background:#c8451f; color:#fff; }
+  .skillBtn.armed .si{ animation:skillReady 1.1s ease-in-out infinite; }
+
+  /* 技能釋放提示 */
+  .skillFx{ position:absolute; z-index:6; font-weight:900; font-size:14px; color:#fff; background:rgba(40,28,70,.9); padding:4px 12px; border-radius:999px; pointer-events:none; opacity:0; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  .skillFx.show{ animation:skillPop 1.3s ease forwards; }
+  @keyframes skillPop{ 0%{opacity:0; transform:translateY(10px) scale(.8);} 18%{opacity:1; transform:translateY(0) scale(1);} 78%{opacity:1;} 100%{opacity:0; transform:translateY(-12px);} }
+
+  /* ── 合作模式：魔王與佈局 ── */
+  .fighter.fx3{ right:6%; bottom:3%; }
+  .battle:not(.coop) .fighter.fx3{ display:none; }
+  .battle.coop .fighter.fx1{ left:4%; }
+  .battle.coop .fighter.fx2{ left:24%; }
+  .pHud.boss{ background:rgba(226,206,255,.94); }
+  .pHud.boss .pHudTop b{ color:#6a1fb0; }
+  .pHud.boss .hpbar > i{ background:linear-gradient(90deg,#7b2fb0,#c79bff); }
+  .pHud.boss .hpbar > i.mid{ background:linear-gradient(90deg,#a259ff,#d9a8ff); }
+  .pHud.boss .hpbar > i.low{ background:linear-gradient(90deg,#e85d4a,#ff8a70); }
+
+  @media (orientation:portrait){
+    .skillBtn .si{ font-size:16px; }
+    .skillBtn .sn{ font-size:10px; }
+    .skillRow{ margin-top:2px; }
+    .skillFx{ font-size:12px; padding:3px 9px; }
+  }
+
+  /* ════════════════ 像素復古風覆寫 ════════════════ */
+  :root{
+    --ink:#241a33; --card:#fbf3e0; --line:#241a33;
+    --blue:#3a6fd8; --blue-d:#1d3f96; --red:#e0473b; --red-d:#9c241c;
+    --good:#2fae5e; --warn:#ffb02e; --accent:#ff8a3d; --accent-d:#c8451f; --gold:#ffce4a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    font-family:"Courier New",ui-monospace,Menlo,Consolas,monospace;
+    background:#1c1530; color:var(--ink); letter-spacing:.4px;
+  }
+  /* CRT 掃描線 */
+  body::after{
+    content:""; position:fixed; inset:0; z-index:9999; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.10) 0 2px, transparent 2px 4px);
+  }
+  /* 通用：移除圓角、加粗描邊硬邊 */
+  .panel, .card, .overlay, .modeBtn, .btn, .choice, .skillBtn, .pHud, .tag, .vs, .stageName,
+  .raceTip, .bossAtk, .skillFx, .explain, .zoneTitle, .duo .who, .rules, .ruleBox, .qTag, .pstat{
+    border-radius:0 !important;
+  }
+  .panel{
+    background:var(--card); border:4px solid var(--line);
+    box-shadow:8px 8px 0 rgba(36,26,51,.45);
+  }
+  /* 角色像素化：保持方塊清晰 */
+  .fighter svg, .char{ shape-rendering:crispEdges; image-rendering:pixelated; }
+  /* 頭頂血條膠囊 → 方塊 */
+  .pHud{
+    background:#fbf3e0; border:3px solid var(--line);
+    box-shadow:4px 4px 0 rgba(36,26,51,.4); padding:6px 9px 7px;
+  }
+  .pHud.boss{ background:#efe4ff; }
+  .pHud .hpbar{
+    background:#241a33; border:2px solid var(--line); height:13px; position:relative; overflow:hidden;
+  }
+  .pHud .hpbar > i{ border-radius:0; display:block; height:100%; }
+  .pHud .hpbar::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image:repeating-linear-gradient(90deg, transparent 0 13px, rgba(0,0,0,.32) 13px 15px);
+  }
+  /* 開始 / 勝利 / 規則卡 */
+  .card{
+    background:var(--card) !important; border:4px solid var(--line) !important;
+    box-shadow:8px 8px 0 rgba(36,26,51,.45) !important; padding:22px 26px !important;
+  }
+  .card h1, .card h2{ letter-spacing:2px; text-transform:uppercase; color:var(--accent-d) !important; }
+  .card p{ color:#3a2f4a; }
+  .overlay{ background:rgba(18,12,32,.72); }
+  .rules{ background:#f0e9d4 !important; border:3px solid var(--line); color:#3a2f4a !important; }
+  .duo .who{ border:3px solid var(--line); box-shadow:4px 4px 0 rgba(36,26,51,.4); border-radius:0 !important; }
+  .duo .who.p1{ background:#dfeaff !important; } .duo .who.p2{ background:#ffe1da !important; }
+  /* 模式按鈕 */
+  .modeBtn{
+    border:3px solid var(--line) !important; background:#fff !important; color:var(--accent-d) !important;
+    box-shadow:4px 4px 0 rgba(36,26,51,.4) !important; font-family:inherit !important;
+  }
+  .modeBtn small{ color:#7a5a3a !important; }
+  .modeBtn.active{ background:var(--accent) !important; color:#fff !important; border-color:var(--line) !important; box-shadow:4px 4px 0 var(--accent-d) !important; }
+  .modeBtn.active small{ color:#fff !important; }
+  /* 主按鈕 */
+  .btn, .startBtn{
+    border:3px solid var(--line) !important; background:var(--accent) !important; color:#fff !important;
+    box-shadow:4px 4px 0 var(--accent-d) !important; font-family:inherit !important; letter-spacing:1px;
+    border-radius:0 !important;
+  }
+  .btn:active, .startBtn:active, .modeBtn:active{ transform:translate(2px,2px); box-shadow:2px 2px 0 var(--accent-d) !important; }
+  /* 作答選項 */
+  .zoneTitle{ border:2px solid var(--line); }
+  .p1col .zoneTitle{ background:#dfeaff; color:var(--blue-d) !important; }
+  .p2col .zoneTitle{ background:#ffe1da; color:var(--red-d) !important; }
+  .choice{
+    border:3px solid var(--line) !important; box-shadow:4px 4px 0 rgba(36,26,51,.35) !important;
+    font-family:inherit !important;
+  }
+  .p1col .choice{ box-shadow:4px 4px 0 #1d3f96 !important; }
+  .p2col .choice{ box-shadow:4px 4px 0 #9c241c !important; }
+  .choice.correct{ box-shadow:4px 4px 0 #168f49 !important; }
+  .choice.wrong{ box-shadow:4px 4px 0 #a52c1c !important; }
+  /* 技能按鈕 */
+  .skillBtn{
+    border:3px solid var(--line) !important; background:#fff !important;
+    box-shadow:3px 3px 0 rgba(36,26,51,.35) !important; font-family:inherit !important;
+  }
+  .skillBtn.ready{ background:#ffe6c2 !important; box-shadow:3px 3px 0 #c8451f !important; }
+  .skillBtn.armed{ background:#fff3c4 !important; box-shadow:0 0 0 3px #ffd24a, 3px 3px 0 #c8451f !important; opacity:1 !important; }
+  .skillFx{ border:3px solid var(--line); background:rgba(40,28,70,.95) !important; }
+  /* 飄字更硬 */
+  .dmg{ font-family:inherit; -webkit-text-stroke:2px #241a33; paint-order:stroke fill; }
+  .tag{ background:#ffe3c2; border:2px solid var(--line); color:var(--accent-d) !important; }
+  .vs, .stageName, .raceTip, .bossAtk{ border:3px solid var(--line); background:var(--card); }
+  .stageName{ color:var(--accent-d) !important; }
+  .vs{ background:var(--accent); color:#fff; }
+  .bossAtk{ background:var(--red); color:#fff; border-color:var(--line); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <div class="hud">
+      <div class="title">⚔️ 代數雙人對決</div>
+      <div class="grow"></div>
+      <div class="pill" id="roundPill">第 1 題</div>
+      <div class="stage-chip" id="stageChip">階段一・代數式</div>
+    </div>
+
+    <!-- 角色 / 背景 SVG 定義（系統原生渲染，無外部圖片） -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="mageHat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fa3f5"/><stop offset=".55" stop-color="#3a6fd0"/><stop offset="1" stop-color="#23489f"/></linearGradient>
+        <linearGradient id="mageRobe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5e92ee"/><stop offset=".5" stop-color="#3f6fcf"/><stop offset="1" stop-color="#23489c"/></linearGradient>
+        <radialGradient id="mageOrb" cx="0.38" cy="0.36" r="0.75"><stop offset="0" stop-color="#f2faff"/><stop offset=".45" stop-color="#9fd2ff"/><stop offset="1" stop-color="#2f7fd6"/></radialGradient>
+        <linearGradient id="knightHelm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff857a"/><stop offset=".55" stop-color="#e8463a"/><stop offset="1" stop-color="#b8261d"/></linearGradient>
+        <linearGradient id="knightArmor" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f66a5f"/><stop offset=".5" stop-color="#d8382b"/><stop offset="1" stop-color="#a82219"/></linearGradient>
+        <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0b8"/><stop offset=".5" stop-color="#ffd464"/><stop offset="1" stop-color="#e0a52e"/></linearGradient>
+        <linearGradient id="staff" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c08a4e"/><stop offset=".5" stop-color="#9a6a2a"/><stop offset="1" stop-color="#6b4519"/></linearGradient>
+        <radialGradient id="skin" cx="0.4" cy="0.34" r="0.85"><stop offset="0" stop-color="#ffe9d4"/><stop offset=".6" stop-color="#f6c79e"/><stop offset="1" stop-color="#e0a373"/></radialGradient>
+        <radialGradient id="shieldGrad" cx="0.4" cy="0.36" r="0.8"><stop offset="0" stop-color="#fff3c0"/><stop offset=".55" stop-color="#ffd564"/><stop offset="1" stop-color="#d99f2c"/></radialGradient>
+        <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f4f8fb"/><stop offset=".5" stop-color="#cdd7e0"/><stop offset="1" stop-color="#9aa6b2"/></linearGradient>
+        <radialGradient id="bossBody" cx="0.4" cy="0.34" r="0.85"><stop offset="0" stop-color="#c79bff"/><stop offset=".55" stop-color="#7b2fb0"/><stop offset="1" stop-color="#3d1466"/></radialGradient>
+        <linearGradient id="bossHorn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3c4ff"/><stop offset="1" stop-color="#7b2fb0"/></linearGradient>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe9ff"/><stop offset="1" stop-color="#eafaff"/></linearGradient>
+        <filter id="soft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="6"/></filter>
+      </defs>
+
+      <!-- 藍隊法師（Q 版・大頭短身） -->
+                              <symbol id="char-mage" viewBox="0 0 240 320">
+<g shape-rendering="crispEdges">
+<rect x="100" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="20" width="10" height="10" fill="#1b3f8c"/>
+<rect x="120" y="20" width="10" height="10" fill="#1b3f8c"/>
+<rect x="130" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="210" y="20" width="10" height="10" fill="#8fe3ff"/>
+<rect x="220" y="20" width="10" height="10" fill="#8fe3ff"/>
+<rect x="90" y="30" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="30" width="10" height="10" fill="#1b3f8c"/>
+<rect x="110" y="30" width="10" height="10" fill="#1b3f8c"/>
+<rect x="120" y="30" width="10" height="10" fill="#1b3f8c"/>
+<rect x="130" y="30" width="10" height="10" fill="#1b3f8c"/>
+<rect x="140" y="30" width="10" height="10" fill="#241a33"/>
+<rect x="210" y="30" width="10" height="10" fill="#8fe3ff"/>
+<rect x="220" y="30" width="10" height="10" fill="#8fe3ff"/>
+<rect x="80" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="40" width="10" height="10" fill="#1b3f8c"/>
+<rect x="100" y="40" width="10" height="10" fill="#1b3f8c"/>
+<rect x="110" y="40" width="10" height="10" fill="#1b3f8c"/>
+<rect x="120" y="40" width="10" height="10" fill="#1b3f8c"/>
+<rect x="130" y="40" width="10" height="10" fill="#1b3f8c"/>
+<rect x="140" y="40" width="10" height="10" fill="#1b3f8c"/>
+<rect x="150" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="210" y="40" width="10" height="10" fill="#8fe3ff"/>
+<rect x="220" y="40" width="10" height="10" fill="#8fe3ff"/>
+<rect x="70" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="50" width="10" height="10" fill="#1b3f8c"/>
+<rect x="90" y="50" width="10" height="10" fill="#1b3f8c"/>
+<rect x="100" y="50" width="10" height="10" fill="#1b3f8c"/>
+<rect x="110" y="50" width="10" height="10" fill="#1b3f8c"/>
+<rect x="120" y="50" width="10" height="10" fill="#1b3f8c"/>
+<rect x="130" y="50" width="10" height="10" fill="#1b3f8c"/>
+<rect x="140" y="50" width="10" height="10" fill="#1b3f8c"/>
+<rect x="150" y="50" width="10" height="10" fill="#1b3f8c"/>
+<rect x="160" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="210" y="50" width="10" height="10" fill="#8fe3ff"/>
+<rect x="220" y="50" width="10" height="10" fill="#8fe3ff"/>
+<rect x="60" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="80" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="90" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="100" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="110" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="120" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="130" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="140" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="150" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="160" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="170" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="180" y="60" width="10" height="10" fill="#1b3f8c"/>
+<rect x="190" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="60" width="10" height="10" fill="#9a6a2a"/>
+<rect x="30" y="70" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="50" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="60" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="70" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="80" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="90" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="100" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="110" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="120" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="130" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="140" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="150" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="160" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="170" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="180" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="190" y="70" width="10" height="10" fill="#1b3f8c"/>
+<rect x="200" y="70" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="70" width="10" height="10" fill="#9a6a2a"/>
+<rect x="40" y="80" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="60" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="70" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="80" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="90" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="100" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="110" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="120" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="130" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="140" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="150" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="160" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="170" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="180" y="80" width="10" height="10" fill="#1b3f8c"/>
+<rect x="190" y="80" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="80" width="10" height="10" fill="#9a6a2a"/>
+<rect x="70" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="90" width="10" height="10" fill="#f6c79e"/>
+<rect x="90" y="90" width="10" height="10" fill="#f6c79e"/>
+<rect x="100" y="90" width="10" height="10" fill="#f6c79e"/>
+<rect x="110" y="90" width="10" height="10" fill="#f6c79e"/>
+<rect x="120" y="90" width="10" height="10" fill="#f6c79e"/>
+<rect x="130" y="90" width="10" height="10" fill="#f6c79e"/>
+<rect x="140" y="90" width="10" height="10" fill="#f6c79e"/>
+<rect x="150" y="90" width="10" height="10" fill="#f6c79e"/>
+<rect x="160" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="90" width="10" height="10" fill="#9a6a2a"/>
+<rect x="60" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="80" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="90" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="100" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="110" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="120" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="130" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="140" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="150" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="160" y="100" width="10" height="10" fill="#f6c79e"/>
+<rect x="170" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="100" width="10" height="10" fill="#9a6a2a"/>
+<rect x="70" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="110" width="10" height="10" fill="#f6c79e"/>
+<rect x="90" y="110" width="10" height="10" fill="#f6c79e"/>
+<rect x="100" y="110" width="10" height="10" fill="#f6c79e"/>
+<rect x="110" y="110" width="10" height="10" fill="#f6c79e"/>
+<rect x="120" y="110" width="10" height="10" fill="#f6c79e"/>
+<rect x="130" y="110" width="10" height="10" fill="#f6c79e"/>
+<rect x="140" y="110" width="10" height="10" fill="#f6c79e"/>
+<rect x="150" y="110" width="10" height="10" fill="#f6c79e"/>
+<rect x="160" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="110" width="10" height="10" fill="#9a6a2a"/>
+<rect x="70" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="120" width="10" height="10" fill="#f6c79e"/>
+<rect x="90" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="120" width="10" height="10" fill="#f6c79e"/>
+<rect x="120" y="120" width="10" height="10" fill="#f6c79e"/>
+<rect x="130" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="120" width="10" height="10" fill="#f6c79e"/>
+<rect x="160" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="120" width="10" height="10" fill="#9a6a2a"/>
+<rect x="70" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="130" width="10" height="10" fill="#f6c79e"/>
+<rect x="90" y="130" width="10" height="10" fill="#f6c79e"/>
+<rect x="100" y="130" width="10" height="10" fill="#f6c79e"/>
+<rect x="110" y="130" width="10" height="10" fill="#f6c79e"/>
+<rect x="120" y="130" width="10" height="10" fill="#f6c79e"/>
+<rect x="130" y="130" width="10" height="10" fill="#f6c79e"/>
+<rect x="140" y="130" width="10" height="10" fill="#f6c79e"/>
+<rect x="150" y="130" width="10" height="10" fill="#f6c79e"/>
+<rect x="160" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="130" width="10" height="10" fill="#9a6a2a"/>
+<rect x="70" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="140" width="10" height="10" fill="#f6c79e"/>
+<rect x="90" y="140" width="10" height="10" fill="#f6c79e"/>
+<rect x="100" y="140" width="10" height="10" fill="#f6c79e"/>
+<rect x="110" y="140" width="10" height="10" fill="#f6c79e"/>
+<rect x="120" y="140" width="10" height="10" fill="#f6c79e"/>
+<rect x="130" y="140" width="10" height="10" fill="#f6c79e"/>
+<rect x="140" y="140" width="10" height="10" fill="#f6c79e"/>
+<rect x="150" y="140" width="10" height="10" fill="#f6c79e"/>
+<rect x="160" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="140" width="10" height="10" fill="#9a6a2a"/>
+<rect x="80" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="150" width="10" height="10" fill="#e8eef5"/>
+<rect x="100" y="150" width="10" height="10" fill="#e8eef5"/>
+<rect x="110" y="150" width="10" height="10" fill="#e8eef5"/>
+<rect x="120" y="150" width="10" height="10" fill="#e8eef5"/>
+<rect x="130" y="150" width="10" height="10" fill="#e8eef5"/>
+<rect x="140" y="150" width="10" height="10" fill="#e8eef5"/>
+<rect x="150" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="150" width="10" height="10" fill="#9a6a2a"/>
+<rect x="80" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="160" width="10" height="10" fill="#e8eef5"/>
+<rect x="100" y="160" width="10" height="10" fill="#e8eef5"/>
+<rect x="110" y="160" width="10" height="10" fill="#e8eef5"/>
+<rect x="120" y="160" width="10" height="10" fill="#e8eef5"/>
+<rect x="130" y="160" width="10" height="10" fill="#e8eef5"/>
+<rect x="140" y="160" width="10" height="10" fill="#e8eef5"/>
+<rect x="150" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="160" width="10" height="10" fill="#9a6a2a"/>
+<rect x="90" y="170" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="170" width="10" height="10" fill="#e8eef5"/>
+<rect x="110" y="170" width="10" height="10" fill="#e8eef5"/>
+<rect x="120" y="170" width="10" height="10" fill="#e8eef5"/>
+<rect x="130" y="170" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="170" width="10" height="10" fill="#9a6a2a"/>
+<rect x="50" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="120" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="130" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="200" y="180" width="10" height="10" fill="#2f6fd0"/>
+<rect x="210" y="180" width="10" height="10" fill="#f6c79e"/>
+<rect x="220" y="180" width="10" height="10" fill="#9a6a2a"/>
+<rect x="50" y="190" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="190" width="10" height="10" fill="#ffd464"/>
+<rect x="120" y="190" width="10" height="10" fill="#ffd464"/>
+<rect x="130" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="190" width="10" height="10" fill="#241a33"/>
+<rect x="200" y="190" width="10" height="10" fill="#2f6fd0"/>
+<rect x="210" y="190" width="10" height="10" fill="#f6c79e"/>
+<rect x="220" y="190" width="10" height="10" fill="#9a6a2a"/>
+<rect x="50" y="200" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="200" width="10" height="10" fill="#ffd464"/>
+<rect x="120" y="200" width="10" height="10" fill="#ffd464"/>
+<rect x="130" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="200" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="200" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="200" width="10" height="10" fill="#9a6a2a"/>
+<rect x="40" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="60" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="120" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="130" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="210" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="210" width="10" height="10" fill="#9a6a2a"/>
+<rect x="40" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="60" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="120" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="130" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="220" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="220" width="10" height="10" fill="#9a6a2a"/>
+<rect x="30" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="50" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="60" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="120" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="130" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="230" width="10" height="10" fill="#2f6fd0"/>
+<rect x="200" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="230" width="10" height="10" fill="#9a6a2a"/>
+<rect x="30" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="50" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="60" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="120" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="130" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="240" width="10" height="10" fill="#2f6fd0"/>
+<rect x="200" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="240" width="10" height="10" fill="#9a6a2a"/>
+<rect x="20" y="250" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="40" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="50" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="60" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="120" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="130" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="200" y="250" width="10" height="10" fill="#2f6fd0"/>
+<rect x="210" y="250" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="250" width="10" height="10" fill="#9a6a2a"/>
+<rect x="20" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="40" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="50" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="60" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="120" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="130" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="200" y="260" width="10" height="10" fill="#2f6fd0"/>
+<rect x="210" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="260" width="10" height="10" fill="#9a6a2a"/>
+<rect x="20" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="40" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="50" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="60" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="70" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="80" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="90" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="100" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="110" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="120" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="130" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="140" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="150" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="160" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="170" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="180" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="190" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="200" y="270" width="10" height="10" fill="#2f6fd0"/>
+<rect x="210" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="270" width="10" height="10" fill="#9a6a2a"/>
+<rect x="80" y="280" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="280" width="10" height="10" fill="#1b3f8c"/>
+<rect x="100" y="280" width="10" height="10" fill="#1b3f8c"/>
+<rect x="110" y="280" width="10" height="10" fill="#1b3f8c"/>
+<rect x="120" y="280" width="10" height="10" fill="#1b3f8c"/>
+<rect x="130" y="280" width="10" height="10" fill="#1b3f8c"/>
+<rect x="140" y="280" width="10" height="10" fill="#1b3f8c"/>
+<rect x="150" y="280" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="280" width="10" height="10" fill="#9a6a2a"/>
+</g>
+      </symbol>
+
+      <!-- 紅隊騎士（Q 版・大頭短身） -->
+      <symbol id="char-knight" viewBox="0 0 240 320">
+<g shape-rendering="crispEdges">
+<rect x="100" y="0" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="0" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="0" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="0" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="10" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="10" width="10" height="10" fill="#9c241c"/>
+<rect x="120" y="10" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="10" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="20" width="10" height="10" fill="#9c241c"/>
+<rect x="120" y="20" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="30" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="30" width="10" height="10" fill="#fbfbff"/>
+<rect x="80" y="30" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="30" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="30" width="10" height="10" fill="#fbfbff"/>
+<rect x="110" y="30" width="10" height="10" fill="#ffce4a"/>
+<rect x="120" y="30" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="30" width="10" height="10" fill="#fbfbff"/>
+<rect x="140" y="30" width="10" height="10" fill="#fbfbff"/>
+<rect x="150" y="30" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="30" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="30" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="40" width="10" height="10" fill="#c2ccd8"/>
+<rect x="80" y="40" width="10" height="10" fill="#c2ccd8"/>
+<rect x="90" y="40" width="10" height="10" fill="#c2ccd8"/>
+<rect x="100" y="40" width="10" height="10" fill="#c2ccd8"/>
+<rect x="110" y="40" width="10" height="10" fill="#c2ccd8"/>
+<rect x="120" y="40" width="10" height="10" fill="#c2ccd8"/>
+<rect x="130" y="40" width="10" height="10" fill="#8a93a3"/>
+<rect x="140" y="40" width="10" height="10" fill="#8a93a3"/>
+<rect x="150" y="40" width="10" height="10" fill="#8a93a3"/>
+<rect x="160" y="40" width="10" height="10" fill="#8a93a3"/>
+<rect x="170" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="50" width="10" height="10" fill="#c2ccd8"/>
+<rect x="80" y="50" width="10" height="10" fill="#c2ccd8"/>
+<rect x="90" y="50" width="10" height="10" fill="#c2ccd8"/>
+<rect x="100" y="50" width="10" height="10" fill="#c2ccd8"/>
+<rect x="110" y="50" width="10" height="10" fill="#c2ccd8"/>
+<rect x="120" y="50" width="10" height="10" fill="#c2ccd8"/>
+<rect x="130" y="50" width="10" height="10" fill="#8a93a3"/>
+<rect x="140" y="50" width="10" height="10" fill="#8a93a3"/>
+<rect x="150" y="50" width="10" height="10" fill="#8a93a3"/>
+<rect x="160" y="50" width="10" height="10" fill="#8a93a3"/>
+<rect x="170" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="60" width="10" height="10" fill="#c2ccd8"/>
+<rect x="80" y="60" width="10" height="10" fill="#c2ccd8"/>
+<rect x="90" y="60" width="10" height="10" fill="#c2ccd8"/>
+<rect x="100" y="60" width="10" height="10" fill="#c2ccd8"/>
+<rect x="110" y="60" width="10" height="10" fill="#c2ccd8"/>
+<rect x="120" y="60" width="10" height="10" fill="#c2ccd8"/>
+<rect x="130" y="60" width="10" height="10" fill="#8a93a3"/>
+<rect x="140" y="60" width="10" height="10" fill="#8a93a3"/>
+<rect x="150" y="60" width="10" height="10" fill="#8a93a3"/>
+<rect x="160" y="60" width="10" height="10" fill="#8a93a3"/>
+<rect x="170" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="70" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="70" width="10" height="10" fill="#c2ccd8"/>
+<rect x="80" y="70" width="10" height="10" fill="#c2ccd8"/>
+<rect x="90" y="70" width="10" height="10" fill="#c2ccd8"/>
+<rect x="100" y="70" width="10" height="10" fill="#c2ccd8"/>
+<rect x="110" y="70" width="10" height="10" fill="#c2ccd8"/>
+<rect x="120" y="70" width="10" height="10" fill="#c2ccd8"/>
+<rect x="130" y="70" width="10" height="10" fill="#8a93a3"/>
+<rect x="140" y="70" width="10" height="10" fill="#8a93a3"/>
+<rect x="150" y="70" width="10" height="10" fill="#8a93a3"/>
+<rect x="160" y="70" width="10" height="10" fill="#8a93a3"/>
+<rect x="170" y="70" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="80" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="80" width="10" height="10" fill="#c2ccd8"/>
+<rect x="80" y="80" width="10" height="10" fill="#c2ccd8"/>
+<rect x="90" y="80" width="10" height="10" fill="#c2ccd8"/>
+<rect x="100" y="80" width="10" height="10" fill="#c2ccd8"/>
+<rect x="110" y="80" width="10" height="10" fill="#c2ccd8"/>
+<rect x="120" y="80" width="10" height="10" fill="#c2ccd8"/>
+<rect x="130" y="80" width="10" height="10" fill="#8a93a3"/>
+<rect x="140" y="80" width="10" height="10" fill="#8a93a3"/>
+<rect x="150" y="80" width="10" height="10" fill="#8a93a3"/>
+<rect x="160" y="80" width="10" height="10" fill="#8a93a3"/>
+<rect x="170" y="80" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="80" width="10" height="10" fill="#241a33"/>
+<rect x="200" y="80" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="90" width="10" height="10" fill="#c2ccd8"/>
+<rect x="80" y="90" width="10" height="10" fill="#c2ccd8"/>
+<rect x="90" y="90" width="10" height="10" fill="#c2ccd8"/>
+<rect x="100" y="90" width="10" height="10" fill="#c2ccd8"/>
+<rect x="110" y="90" width="10" height="10" fill="#c2ccd8"/>
+<rect x="120" y="90" width="10" height="10" fill="#c2ccd8"/>
+<rect x="130" y="90" width="10" height="10" fill="#8a93a3"/>
+<rect x="140" y="90" width="10" height="10" fill="#8a93a3"/>
+<rect x="150" y="90" width="10" height="10" fill="#8a93a3"/>
+<rect x="160" y="90" width="10" height="10" fill="#8a93a3"/>
+<rect x="170" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="90" width="10" height="10" fill="#fbfbff"/>
+<rect x="200" y="90" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="100" width="10" height="10" fill="#c2ccd8"/>
+<rect x="80" y="100" width="10" height="10" fill="#c2ccd8"/>
+<rect x="90" y="100" width="10" height="10" fill="#c2ccd8"/>
+<rect x="100" y="100" width="10" height="10" fill="#c2ccd8"/>
+<rect x="110" y="100" width="10" height="10" fill="#c2ccd8"/>
+<rect x="120" y="100" width="10" height="10" fill="#c2ccd8"/>
+<rect x="130" y="100" width="10" height="10" fill="#8a93a3"/>
+<rect x="140" y="100" width="10" height="10" fill="#8a93a3"/>
+<rect x="150" y="100" width="10" height="10" fill="#8a93a3"/>
+<rect x="160" y="100" width="10" height="10" fill="#8a93a3"/>
+<rect x="170" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="100" width="10" height="10" fill="#fbfbff"/>
+<rect x="200" y="100" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="110" width="10" height="10" fill="#f2c290"/>
+<rect x="100" y="110" width="10" height="10" fill="#f2c290"/>
+<rect x="110" y="110" width="10" height="10" fill="#f2c290"/>
+<rect x="120" y="110" width="10" height="10" fill="#f2c290"/>
+<rect x="130" y="110" width="10" height="10" fill="#f2c290"/>
+<rect x="140" y="110" width="10" height="10" fill="#f2c290"/>
+<rect x="150" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="200" y="110" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="130" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="200" y="120" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="130" width="10" height="10" fill="#f2c290"/>
+<rect x="100" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="130" width="10" height="10" fill="#fbfbff"/>
+<rect x="120" y="130" width="10" height="10" fill="#f2c290"/>
+<rect x="130" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="130" width="10" height="10" fill="#fbfbff"/>
+<rect x="150" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="130" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="130" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="140" width="10" height="10" fill="#f2c290"/>
+<rect x="100" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="140" width="10" height="10" fill="#f2c290"/>
+<rect x="130" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="140" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="140" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="150" width="10" height="10" fill="#f2c290"/>
+<rect x="100" y="150" width="10" height="10" fill="#f2c290"/>
+<rect x="110" y="150" width="10" height="10" fill="#f2c290"/>
+<rect x="120" y="150" width="10" height="10" fill="#f2c290"/>
+<rect x="130" y="150" width="10" height="10" fill="#f2c290"/>
+<rect x="140" y="150" width="10" height="10" fill="#f2c290"/>
+<rect x="150" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="150" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="150" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="160" width="10" height="10" fill="#d99a63"/>
+<rect x="100" y="160" width="10" height="10" fill="#d99a63"/>
+<rect x="110" y="160" width="10" height="10" fill="#d99a63"/>
+<rect x="120" y="160" width="10" height="10" fill="#d99a63"/>
+<rect x="130" y="160" width="10" height="10" fill="#d99a63"/>
+<rect x="140" y="160" width="10" height="10" fill="#d99a63"/>
+<rect x="150" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="160" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="160" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="170" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="170" width="10" height="10" fill="#ffce4a"/>
+<rect x="70" y="170" width="10" height="10" fill="#ffce4a"/>
+<rect x="80" y="170" width="10" height="10" fill="#ffce4a"/>
+<rect x="90" y="170" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="170" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="170" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="170" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="170" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="170" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="170" width="10" height="10" fill="#ffce4a"/>
+<rect x="160" y="170" width="10" height="10" fill="#ffce4a"/>
+<rect x="170" y="170" width="10" height="10" fill="#ffce4a"/>
+<rect x="180" y="170" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="170" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="170" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="170" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="180" width="10" height="10" fill="#ffce4a"/>
+<rect x="70" y="180" width="10" height="10" fill="#ffce4a"/>
+<rect x="80" y="180" width="10" height="10" fill="#ffce4a"/>
+<rect x="90" y="180" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="180" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="180" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="180" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="180" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="180" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="180" width="10" height="10" fill="#ffce4a"/>
+<rect x="160" y="180" width="10" height="10" fill="#ffce4a"/>
+<rect x="170" y="180" width="10" height="10" fill="#ffce4a"/>
+<rect x="180" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="180" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="180" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="190" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="190" width="10" height="10" fill="#8a93a3"/>
+<rect x="40" y="190" width="10" height="10" fill="#c2ccd8"/>
+<rect x="50" y="190" width="10" height="10" fill="#c2ccd8"/>
+<rect x="60" y="190" width="10" height="10" fill="#ffce4a"/>
+<rect x="70" y="190" width="10" height="10" fill="#ffce4a"/>
+<rect x="80" y="190" width="10" height="10" fill="#ffce4a"/>
+<rect x="90" y="190" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="190" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="190" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="190" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="190" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="190" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="190" width="10" height="10" fill="#ffce4a"/>
+<rect x="160" y="190" width="10" height="10" fill="#ffce4a"/>
+<rect x="170" y="190" width="10" height="10" fill="#ffce4a"/>
+<rect x="180" y="190" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="190" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="190" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="190" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="200" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="200" width="10" height="10" fill="#8a93a3"/>
+<rect x="40" y="200" width="10" height="10" fill="#c2ccd8"/>
+<rect x="50" y="200" width="10" height="10" fill="#c2ccd8"/>
+<rect x="60" y="200" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="200" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="200" width="10" height="10" fill="#e0473b"/>
+<rect x="90" y="200" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="200" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="200" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="200" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="200" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="200" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="200" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="200" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="200" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="200" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="200" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="200" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="200" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="210" width="10" height="10" fill="#8a93a3"/>
+<rect x="40" y="210" width="10" height="10" fill="#c2ccd8"/>
+<rect x="50" y="210" width="10" height="10" fill="#c2ccd8"/>
+<rect x="60" y="210" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="210" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="210" width="10" height="10" fill="#e0473b"/>
+<rect x="90" y="210" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="210" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="210" width="10" height="10" fill="#ffce4a"/>
+<rect x="120" y="210" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="210" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="210" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="210" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="210" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="210" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="210" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="210" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="220" width="10" height="10" fill="#8a93a3"/>
+<rect x="40" y="220" width="10" height="10" fill="#ffce4a"/>
+<rect x="50" y="220" width="10" height="10" fill="#c2ccd8"/>
+<rect x="60" y="220" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="220" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="220" width="10" height="10" fill="#e0473b"/>
+<rect x="90" y="220" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="220" width="10" height="10" fill="#ffce4a"/>
+<rect x="110" y="220" width="10" height="10" fill="#ffce4a"/>
+<rect x="120" y="220" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="220" width="10" height="10" fill="#ffce4a"/>
+<rect x="140" y="220" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="220" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="220" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="220" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="220" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="220" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="230" width="10" height="10" fill="#8a93a3"/>
+<rect x="40" y="230" width="10" height="10" fill="#c2ccd8"/>
+<rect x="50" y="230" width="10" height="10" fill="#c2ccd8"/>
+<rect x="60" y="230" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="230" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="230" width="10" height="10" fill="#e0473b"/>
+<rect x="90" y="230" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="230" width="10" height="10" fill="#ffce4a"/>
+<rect x="110" y="230" width="10" height="10" fill="#ffce4a"/>
+<rect x="120" y="230" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="230" width="10" height="10" fill="#ffce4a"/>
+<rect x="140" y="230" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="230" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="230" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="230" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="230" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="230" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="240" width="10" height="10" fill="#8a93a3"/>
+<rect x="40" y="240" width="10" height="10" fill="#c2ccd8"/>
+<rect x="50" y="240" width="10" height="10" fill="#c2ccd8"/>
+<rect x="60" y="240" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="240" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="240" width="10" height="10" fill="#e0473b"/>
+<rect x="90" y="240" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="240" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="240" width="10" height="10" fill="#ffce4a"/>
+<rect x="120" y="240" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="240" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="240" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="240" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="240" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="240" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="240" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="240" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="250" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="250" width="10" height="10" fill="#8a93a3"/>
+<rect x="40" y="250" width="10" height="10" fill="#c2ccd8"/>
+<rect x="50" y="250" width="10" height="10" fill="#c2ccd8"/>
+<rect x="60" y="250" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="250" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="250" width="10" height="10" fill="#e0473b"/>
+<rect x="90" y="250" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="250" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="120" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="250" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="250" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="250" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="250" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="250" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="190" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="200" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="210" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="220" y="250" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="70" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="80" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="90" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="100" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="110" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="120" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="140" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="150" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="160" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="170" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="180" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="190" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="200" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="210" y="260" width="10" height="10" fill="#ffce4a"/>
+<rect x="220" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="270" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="270" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="270" width="10" height="10" fill="#e0473b"/>
+<rect x="90" y="270" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="270" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="270" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="270" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="270" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="270" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="270" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="270" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="270" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="270" width="10" height="10" fill="#c2ccd8"/>
+<rect x="200" y="270" width="10" height="10" fill="#c2ccd8"/>
+<rect x="210" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="280" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="280" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="280" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="280" width="10" height="10" fill="#e0473b"/>
+<rect x="90" y="280" width="10" height="10" fill="#e0473b"/>
+<rect x="100" y="280" width="10" height="10" fill="#e0473b"/>
+<rect x="110" y="280" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="280" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="280" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="280" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="280" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="280" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="280" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="280" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="280" width="10" height="10" fill="#ffce4a"/>
+<rect x="200" y="280" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="290" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="290" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="290" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="290" width="10" height="10" fill="#9c241c"/>
+<rect x="90" y="290" width="10" height="10" fill="#9c241c"/>
+<rect x="100" y="290" width="10" height="10" fill="#9c241c"/>
+<rect x="110" y="290" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="290" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="290" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="290" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="290" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="290" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="290" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="290" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="290" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="300" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="300" width="10" height="10" fill="#e0473b"/>
+<rect x="70" y="300" width="10" height="10" fill="#e0473b"/>
+<rect x="80" y="300" width="10" height="10" fill="#9c241c"/>
+<rect x="90" y="300" width="10" height="10" fill="#9c241c"/>
+<rect x="100" y="300" width="10" height="10" fill="#9c241c"/>
+<rect x="110" y="300" width="10" height="10" fill="#e0473b"/>
+<rect x="120" y="300" width="10" height="10" fill="#e0473b"/>
+<rect x="130" y="300" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="300" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="300" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="300" width="10" height="10" fill="#9c241c"/>
+<rect x="170" y="300" width="10" height="10" fill="#9c241c"/>
+<rect x="180" y="300" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="310" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="310" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="310" width="10" height="10" fill="#9c241c"/>
+<rect x="90" y="310" width="10" height="10" fill="#9c241c"/>
+<rect x="100" y="310" width="10" height="10" fill="#9c241c"/>
+<rect x="110" y="310" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="310" width="10" height="10" fill="#241a33"/>
+<rect x="130" y="310" width="10" height="10" fill="#9c241c"/>
+<rect x="140" y="310" width="10" height="10" fill="#9c241c"/>
+<rect x="150" y="310" width="10" height="10" fill="#9c241c"/>
+<rect x="160" y="310" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="310" width="10" height="10" fill="#241a33"/>
+</g>
+      </symbol>
+
+      <!-- 代數魔王（Q 版・大圓頭獨眼萌凶） -->
+      <symbol id="char-boss" viewBox="0 0 240 320">
+<g shape-rendering="crispEdges">
+<rect x="50" y="10" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="10" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="10" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="10" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="20" width="10" height="10" fill="#ffce4a"/>
+<rect x="60" y="20" width="10" height="10" fill="#ffce4a"/>
+<rect x="70" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="20" width="10" height="10" fill="#ffce4a"/>
+<rect x="190" y="20" width="10" height="10" fill="#ffce4a"/>
+<rect x="200" y="20" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="30" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="30" width="10" height="10" fill="#ffce4a"/>
+<rect x="60" y="30" width="10" height="10" fill="#ffce4a"/>
+<rect x="70" y="30" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="30" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="30" width="10" height="10" fill="#ffce4a"/>
+<rect x="190" y="30" width="10" height="10" fill="#ffce4a"/>
+<rect x="200" y="30" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="40" width="10" height="10" fill="#ffce4a"/>
+<rect x="50" y="40" width="10" height="10" fill="#ffce4a"/>
+<rect x="60" y="40" width="10" height="10" fill="#ffce4a"/>
+<rect x="70" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="40" width="10" height="10" fill="#ffce4a"/>
+<rect x="190" y="40" width="10" height="10" fill="#ffce4a"/>
+<rect x="200" y="40" width="10" height="10" fill="#ffce4a"/>
+<rect x="210" y="40" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="50" width="10" height="10" fill="#ffce4a"/>
+<rect x="50" y="50" width="10" height="10" fill="#ffce4a"/>
+<rect x="60" y="50" width="10" height="10" fill="#ffce4a"/>
+<rect x="70" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="50" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="50" width="10" height="10" fill="#ffce4a"/>
+<rect x="190" y="50" width="10" height="10" fill="#ffce4a"/>
+<rect x="200" y="50" width="10" height="10" fill="#ffce4a"/>
+<rect x="210" y="50" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="60" width="10" height="10" fill="#ffce4a"/>
+<rect x="50" y="60" width="10" height="10" fill="#ffce4a"/>
+<rect x="60" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="90" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="100" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="110" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="120" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="140" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="150" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="160" y="60" width="10" height="10" fill="#9b4fe0"/>
+<rect x="170" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="190" y="60" width="10" height="10" fill="#ffce4a"/>
+<rect x="200" y="60" width="10" height="10" fill="#ffce4a"/>
+<rect x="210" y="60" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="70" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="70" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="90" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="100" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="110" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="120" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="140" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="150" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="160" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="170" y="70" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="70" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="70" width="10" height="10" fill="#241a33"/>
+<rect x="200" y="70" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="80" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="80" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="90" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="100" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="110" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="120" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="140" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="150" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="160" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="170" y="80" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="80" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="80" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="80" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="90" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="90" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="90" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="90" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="90" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="90" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="90" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="90" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="100" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="100" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="100" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="100" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="100" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="100" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="100" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="100" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="100" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="100" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="110" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="110" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="110" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="110" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="110" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="110" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="120" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="130" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="140" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="150" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="110" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="110" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="110" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="110" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="110" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="110" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="110" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="120" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="120" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="120" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="120" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="120" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="120" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="110" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="120" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="130" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="140" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="150" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="120" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="120" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="120" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="120" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="120" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="120" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="120" width="10" height="10" fill="#34105a"/>
+<rect x="230" y="120" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="130" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="130" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="130" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="130" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="130" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="130" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="130" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="130" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="130" width="10" height="10" fill="#fff27a"/>
+<rect x="110" y="130" width="10" height="10" fill="#fff27a"/>
+<rect x="120" y="130" width="10" height="10" fill="#fff27a"/>
+<rect x="130" y="130" width="10" height="10" fill="#fff27a"/>
+<rect x="140" y="130" width="10" height="10" fill="#fff27a"/>
+<rect x="150" y="130" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="130" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="130" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="130" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="130" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="130" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="130" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="130" width="10" height="10" fill="#34105a"/>
+<rect x="230" y="130" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="140" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="140" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="140" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="140" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="140" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="140" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="140" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="140" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="140" width="10" height="10" fill="#fff27a"/>
+<rect x="110" y="140" width="10" height="10" fill="#fbfbff"/>
+<rect x="120" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="130" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="140" width="10" height="10" fill="#fff27a"/>
+<rect x="150" y="140" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="140" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="140" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="140" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="140" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="140" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="140" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="140" width="10" height="10" fill="#34105a"/>
+<rect x="230" y="140" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="150" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="150" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="150" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="150" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="150" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="150" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="150" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="150" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="150" width="10" height="10" fill="#fff27a"/>
+<rect x="110" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="130" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="150" width="10" height="10" fill="#fff27a"/>
+<rect x="150" y="150" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="150" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="150" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="150" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="150" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="150" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="150" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="150" width="10" height="10" fill="#34105a"/>
+<rect x="230" y="150" width="10" height="10" fill="#241a33"/>
+<rect x="0" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="160" width="10" height="10" fill="#9b4fe0"/>
+<rect x="20" y="160" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="160" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="160" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="160" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="160" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="160" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="160" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="160" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="160" width="10" height="10" fill="#fff27a"/>
+<rect x="110" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="130" y="160" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="160" width="10" height="10" fill="#fff27a"/>
+<rect x="150" y="160" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="160" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="160" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="160" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="160" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="160" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="160" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="160" width="10" height="10" fill="#34105a"/>
+<rect x="230" y="160" width="10" height="10" fill="#34105a"/>
+<rect x="10" y="170" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="170" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="170" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="170" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="170" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="170" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="170" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="170" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="170" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="170" width="10" height="10" fill="#fff27a"/>
+<rect x="110" y="170" width="10" height="10" fill="#fff27a"/>
+<rect x="120" y="170" width="10" height="10" fill="#fff27a"/>
+<rect x="130" y="170" width="10" height="10" fill="#fff27a"/>
+<rect x="140" y="170" width="10" height="10" fill="#fff27a"/>
+<rect x="150" y="170" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="170" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="170" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="170" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="170" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="170" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="170" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="170" width="10" height="10" fill="#34105a"/>
+<rect x="230" y="170" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="180" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="180" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="180" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="180" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="180" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="180" width="10" height="10" fill="#ff8ad6"/>
+<rect x="80" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="90" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="110" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="120" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="130" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="140" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="150" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="180" width="10" height="10" fill="#fbfbff"/>
+<rect x="170" y="180" width="10" height="10" fill="#ff8ad6"/>
+<rect x="180" y="180" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="180" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="180" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="180" width="10" height="10" fill="#34105a"/>
+<rect x="220" y="180" width="10" height="10" fill="#34105a"/>
+<rect x="230" y="180" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="190" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="190" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="90" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="100" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="110" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="120" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="140" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="150" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="160" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="170" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="190" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="190" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="210" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="220" y="190" width="10" height="10" fill="#9b4fe0"/>
+<rect x="230" y="190" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="200" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="200" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="90" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="100" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="110" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="120" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="140" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="150" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="160" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="170" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="200" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="200" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="210" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="220" y="200" width="10" height="10" fill="#9b4fe0"/>
+<rect x="230" y="200" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="30" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="210" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="210" width="10" height="10" fill="#fbfbff"/>
+<rect x="100" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="210" width="10" height="10" fill="#fbfbff"/>
+<rect x="120" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="130" y="210" width="10" height="10" fill="#fbfbff"/>
+<rect x="140" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="210" width="10" height="10" fill="#fbfbff"/>
+<rect x="160" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="210" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="210" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="210" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="220" y="210" width="10" height="10" fill="#9b4fe0"/>
+<rect x="230" y="210" width="10" height="10" fill="#241a33"/>
+<rect x="10" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="220" width="10" height="10" fill="#9b4fe0"/>
+<rect x="40" y="220" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="220" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="220" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="220" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="130" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="220" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="220" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="220" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="220" width="10" height="10" fill="#9b4fe0"/>
+<rect x="210" y="220" width="10" height="10" fill="#9b4fe0"/>
+<rect x="220" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="230" y="220" width="10" height="10" fill="#241a33"/>
+<rect x="20" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="230" width="10" height="10" fill="#9b4fe0"/>
+<rect x="50" y="230" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="230" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="230" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="130" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="170" y="230" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="230" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="230" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="230" width="10" height="10" fill="#34105a"/>
+<rect x="210" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="220" y="230" width="10" height="10" fill="#241a33"/>
+<rect x="30" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="40" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="240" width="10" height="10" fill="#fff27a"/>
+<rect x="60" y="240" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="240" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="240" width="10" height="10" fill="#9b4fe0"/>
+<rect x="90" y="240" width="10" height="10" fill="#9b4fe0"/>
+<rect x="100" y="240" width="10" height="10" fill="#34105a"/>
+<rect x="110" y="240" width="10" height="10" fill="#34105a"/>
+<rect x="120" y="240" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="240" width="10" height="10" fill="#34105a"/>
+<rect x="140" y="240" width="10" height="10" fill="#34105a"/>
+<rect x="150" y="240" width="10" height="10" fill="#9b4fe0"/>
+<rect x="160" y="240" width="10" height="10" fill="#9b4fe0"/>
+<rect x="170" y="240" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="240" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="240" width="10" height="10" fill="#34105a"/>
+<rect x="200" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="210" y="240" width="10" height="10" fill="#241a33"/>
+<rect x="50" y="250" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="250" width="10" height="10" fill="#9b4fe0"/>
+<rect x="70" y="250" width="10" height="10" fill="#9b4fe0"/>
+<rect x="80" y="250" width="10" height="10" fill="#9b4fe0"/>
+<rect x="90" y="250" width="10" height="10" fill="#9b4fe0"/>
+<rect x="100" y="250" width="10" height="10" fill="#34105a"/>
+<rect x="110" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="120" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="130" y="250" width="10" height="10" fill="#ffce4a"/>
+<rect x="140" y="250" width="10" height="10" fill="#34105a"/>
+<rect x="150" y="250" width="10" height="10" fill="#9b4fe0"/>
+<rect x="160" y="250" width="10" height="10" fill="#9b4fe0"/>
+<rect x="170" y="250" width="10" height="10" fill="#9b4fe0"/>
+<rect x="180" y="250" width="10" height="10" fill="#34105a"/>
+<rect x="190" y="250" width="10" height="10" fill="#241a33"/>
+<rect x="60" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="70" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="260" width="10" height="10" fill="#9b4fe0"/>
+<rect x="90" y="260" width="10" height="10" fill="#9b4fe0"/>
+<rect x="100" y="260" width="10" height="10" fill="#34105a"/>
+<rect x="110" y="260" width="10" height="10" fill="#34105a"/>
+<rect x="120" y="260" width="10" height="10" fill="#34105a"/>
+<rect x="130" y="260" width="10" height="10" fill="#34105a"/>
+<rect x="140" y="260" width="10" height="10" fill="#34105a"/>
+<rect x="150" y="260" width="10" height="10" fill="#9b4fe0"/>
+<rect x="160" y="260" width="10" height="10" fill="#9b4fe0"/>
+<rect x="170" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="180" y="260" width="10" height="10" fill="#241a33"/>
+<rect x="80" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="90" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="100" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="110" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="270" width="10" height="10" fill="#9b4fe0"/>
+<rect x="130" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="140" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="150" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="160" y="270" width="10" height="10" fill="#241a33"/>
+<rect x="120" y="280" width="10" height="10" fill="#241a33"/>
+</g>
+      </symbol>
+    </svg>
+
+    <!-- 上半屏：戰場 -->
+    <div class="battle" id="battle">
+      <svg class="bg" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
+        <!-- 天空分層（硬邊色帶） -->
+        <rect x="0" y="0" width="1200" height="120" fill="#342a66"/>
+        <rect x="0" y="120" width="1200" height="120" fill="#4d3f8f"/>
+        <rect x="0" y="240" width="1200" height="100" fill="#6f5fb8"/>
+        <rect x="0" y="340" width="1200" height="90" fill="#9a86d6"/>
+        <!-- 像素太陽 -->
+        <rect x="1040" y="56" width="96" height="96" fill="#ffd24a"/>
+        <rect x="1058" y="74" width="60" height="60" fill="#ffe98a"/>
+        <!-- 像素雲 -->
+        <g fill="#eef0ff">
+          <rect x="160" y="150" width="40" height="40"/><rect x="200" y="130" width="60" height="40"/><rect x="260" y="150" width="44" height="36"/>
+          <rect x="780" y="110" width="44" height="38"/><rect x="824" y="92" width="64" height="40"/><rect x="888" y="110" width="40" height="36"/>
+        </g>
+        <!-- 遠山（方塊階梯） -->
+        <g fill="#5a8f3a">
+          <rect x="60" y="380" width="180" height="50"/><rect x="100" y="360" width="110" height="30"/>
+          <rect x="980" y="380" width="180" height="50"/><rect x="1020" y="360" width="110" height="30"/>
+        </g>
+        <!-- 地面 -->
+        <rect x="0" y="430" width="1200" height="40" fill="#3f8a2e"/>
+        <rect x="0" y="470" width="1200" height="140" fill="#6fc24a"/>
+        <!-- 像素草叢 -->
+        <g fill="#4f9e3a">
+          <rect x="300" y="470" width="14" height="14"/><rect x="322" y="476" width="12" height="12"/><rect x="640" y="468" width="14" height="14"/><rect x="900" y="474" width="12" height="12"/><rect x="560" y="480" width="12" height="12"/>
+        </g>
+        <!-- 像素樹 -->
+        <g>
+          <rect x="430" y="430" width="16" height="50" fill="#7a4a22"/>
+          <rect x="404" y="392" width="68" height="44" fill="#3f8a2e"/><rect x="420" y="372" width="40" height="30" fill="#4f9e3a"/>
+          <rect x="760" y="430" width="16" height="50" fill="#7a4a22"/>
+          <rect x="734" y="392" width="68" height="44" fill="#3f8a2e"/><rect x="750" y="372" width="40" height="30" fill="#4f9e3a"/>
+        </g>
+      </svg>
+      <div class="flash p1flash" id="flash1"></div>
+      <div class="flash p2flash" id="flash2"></div>
+      <div class="flash bossflash" id="flashBoss"></div>
+      <div class="flash bosshit" id="flashBossHit"></div>
+      <div class="stageName" id="stageName">第一階段：代數式</div>
+      <div class="vs" id="vs">VS</div>
+      <div class="raceTip" id="raceTip">⚡ 誰先答對，誰就攻擊！</div>
+      <div class="bossAtk" id="bossAtk">👹 魔王攻擊！</div>
+
+      <div class="pHud p1">
+        <div class="pHudTop"><b>🧙 1P 藍隊法師</b><span id="hp1num">HP 100 / 100</span></div>
+        <div class="hpbar"><i id="hp1"></i></div>
+        <div class="pHudFoot"><span>✔️ <b id="ok1">0</b></span><span>❌ <b id="no1">0</b></span><span class="st" id="streak1"></span></div>
+      </div>
+      <div class="pHud p2">
+        <div class="pHudTop"><b>⚔️ 2P 紅隊騎士</b><span id="hp2num">HP 100 / 100</span></div>
+        <div class="hpbar"><i id="hp2"></i></div>
+        <div class="pHudFoot"><span>✔️ <b id="ok2">0</b></span><span>❌ <b id="no2">0</b></span><span class="st" id="streak2"></span></div>
+      </div>
+
+      <div class="fighter fx1" id="f1"><svg viewBox="0 0 240 320" preserveAspectRatio="xMidYMax meet"><use href="#char-mage"/></svg></div>
+      <div class="fighter fx2" id="f2"><svg viewBox="0 0 240 320" preserveAspectRatio="xMidYMax meet"><use href="#char-knight"/></svg></div>
+      <div class="fighter fx3" id="f3"><svg viewBox="0 0 240 320" preserveAspectRatio="xMidYMax meet"><use href="#char-boss"/></svg></div>
+      <div class="dmg" id="dmg1" style="left:14%; bottom:40%;"></div>
+      <div class="dmg" id="dmg2" style="right:14%; bottom:40%;"></div>
+      <div class="dmg" id="dmg3" style="right:8%; bottom:44%;"></div>
+      <div class="skillFx" id="skillFx1" style="left:5%; top:7%;"></div>
+      <div class="skillFx" id="skillFx2" style="right:5%; top:7%;"></div>
+    </div>
+
+    <!-- 下半屏：作答區 -->
+    <div class="answer" id="answerArea">
+      <div class="zoneCol p1col">
+        <div class="zoneTitle">📝 1P 作答區</div>
+        <div class="question coopQ" id="q1"></div>
+        <div class="zone" id="zone1"></div>
+        <div class="pstat" id="st1"></div>
+        <div class="skillRow" id="skills1"></div>
+      </div>
+      <div class="qCol">
+        <div class="question" id="question">準備開始…</div>
+        <div class="explain" id="explain">同一條題目，兩人各自作答，誰先答對誰攻擊對方！</div>
+        <div class="hint" id="hintLine">答對：對手 -20HP（連擊 -25HP）· 答錯：自己 -5HP 並鎖定本題</div>
+      </div>
+      <div class="zoneCol p2col">
+        <div class="zoneTitle">📝 2P 作答區</div>
+        <div class="question coopQ" id="q2"></div>
+        <div class="zone" id="zone2"></div>
+        <div class="pstat" id="st2"></div>
+        <div class="skillRow" id="skills2"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 開始畫面 -->
+<div class="overlay" id="startOv">
+  <div class="card">
+    <h1>⚔️ 代數雙人對決大作戰</h1>
+    <div class="tag">五年級數學 · 階段一「代數式」＋ 階段二「解方程」</div>
+    <div class="duo">
+      <div class="who p1">
+        <svg class="char" viewBox="0 0 240 320"><use href="#char-mage"/></svg>
+        <b style="color:var(--blue-d)">🧙 1P 藍隊法師</b>
+        <small>代數魔法・藍</small>
+      </div>
+      <div class="who p2">
+        <svg class="char" viewBox="0 0 240 320"><use href="#char-knight"/></svg>
+        <b style="color:var(--red-d)">⚔️ 2P 紅隊騎士</b>
+        <small>方程式斬擊・紅</small>
+      </div>
+    </div>
+    <div class="modeRow" id="modeRow">
+      <button class="modeBtn active" data-mode="campaign">🛡️ 闖關模式<small>保證進入階段二</small></button>
+      <button class="modeBtn" data-mode="ko">⚔️ 血量 KO 戰<small>歸零即勝</small></button>
+      <button class="modeBtn" data-mode="coop">🤝 雙人合作<small>合力擊敗魔王</small></button>
+    </div>
+    <div class="rules" id="rulesBox">
+      ⚡ 每題<b>同時顯示</b>給兩人，各自在自己的作答區選答案，<b>誰先答對誰攻擊對方</b>，然後進入下一題！<br />
+      💥 答對：對手 <b>-10 HP</b>（連擊 -14 HP）；答錯：自己 <b>-4 HP</b>，本題鎖定（對方仍可繼續答）。<br />
+      🌗 闖關模式：<b>一定先玩完階段一，再進入階段二</b>，題目全部玩完後比血量決勝負。<br />
+      🏆 血 KO 戰：先把對手 HP 打到 0 即獲勝；題目也都會出完。<br />
+      🤝 雙人合作：兩人各自拿到<b>不同題目</b>、獨立作答，答完立即出下一題！<b>答對→魔王扣血 ＋ 隊伍回血</b>、<b>答錯→隊伍扣血</b>，合力把魔王血打歸零即獲勝！<br />
+      ✨ <b>主動技能</b>：每人每題可釋放 1 個技能（有冷卻）——❄️冰封（凍結對手／使魔王反擊失效）、⚡蓄力（本題傷害×1.5）、🛡️守護（抵擋／減免下一次受擊）。
+    </div>
+    <button class="btn" id="startBtn">開始對戰 🔥</button>
+  </div>
+</div>
+
+<!-- 階段過場 -->
+<div class="overlay hidden" id="bannerOv">
+  <div class="card banner">
+    <div class="big" id="bannerBig">階段二</div>
+    <div class="sub" id="bannerSub">解方程</div>
+  </div>
+</div>
+
+<!-- 勝利畫面 -->
+<div class="overlay hidden" id="winOv">
+  <div class="card">
+    <div class="winnerImg" id="winImg">
+      <svg id="winSvg1" viewBox="0 0 240 320"><use href="#char-mage"/></svg>
+      <svg id="winSvg2" viewBox="0 0 240 320" style="display:none"><use href="#char-knight"/></svg>
+    </div>
+    <h1 id="winTitle">藍隊法師 獲勝！</h1>
+    <p id="winDesc">答對最多、撐到最後的就是最強代數大師！</p>
+    <div class="statRow">
+      <div class="s" id="winStat1"></div>
+      <div class="s" id="winStat2"></div>
+      <div class="s" id="winStatRounds"></div>
+    </div>
+    <button class="btn" id="againBtn">再戰一場 🔁</button>
+  </div>
+</div>
+
+<script>
+/* ══════════ 工具 ══════════ */
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; };
+const $ = id => document.getElementById(id);
+
+/* ══════════ 題目生成器 ══════════ */
+/* 每局隨機生成，數字與字母都隨機化；若與已出題重複則自動改數字 / 字母 */
+const LETTERS = ["x","y","m","n","a","t","p","q"];
+const seen = new Set();               // 本局已出題指紋，避免重複
+function fingerprint(q, ch){ return q + "::" + ch.join("|"); }
+function newLetter(){ return pick(LETTERS); }
+
+/* 把 choices 打散並記錄正確答案索引；同時確保 4 個選項互不相同 */
+function makeQ(q, choices, ansIdx, ex){
+  const out = choices.map(String);
+  const seen = new Set([out[ansIdx]]);
+  let salt = 1;
+  for(let i=0; i<out.length; i++){
+    if(i === ansIdx) continue;
+    let v = out[i];
+    while(seen.has(v)){                       // 與其他選項撞名 → 微調尾數或加括號，避免重複/雙正解
+      if(/\d/.test(v)) v = v.replace(/(\d+)(?=\D*$)/, m => String(+m + salt));
+      else v = "(" + v + ")" + salt;
+      salt++;
+    }
+    seen.add(v); out[i] = v;
+  }
+  const order = shuffle([0,1,2,3]);
+  const ch = order.map(i => out[i]);
+  const ans = order.indexOf(ansIdx);
+  return {q, ch, ans, ex};
+}
+/* 數值型干擾選項：以 ans 為中心生成 3 個不同整數 */
+function numChoices(ans, spread){
+  const set = new Set([ans]); const out = [ans]; let g=0;
+  while(out.length<4 && g++<200){
+    let v = ans + rnd(-spread, spread);
+    if(v===ans) v = ans + (rnd(0,1)?1:-1)*rnd(1,3);
+    if(!set.has(v) && v>=-30){ set.add(v); out.push(v); }
+  }
+  while(out.length<4){ out.push(ans + out.length*7 + 1); }
+  return out; // [ans, w, w, w]
+}
+
+/* ── 階段一：代數式 ── */
+const S1 = [
+  () => { const a=rnd(2,9), b=rnd(2,9), V=newLetter();
+    return makeQ(`化簡：${a}${V} + ${b}${V} = ?`,
+      [`${a+b}${V}`, `${(a+b+rnd(1,3))}${V}`, `${a*b}${V}`, `${a}${V} + ${b}${V}`], 0,
+      `同類項係數相加：${a} + ${b} = ${a+b}，所以是 ${a+b}${V}。`); },
+  () => { const a=rnd(2,9), b=rnd(2,9), c=rnd(2,9), V=newLetter();
+    return makeQ(`化簡：${a}${V} + ${b}${V} + ${c}${V} = ?`,
+      [`${(a+b+c)}${V}`, `${(a+b)}${V} + ${c}`, `${a+b+c}`, `${(a+c)}${V} + ${b}`], 0,
+      `三個都是 ${V} 同類項：${a}+${b}+${c} = ${a+b+c}，所以是 ${a+b+c}${V}。`); },
+  () => { let a=rnd(3,9), b=rnd(2,a-1), c=rnd(1,9), V=newLetter();
+    return makeQ(`化簡：${a}${V} - ${b}${V} + ${c} = ?`,
+      [`${(a-b)}${V} + ${c}`, `${(a+b)}${V} + ${c}`, `${(a-b)}${V}`, `${a-b+c}${V}`], 0,
+      `只合併 ${V}：${a} - ${b} = ${a-b}，後面再加 ${c}。`); },
+  () => { const n=rnd(2,9), c=rnd(2,6), d=rnd(1,9), V=newLetter();
+    const ans=c*n+d, ch=numChoices(ans,3);
+    return makeQ(`當 ${V} = ${n} 時，${c}${V} + ${d} = ?`, ch, 0,
+      `${c} × ${n} = ${c*n}，${c*n} + ${d} = ${ans}。`); },
+  () => { const n=rnd(2,9), c=rnd(2,6), d=rnd(1,9), V=newLetter();
+    const ans=c*n-d, ch=numChoices(ans,3);
+    return makeQ(`當 ${V} = ${n} 時，${c}${V} - ${d} = ?`, ch, 0,
+      `${c} × ${n} = ${c*n}，${c*n} - ${d} = ${ans}。`); },
+  () => { const k=rnd(2,9), V=newLetter();
+    return makeQ(`「比 ${V} 多 ${k} 的數」可以寫成：`,
+      [`${V}+${k}`, `${V}-${k}`, `${k}${V}`, `${k}-${V}`], 0,
+      `「比 ${V} 多 ${k}」即在 ${V} 的基礎上再加 ${k}，記作 ${V} + ${k}。`); },
+  () => { const k=rnd(2,9), V=newLetter();
+    return makeQ(`「${V} 的 ${k} 倍」可以寫成：`,
+      [`${k}${V}`, `${V}+${k}`, `${V}-${k}`, `${k}+${V}`], 0,
+      `倍數用乘法：${V} × ${k} 記作 ${k}${V}。`); },
+  () => { const k=rnd(2,6), m=rnd(1,9), V=newLetter();
+    return makeQ(`「${V} 的 ${k} 倍再減 ${m}」可以寫成：`,
+      [`${k}${V} - ${m}`, `${k}${V} + ${m}`, `${k-m}${V}`, `${m}${V} - ${k}`], 0,
+      `${V} 的 ${k} 倍是 ${k}${V}，再減 ${m} 即 ${k}${V} - ${m}。`); },
+  () => { const a=rnd(2,9), b=rnd(2,9), V=newLetter();
+    return makeQ(`化簡：${a}${V} × ${b} = ?`,
+      [`${(a*b)}${V}`, `${(a*b+rnd(1,4))}${V}`, `${a+b}${V}`, `${a}${V}${b}`], 0,
+      `數字相乘：${a} × ${b} = ${a*b}，${V} 保持不變。`); },
+  () => { let a=rnd(2,9), b=rnd(2,9), c=rnd(2,9), V=newLetter();
+    return makeQ(`化簡：${a}${V} + ${b} + ${c}${V} = ?`,
+      [`${(a+c)}${V} + ${b}`, `${(a+c+b)}${V}`, `${a+c}${V}`, `${(a+c)} + ${b}${V}`], 0,
+      `合併 ${V}：${a}${V} + ${c}${V} = ${a+c}${V}，再加 ${b}。`); },
+  () => { const c=rnd(3,9), d=rnd(1,c-1), e=rnd(1,9), n=rnd(2,9), V=newLetter();
+    return makeQ(`當 ${V} = ${n} 時，${c}${V} - ${d}${V} + ${e} = ?`, numChoices((c-d)*n+e,3), 0,
+      `${c} - ${d} = ${c-d}，${c-d} × ${n} = ${(c-d)*n}，${(c-d)*n} + ${e} = ${(c-d)*n+e}。`); },
+  () => { const a=rnd(4,9), c=rnd(1,a-1), b=rnd(1,9), V=newLetter();
+    return makeQ(`化簡：${a}${V} + ${b} - ${c}${V} = ?`,
+      [`${(a-c)}${V} + ${b}`, `${(a-c)}${V} - ${b}`, `${a+c}${V} + ${b}`, `${(a-c+b)}${V}`], 0,
+      `合併 ${V}：${a} - ${c} = ${a-c}，所以是 ${(a-c)}${V} + ${b}。`); },
+  () => { const a=rnd(2,9), b=rnd(2,9), V=newLetter();
+    return makeQ(`化簡：${a}(${V} + ${b}) = ?`,
+      [`${a}${V} + ${a*b}`, `${a+b}${V}`, `${a*b}${V}`, `${a}${V} + ${b}`], 0,
+      `乘法分配律：${a} × ${V} + ${a} × ${b} = ${a}${V} + ${a*b}。`); },
+  () => { const c=rnd(2,9), d=rnd(2,9), n=rnd(2,9), V=newLetter();
+    return makeQ(`當 ${V} = ${n} 時，${c}${V} + ${d}${V} = ?`, numChoices((c+d)*n,3), 0,
+      `${c} + ${d} = ${c+d}，${c+d} × ${n} = ${(c+d)*n}。`); },
+];
+
+/* ── 階段二：解方程 ── */
+const S2 = [
+  () => { const a=rnd(2,9), b=rnd(a+1,18), V=newLetter();
+    return makeQ(`解方程：${V} + ${a} = ${b}`, numChoices(b-a,3), 0,
+      `兩邊同減 ${a}：${V} = ${b} - ${a} = ${b-a}。`); },
+  () => { const a=rnd(2,9), b=rnd(2,15), V=newLetter();
+    return makeQ(`解方程：${V} - ${a} = ${b}`, numChoices(b+a,3), 0,
+      `兩邊同加 ${a}：${V} = ${b} + ${a} = ${b+a}。`); },
+  () => { const a=rnd(2,9), x0=rnd(2,12), V=newLetter();
+    return makeQ(`解方程：${a}${V} = ${a*x0}`, numChoices(x0,3), 0,
+      `兩邊同除以 ${a}：${V} = ${a*x0} ÷ ${a} = ${x0}。`); },
+  () => { const a=rnd(2,9), b=rnd(2,9), V=newLetter();
+    return makeQ(`解方程：${V} ÷ ${a} = ${b}`, numChoices(a*b,3), 0,
+      `兩邊同乘 ${a}：${V} = ${b} × ${a} = ${a*b}。`); },
+  () => { const a=rnd(2,6), x0=rnd(2,9), b=rnd(1,9), c=a*x0+b, V=newLetter();
+    return makeQ(`解方程：${a}${V} + ${b} = ${c}`, numChoices(x0,3), 0,
+      `先減 ${b}：${a}${V} = ${c-b}；再除以 ${a}：${V} = ${(c-b)/a}。`); },
+  () => { const a=rnd(2,6), x0=rnd(2,9), b=rnd(1,9), c=a*x0-b, V=newLetter();
+    return makeQ(`解方程：${a}${V} - ${b} = ${c}`, numChoices(x0,3), 0,
+      `先加 ${b}：${a}${V} = ${c+b}；再除以 ${a}：${V} = ${(c+b)/a}。`); },
+  () => { let a=rnd(4,9), d=rnd(1,3), b=a-d, c=d*rnd(2,9), V=newLetter();
+    return makeQ(`解方程：${a}${V} = ${b}${V} + ${c}`, numChoices(c/d,3), 0,
+      `兩邊同減 ${b}${V}：${d}${V} = ${c}，所以 ${V} = ${c/d}。`); },
+  () => { const d=rnd(1,3), b=d+1, a=d*rnd(2,9), V=newLetter();
+    return makeQ(`解方程：${V} + ${a} = ${b}${V}`, numChoices(a/d,3), 0,
+      `兩邊同減 ${V}：${a} = ${d}${V}，所以 ${V} = ${a/d}。`); },
+  () => { const a=rnd(2,6), x0=rnd(2,9), b=rnd(1,5), c=a*(x0+b), V=newLetter();
+    return makeQ(`解方程：${a}(${V} + ${b}) = ${c}`, numChoices(x0,3), 0,
+      `兩邊同除以 ${a}：${V} + ${b} = ${c/a}，所以 ${V} = ${x0}。`); },
+  () => { let x0=rnd(2,9), m=rnd(1,3), b=m*x0, a=rnd(m+2,9), c=a-m, V=newLetter();
+    return makeQ(`解方程：${a}${V} - ${b} = ${c}${V}`, numChoices(x0,3), 0,
+      `兩邊同減 ${c}${V}：${(a-c)}${V} - ${b} = 0，所以 ${(a-c)}${V} = ${b}，${V} = ${x0}。`); },
+  () => { const a=rnd(2,9), b=rnd(2,9), c=a*b, V=newLetter();
+    return makeQ(`解方程：${c} ÷ ${V} = ${a}`, numChoices(b,3), 0,
+      `兩邊同乘 ${V}：${c} = ${a}${V}，所以 ${V} = ${b}。`); },
+  () => { const a=rnd(2,9), b=rnd(2,9), x0=rnd(2,9), c=(a+b)*x0, V=newLetter();
+    return makeQ(`解方程：${a}${V} + ${b}${V} = ${c}`, numChoices(x0,3), 0,
+      `合併同類項：${(a+b)}${V} = ${c}，所以 ${V} = ${x0}。`); },
+  () => { const a=rnd(3,9), b=rnd(1,a-1), x0=rnd(2,9), c=(a-b)*x0, V=newLetter();
+    return makeQ(`解方程：${a}${V} - ${b}${V} = ${c}`, numChoices(x0,3), 0,
+      `合併同類項：${(a-b)}${V} = ${c}，所以 ${V} = ${x0}。`); },
+  () => { const a=rnd(2,6), b=rnd(1,5), x0=rnd(b+1,12), c=a*(x0-b), V=newLetter();
+    return makeQ(`解方程：${a}(${V} - ${b}) = ${c}`, numChoices(x0,3), 0,
+      `兩邊同除以 ${a}：${V} - ${b} = ${x0-b}，所以 ${V} = ${x0}。`); },
+];
+
+/* 生成不重複題目：撞題就重抽數字 / 字母 */
+function generate(bank, count){
+  const out = []; let guard = 0;
+  while(out.length < count && guard++ < 600){
+    const q = pick(bank)();
+    if(!/[a-zA-Z]/.test(q.q)) continue;  // 防呆：題幹必須含未知數字母，拒絕純數字運算題
+    const fp = fingerprint(q.q, q.ch);
+    if(seen.has(fp)) continue;          // 重複 → 換數字 / 字母重抽
+    seen.add(fp); out.push(q);
+  }
+  return out;
+}
+
+/* ══════════ 對戰模式 ══════════ */
+const MODES = {
+  campaign: { name:"闖關模式", hp:260, hit:10, combo:14, miss:4, ko:false,
+    hint:"答對：對手 -10HP（連擊 -14HP）· 答錯：自己 -4HP 並鎖定本題 · 全部玩完比血量（保證進入階段二）" },
+  ko:       { name:"血量 KO 戰", hp:140, hit:18, combo:22, miss:5, ko:true,
+    hint:"答對：對手 -18HP（連擊 -22HP）· 答錯：自己 -5HP 並鎖定本題 · 歸零即勝（快節奏）" },
+  coop:     { name:"雙人合作打Boss", hp:120, coop:true,
+    hint:"🤝 兩人題目不同、各自獨立作答：答對→魔王 -12（蓄力×1.5／冰封 -20）且隊伍 +3；答錯→隊伍 -10（守護免傷）。打光魔王血即勝！" }
+};
+const TEAM_MAX = 120, BOSS_MAX = 260;
+/* 主動技能：兩人共用同一套，各有獨立冷卻 */
+const SKILLS = [
+  { id:"freeze", icon:"❄️", name:"冰封", cd:3 },
+  { id:"power",  icon:"⚡", name:"蓄力", cd:4 },
+  { id:"shield", icon:"🛡️", name:"守護", cd:5 }
+];
+/* 開局進場冷卻（題數）：技能一開始全部鎖住，需等 2 題（第 3 題起）才能使用 */
+const SKILL_START_CD = 2;
+let mode = MODES.campaign;
+
+/* ══════════ 遊戲狀態 ══════════ */
+const LET = ["A","B","C","D"];
+let deck = [], qIndex = 0, stageNo = 1, STAGE1_COUNT = 0;
+let hp = [200, 200];
+let streak = [0, 0];
+let stats = [{ok:0, no:0}, {ok:0, no:0}];
+let answered = [false, false];
+let lastPick = [null, null];
+let locked = false, gameOver = false;
+const P = [
+  {name:"🧙 1P 藍隊法師", short:"1P 藍隊法師"},
+  {name:"⚔️ 2P 紅隊騎士", short:"2P 紅隊騎士"}
+];
+
+/* 技能 / 合作模式狀態 */
+let teamHP = TEAM_MAX, bossHP = BOSS_MAX;
+let skillCD = [[0,0,0],[0,0,0]];      // 每位玩家每個技能的剩餘冷卻（題數）
+let powerActive = [false, false];     // ⚡ 本題增傷
+let shieldActive = [false, false];    // 🛡️ 抵擋下次受擊
+let freezeTeam = false;               // 合作：本題魔王反擊失效
+let frozenFoe = [null, null];        // PvP：凍結對手的計時器
+let qToken = 0;                       // 題目編號（用於凍結失效判斷）
+let coopTimer = null, coopResolved = false;
+let skillBtns = [[],[]];              // 技能按鈕 DOM
+
+/* 合作模式：兩位玩家各自獨立題庫（題目互相不重複）與進度 */
+let coopDeck = [[],[]];   // 各自 32 題（16 代數式 + 16 解方程），與對方完全不重複
+let coopQ = [0, 0];       // 各自當前題號
+let coopStage = [1, 1];   // 各自階段（1=代數式 / 2=解方程）
+let coopAnswered = [false, false];
+let freezeActive = [false, false];  // ❄️ 合作：本題答對重擊魔王
+
+/* ══════════ 模式選擇 ══════════ */
+document.querySelectorAll(".modeBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".modeBtn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+$("startBtn").addEventListener("click", newGame);
+$("againBtn").addEventListener("click", newGame);
+buildSkillButtons();   // 初始化技能按鈕（僅一次）
+
+function newGame(){
+  const chosen = document.querySelector(".modeBtn.active").dataset.mode;
+  mode = MODES[chosen];
+  seen.clear();
+  const s1 = generate(S1, 16);
+  const s2 = generate(S2, 16);
+  STAGE1_COUNT = s1.length;
+  deck = shuffle(s1).concat(shuffle(s2));
+  qIndex = 0; stageNo = 1;
+  hp = [mode.hp, mode.hp]; streak = [0,0];
+  stats = [{ok:0,no:0},{ok:0,no:0}];
+  teamHP = mode.hp; bossHP = BOSS_MAX;
+  gameOver = false; locked = false; answered = [false,false]; lastPick = [null,null];
+  coopQ = [0,0]; coopStage = [1,1]; coopAnswered = [false,false];
+  skillCD = [[SKILL_START_CD,SKILL_START_CD,SKILL_START_CD],[SKILL_START_CD,SKILL_START_CD,SKILL_START_CD]];
+  powerActive = [false,false]; shieldActive = [false,false]; freezeActive = [false,false];
+  const battle = $("battle");
+  const p2hud = document.querySelector(".pHud.p2");
+  if(mode.coop){
+    battle.classList.add("coop");
+    $("answerArea").classList.add("coop");
+    p2hud.classList.add("boss");
+    document.querySelector(".pHud.p1 .pHudTop b").textContent = "🤝 合作隊伍";
+    document.querySelector(".pHud.p2 .pHudTop b").textContent = "👹 代數魔王";
+    $("vs").textContent = "🤝";
+    $("stageName").textContent = "🤝 雙人合作打Boss";
+    seen.clear();
+    const d1 = shuffle(generate(S1,16)).concat(shuffle(generate(S2,16)));
+    const d2 = shuffle(generate(S1,16)).concat(shuffle(generate(S2,16)));
+    coopDeck = [d1, d2]; coopQ = [0,0]; coopStage = [1,1];
+  }else{
+    battle.classList.remove("coop");
+    $("answerArea").classList.remove("coop");
+    p2hud.classList.remove("boss");
+    document.querySelector(".pHud.p1 .pHudTop b").textContent = "🧙 1P 藍隊法師";
+    document.querySelector(".pHud.p2 .pHudTop b").textContent = "⚔️ 2P 紅隊騎士";
+    $("vs").textContent = "VS";
+  }
+  $("hintLine").textContent = mode.hint;
+  $("startOv").classList.add("hidden");
+  $("winOv").classList.add("hidden");
+  showQuestion();
+}
+
+/* ══════════ 畫面更新 ══════════ */
+function render(){
+  if(mode.coop){
+    $("hp1").style.width = (teamHP/TEAM_MAX*100) + "%";
+    $("hp2").style.width = (bossHP/BOSS_MAX*100) + "%";
+    $("hp1").className = teamHP <= TEAM_MAX*0.3 ? "low" : teamHP <= TEAM_MAX*0.6 ? "mid" : "";
+    $("hp2").className = bossHP <= BOSS_MAX*0.3 ? "low" : bossHP <= BOSS_MAX*0.6 ? "mid" : "";
+    $("hp1num").textContent = `隊伍 HP ${teamHP} / ${TEAM_MAX}`;
+    $("hp2num").textContent = `魔王 HP ${bossHP} / ${BOSS_MAX}`;
+    $("ok1").textContent = `1P✔${stats[0].ok}`; $("no1").textContent = `2P✔${stats[1].ok}`;
+    $("streak1").textContent = ""; $("streak2").textContent = "";
+  }else{
+    $("hp1").style.width = (hp[0]/mode.hp*100) + "%";
+    $("hp2").style.width = (hp[1]/mode.hp*100) + "%";
+    $("hp1").className = hp[0] <= mode.hp*0.3 ? "low" : hp[0] <= mode.hp*0.6 ? "mid" : "";
+    $("hp2").className = hp[1] <= mode.hp*0.3 ? "low" : hp[1] <= mode.hp*0.6 ? "mid" : "";
+    $("hp1num").textContent = `HP ${hp[0]} / ${mode.hp}`;
+    $("hp2num").textContent = `HP ${hp[1]} / ${mode.hp}`;
+    $("ok1").textContent = stats[0].ok; $("no1").textContent = stats[0].no;
+    $("ok2").textContent = stats[1].ok; $("no2").textContent = stats[1].no;
+    $("streak1").textContent = streak[0] >= 2 ? `🔥 ${streak[0]} 連擊` : "";
+    $("streak2").textContent = streak[1] >= 2 ? `🔥 ${streak[1]} 連擊` : "";
+  }
+  if(mode.coop){
+    $("roundPill").textContent = `1P 第 ${Math.min(coopQ[0]+1, coopDeck[0].length)} 題 · 2P 第 ${Math.min(coopQ[1]+1, coopDeck[1].length)} 題`;
+    $("stageChip").textContent = "🤝 雙人合作";
+  }else{
+    $("roundPill").textContent = `第 ${Math.min(qIndex+1, deck.length)} 題 / 共 ${deck.length} 題`;
+    const stageLabel = stageNo===1 ? "階段一・代數式" : "階段二・解方程";
+    $("stageChip").textContent = stageLabel;
+    $("stageName").textContent = stageNo===1 ? "第一階段：代數式" : "第二階段：解方程";
+  }
+  renderSkills();
+}
+
+/* 刷新技能按鈕：冷卻中顯示剩餘題數，可用時高亮 */
+function renderSkills(){
+  for(let p=0; p<2; p++){
+    for(let i=0; i<SKILLS.length; i++){
+      const b = skillBtns[p][i]; if(!b) continue;
+      const sk = SKILLS[i];
+      const cd = skillCD[p][i];
+      const ready = !gameOver && cd <= 0;
+      // 已掛上、等待生效的 buff
+      const armed = sk.id === "power"  ? powerActive[p]
+                  : sk.id === "shield" ? shieldActive[p]
+                  : sk.id === "freeze" ? (mode.coop ? freezeActive[p] : false)
+                  : false;
+      b.disabled = !ready;
+      b.classList.toggle("ready", ready && !armed);
+      b.classList.toggle("armed", armed);
+      b.querySelector(".sc").textContent = cd > 0 ? `${cd}題` : (armed ? "ON" : "");
+    }
+  }
+}
+
+/* 初始化技能按鈕（僅一次） */
+function buildSkillButtons(){
+  for(let p=0; p<2; p++){
+    const box = $(p===0 ? "skills1" : "skills2");
+    box.innerHTML = ""; skillBtns[p] = [];
+    SKILLS.forEach((sk, i) => {
+      const b = document.createElement("button");
+      b.className = "skillBtn"; b.type = "button";
+      b.innerHTML = `<span class="si">${sk.icon}</span><span class="sn">${sk.name}</span><span class="sc"></span>`;
+      b.addEventListener("click", () => useSkill(p, i));
+      box.appendChild(b); skillBtns[p].push(b);
+    });
+  }
+}
+
+/* ══════════ 出題 ══════════ */
+let btns = [[],[]];
+function showQuestion(){
+  if(mode.coop){
+    $("question").textContent = "";
+    $("explain").innerHTML = "🤝 兩人各自拿到<b>不同題目</b>、獨立作答，答完立即出下一題！答對打魔王、答錯隊伍扣血。";
+    $("explain").className = "explain";
+    $("raceTip").style.display = "none";
+    showCoopQuestion(0);
+    showCoopQuestion(1);
+    render();
+    return;
+  }
+  qToken++;
+  locked = false; answered = [false, false]; lastPick = [null, null];
+  if(frozenFoe[0]){ clearTimeout(frozenFoe[0]); frozenFoe[0] = null; }
+  if(frozenFoe[1]){ clearTimeout(frozenFoe[1]); frozenFoe[1] = null; }
+  const item = deck[qIndex];
+  $("question").innerHTML = item.q.replace(/([0-9]+[a-zA-Z]+|[a-zA-Z]+[0-9]*|[=＋\-×÷])/g,
+    m => `<span class="hl">${m}</span>`);
+  $("explain").textContent = mode.coop ? "🤝 兩人合力作答，一起擊敗魔王！" : "誰先答對，誰就攻擊對方！";
+  $("explain").className = "explain";
+  $("raceTip").style.display = mode.coop ? "none" : "";
+  for(let p=0; p<2; p++){
+    const box = $(p===0 ? "zone1" : "zone2");
+    box.innerHTML = ""; btns[p] = [];
+    item.ch.forEach((c, i) => {
+      const b = document.createElement("button");
+      b.className = "choice";
+      b.innerHTML = `<i>${LET[i]}</i><span>${c}</span>`;
+      b.addEventListener("click", () => answer(p, i));
+      box.appendChild(b);
+      btns[p].push(b);
+    });
+    const st = $(p===0 ? "st1" : "st2");
+    st.textContent = ""; st.className = "pstat";
+  }
+  render();
+}
+
+/* 合作模式：為單一玩家顯示其專屬題目（與對方不同） */
+function showCoopQuestion(p){
+  const qEl = $(p===0 ? "q1" : "q2");
+  const box = $(p===0 ? "zone1" : "zone2");
+  const st = $(p===0 ? "st1" : "st2");
+  if(coopQ[p] >= coopDeck[p].length){
+    coopAnswered[p] = true;
+    qEl.innerHTML = `<span class="qdone">本輪題目已完成 🎉</span>`;
+    box.innerHTML = ""; btns[p] = [];
+    st.textContent = "等待隊友…"; st.className = "pstat";
+    return;
+  }
+  coopAnswered[p] = false;
+  const item = coopDeck[p][coopQ[p]];
+  coopStage[p] = coopQ[p] < 16 ? 1 : 2;
+  box.innerHTML = ""; btns[p] = [];
+  item.ch.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.innerHTML = `<i>${LET[i]}</i><span>${c}</span>`;
+    b.addEventListener("click", () => answer(p, i));
+    box.appendChild(b);
+    btns[p].push(b);
+  });
+  qEl.innerHTML = item.q.replace(/([0-9]+[a-zA-Z]+|[a-zA-Z]+[0-9]*|[=＋\-×÷])/g, m => `<span class="hl">${m}</span>`);
+  st.textContent = ""; st.className = "pstat";
+}
+function coopNext(p){
+  coopQ[p]++;
+  // 合作模式各自獨立作答，答完一題扣自己技能冷卻 1 題
+  for(let i=0; i<SKILLS.length; i++) if(skillCD[p][i] > 0) skillCD[p][i]--;
+  showCoopQuestion(p);
+  renderSkills();
+  checkDeckEnd();
+}
+
+/* ══════════ 作答結算 ══════════ */
+function answer(p, pick){
+  if(gameOver) return;
+  const item = deck[qIndex];
+
+  /* ── 合作模式：兩人獨立作答，各自答完立即結算 ── */
+  if(mode.coop){
+    if(gameOver || coopAnswered[p]) return;
+    coopAnswered[p] = true;
+    const item = coopDeck[p][coopQ[p]];
+    const good = pick === item.ans;
+    btns[p].forEach((b, i) => {
+      b.disabled = true;
+      if(good && i === item.ans) b.classList.add("correct");
+      if(i === pick && !good) b.classList.add("wrong");
+    });
+    const st = $(p===0 ? "st1" : "st2");
+    if(good){
+      stats[p].ok++;
+      let dmg = 12;
+      if(powerActive[p]){ dmg = Math.round(dmg * 1.5); powerActive[p] = false; }   // ⚡ 蓄力增傷
+      if(freezeActive[p]){ dmg = 20; freezeActive[p] = false; }                     // ❄️ 冰封重擊
+      bossHP = Math.max(0, bossHP - dmg);
+      playerAttackBoss(p);
+      const d = $("dmg3"); d.textContent = "-" + dmg; d.classList.remove("show"); void d.offsetWidth; d.classList.add("show");
+      teamHP = Math.min(TEAM_MAX, teamHP + 3);                                      // 答對隊伍回血
+      const dT = $("dmg1"); dT.textContent = "+3"; dT.classList.remove("show"); void dT.offsetWidth; dT.classList.add("show");
+      st.textContent = `✅ 答對！魔王 -${dmg}，隊伍 +3`;
+      st.className = "pstat good";
+      $("explain").innerHTML = `✅ <b>${P[p].short}</b> 答對！對魔王造成 <b>${dmg}</b> 傷害，隊伍回復 3 HP！<br>${item.ex}`;
+      $("explain").className = "explain ok";
+    }else{
+      stats[p].no++;
+      let dmg = 10, shielded = false;
+      if(shieldActive[p]){ shielded = true; shieldActive[p] = false; dmg = 0; }      // 🛡️ 守護免傷
+      if(dmg > 0) teamHP = Math.max(0, teamHP - dmg);
+      bossAttack();
+      playersHurt();
+      const d = $("dmg1"); d.textContent = shielded ? "🛡️" : ("-" + dmg); d.classList.remove("show"); void d.offsetWidth; d.classList.add("show");
+      st.textContent = shielded ? "🛡️ 守護抵擋！" : `❌ 答錯，隊伍 -${dmg}`;
+      st.className = "pstat " + (shielded ? "good" : "bad");
+      $("explain").innerHTML = `❌ <b>${P[p].short}</b> 答錯，魔王反擊，隊伍 <b>-${dmg} HP</b>${shielded ? "（🛡️守護抵擋）" : ""}<br>正確答案：<b>${LET[item.ans]}. ${item.ch[item.ans]}</b><br>${item.ex}`;
+      $("explain").className = "explain no";
+    }
+    render();
+    if(bossHP <= 0 || teamHP <= 0){ showWin(); return; }
+    setTimeout(() => { if(!gameOver) coopNext(p); }, 1500);
+    return;
+  }
+
+  /* ── PvP 搶答制 ── */
+  if(locked || answered[p]) return;
+  answered[p] = true;
+  const good = pick === item.ans;
+
+  btns[p].forEach((b, i) => {
+    b.disabled = true;
+    if(good && i === item.ans) b.classList.add("correct");
+    if(i === pick && !good) b.classList.add("wrong");
+  });
+
+  if(good){
+    stats[p].ok++;
+    streak[p]++;
+    const combo = streak[p] >= 2;
+    let dmg = combo ? mode.combo : mode.hit;
+    if(powerActive[p]){ dmg = Math.round(dmg * 1.5); powerActive[p] = false; }   // ⚡ 蓄力增傷
+    const foe = 1 - p;
+    locked = true;
+    btns[foe].forEach((b, i) => { b.disabled = true; if(i === item.ans) b.classList.add("correct"); });
+    $("raceTip").style.display = "none";
+    const st = $(p===0 ? "st1" : "st2");
+    st.textContent = combo ? `🔥 ${streak[p]} 連擊！` : "⚡ 搶答成功！";
+    st.className = "pstat good";
+    $("explain").innerHTML = `✅ <b>${P[p].short}</b> 先答對！${combo ? "🔥連擊 " : ""}攻擊 ${P[foe].short} <b>-${dmg} HP</b><br>${item.ex}`;
+    $("explain").className = "explain ok";
+    attack(p, foe, dmg);
+    render();
+    setTimeout(() => { if(!gameOver && !checkDeckEnd()) advance(); }, 1700);
+  }else{
+    stats[p].no++;
+    streak[p] = 0;
+    selfHurt(p);
+    const st = $(p===0 ? "st1" : "st2");
+    st.textContent = "❌ 已答錯，本題鎖定";
+    st.className = "pstat bad";
+    const other = 1 - p;
+    if(answered[other]){
+      locked = true;
+      $("raceTip").style.display = "none";
+      btns[other].forEach((b, i) => { b.disabled = true; if(i === item.ans) b.classList.add("correct"); });
+      $("explain").innerHTML = `😖 兩人都答錯了…正確答案是 <b>${LET[item.ans]}. ${item.ch[item.ans]}</b><br>${item.ex}`;
+      $("explain").className = "explain no";
+      setTimeout(() => { if(!gameOver && !checkDeckEnd()) advance(); }, 2000);
+    }else{
+      $("explain").innerHTML = `❌ <b>${P[p].short}</b> 答錯了，本題鎖定！<br>⚡ ${P[other].short} 還有機會搶答，答對就攻擊！`;
+      $("explain").className = "explain no";
+    }
+    render();
+  }
+}
+
+/* ══════════ 攻擊 / 自傷 ══════════ */
+function attack(atk, def, dmg){
+  const fa = $(atk===0 ? "f1" : "f2"), fd = $(def===0 ? "f1" : "f2");
+  fa.classList.add(atk===0 ? "attack-l" : "attack-r");
+  const bolt = document.createElement("div");
+  bolt.className = "bolt " + (atk===0 ? "b1" : "b2");
+  $("battle").appendChild(bolt);
+  setTimeout(() => bolt.remove(), 600);
+  setTimeout(() => {
+    let actual = dmg, blocked = false;
+    if(shieldActive[def]){ shieldActive[def] = false; actual = 0; blocked = true; }   // 🛡️ 守護抵擋
+    hp[def] = Math.max(0, hp[def] - actual);
+    const fl = $(def===0 ? "flash1" : "flash2");
+    fl.classList.add("hit");
+    const d = $(def===0 ? "dmg1" : "dmg2");
+    d.textContent = blocked ? "🛡️" : ("-" + actual);
+    d.classList.remove("show"); void d.offsetWidth; d.classList.add("show");
+    if(blocked){
+      $("explain").innerHTML += `<br>🛡️ ${P[def].short} 的「守護」抵擋了傷害！`;
+    }else{
+      fd.classList.add("hurt");
+    }
+    setTimeout(() => {
+      fa.classList.remove("attack-l","attack-r"); fd.classList.remove("hurt"); fl.classList.remove("hit");
+    }, 600);
+    render();
+    if(mode.ko && hp[def] <= 0) setTimeout(showWin, 700);   // 僅 KO 模式提前結束
+  }, 240);
+}
+
+function selfHurt(p){
+  hp[p] = Math.max(0, hp[p] - mode.miss);
+  const d = $(p===0 ? "dmg1" : "dmg2");
+  d.textContent = "-" + mode.miss;
+  d.classList.remove("show"); void d.offsetWidth; d.classList.add("show");
+  const f = $(p===0 ? "f1" : "f2");
+  f.classList.add("hurt");
+  setTimeout(() => f.classList.remove("hurt"), 500);
+  render();
+  if(mode.ko && hp[p] <= 0) setTimeout(showWin, 700);
+}
+
+/* 合作模式結算已改為「每人獨立即時結算」(見 answer 的 coop 分支)，此舊函式不再使用。 */
+
+function bossHurt(){
+  const fb = $("f3"); if(fb) fb.classList.add("hurt-boss");
+  const fl = $("flashBossHit"); if(fl) fl.classList.add("hit");
+  setTimeout(() => { if(fb) fb.classList.remove("hurt-boss"); if(fl) fl.classList.remove("hit"); }, 600);
+}
+/* 玩家攻擊魔王：玩家向右突進 + 金色飛彈 → 魔王受傷 */
+function playerAttackBoss(p){
+  const fp = $(p===0 ? "f1" : "f2"); if(!fp) return;
+  fp.classList.add("atk-right");
+  const bolt = document.createElement("div");
+  bolt.className = "bolt bp";
+  $("battle").appendChild(bolt);
+  setTimeout(() => bolt.remove(), 600);
+  setTimeout(() => {
+    fp.classList.remove("atk-right");
+    bossHurt();
+  }, 240);
+}
+function playersHurt(){
+  ["f1","f2"].forEach(id => {
+    const f = $(id); f.classList.add("hurt");
+    setTimeout(() => f.classList.remove("hurt"), 500);
+  });
+}
+
+/* 魔王攻擊特效：魔王突進 + 紫色飛彈 + 紫色閃光 + 攻擊提示 */
+function bossAttack(){
+  const fb = $("f3"); if(!fb) return;
+  fb.classList.add("attack-boss");
+  const flash = $("flashBoss"); if(flash) flash.classList.add("hit");
+  const atk = $("bossAtk");
+  if(atk){ atk.classList.remove("show"); void atk.offsetWidth; atk.classList.add("show"); }
+  const bolt = document.createElement("div");
+  bolt.className = "bolt b3";
+  $("battle").appendChild(bolt);
+  setTimeout(() => bolt.remove(), 600);
+  setTimeout(() => {
+    fb.classList.remove("attack-boss");
+    if(flash) flash.classList.remove("hit");
+  }, 600);
+}
+
+/* ══════════ 主動技能釋放 ══════════ */
+function useSkill(p, i){
+  if(gameOver || skillCD[p][i] > 0) return;
+  const sk = SKILLS[i];
+  if(mode.coop){
+    if(sk.id === "freeze"){ freezeActive[p] = true; skillFx(p, "❄️ 冰封！本題答對重擊魔王"); }
+    else if(sk.id === "power"){ powerActive[p] = true; skillFx(p, "⚡ 蓄力！本題傷害×1.5"); }
+    else if(sk.id === "shield"){ shieldActive[p] = true; skillFx(p, "🛡️ 守護！答錯免傷"); }
+  }else{
+    const foe = 1 - p;
+    if(sk.id === "freeze"){ freezeFoe(p); skillFx(p, "❄️ 冰封！對手無法作答 3 秒"); }
+    else if(sk.id === "power"){ powerActive[p] = true; skillFx(p, "⚡ 蓄力！本題增傷"); }
+    else if(sk.id === "shield"){ shieldActive[p] = true; skillFx(p, "🛡️ 守護！抵擋下次受擊"); }
+  }
+  skillCD[p][i] = sk.cd;
+  renderSkills();
+}
+function freezeFoe(p){
+  const foe = 1 - p;
+  if(answered[foe]) return;
+  btns[foe].forEach(b => b.disabled = true);
+  const token = qToken;
+  frozenFoe[p] = setTimeout(() => {
+    if(!answered[foe] && token === qToken) btns[foe].forEach(b => b.disabled = false);
+    frozenFoe[p] = null;
+  }, 3000);
+}
+function skillFx(p, text){
+  const el = $(p===0 ? "skillFx1" : "skillFx2");
+  el.textContent = text;
+  el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+}
+
+/* ══════════ 題目推進 / 階段切換 ══════════ */
+function checkDeckEnd(){
+  if(mode.coop){
+    if(bossHP <= 0 || teamHP <= 0){ showWin(); return true; }
+    if(coopQ[0] >= coopDeck[0].length && coopQ[1] >= coopDeck[1].length){ showWin(); return true; }
+    return false;
+  }
+  if(hp[0] <= 0 && hp[1] <= 0){ showWin(); return true; }
+  if(qIndex >= deck.length - 1){ showWin(); return true; }   // 題目全部玩完 → 比結果
+  return false;
+}
+
+function advance(){
+  for(let p=0; p<2; p++)                                   // 技能冷卻遞減
+    for(let i=0; i<SKILLS.length; i++) if(skillCD[p][i] > 0) skillCD[p][i]--;
+  qIndex++;
+  if(qIndex === STAGE1_COUNT && stageNo === 1){   // 進入階段二
+    stageNo = 2;
+    render();
+    showBanner("階段二", "解方程", () => showQuestion());
+  }else{
+    showQuestion();
+  }
+}
+
+function showBanner(big, sub, done){
+  $("bannerBig").textContent = big;
+  $("bannerSub").textContent = sub;
+  const ov = $("bannerOv");
+  ov.classList.remove("hidden");
+  setTimeout(() => { ov.classList.add("hidden"); done && done(); }, 1800);
+}
+
+/* ══════════ 勝負 ══════════ */
+function showWin(){
+  if(gameOver) return;
+  gameOver = true;
+  if(coopTimer){ clearTimeout(coopTimer); coopTimer = null; }
+
+  if(mode.coop){
+    $("winSvg1").style.display = "block";
+    $("winSvg2").style.display = "block";
+    if(bossHP <= 0){
+      $("winTitle").textContent = "🎉 合作成功！擊敗代數魔王！";
+      $("winDesc").textContent = "兩位配合無間，太強了！";
+    }else if(teamHP <= 0){
+      $("winTitle").textContent = "💀 合作失敗…";
+      $("winDesc").textContent = "隊伍被魔王擊潰了，再試一次吧！";
+    }else{
+      $("winTitle").textContent = "⏳ 任務未竟";
+      $("winDesc").textContent = `魔王還剩 ${bossHP} HP，下次再接再厲！`;
+    }
+    $("winStat1").textContent = `🤝 隊伍剩餘 HP ${teamHP} / ${TEAM_MAX}`;
+    $("winStat2").textContent = `👹 魔王剩餘 HP ${bossHP} / ${BOSS_MAX}`;
+    $("winStatRounds").textContent = `📖 共完成 ${qIndex + 1} 題（雙人合作）`;
+  }else{
+    let winner;
+    if(hp[0] <= 0 && hp[1] <= 0) winner = -1;
+    else if(hp[0] <= 0) winner = 1;
+    else if(hp[1] <= 0) winner = 0;
+    else if(hp[0] > hp[1]) winner = 0;
+    else if(hp[1] > hp[0]) winner = 1;
+    else winner = stats[0].ok > stats[1].ok ? 0 : (stats[1].ok > stats[0].ok ? 1 : -1);
+
+    if(winner === -1){
+      $("winSvg1").style.display = "none";
+      $("winSvg2").style.display = "none";
+      $("winTitle").textContent = "平手！";
+      $("winDesc").textContent = "兩位都太強了，再戰一場分勝負吧！";
+    }else{
+      const showMage = winner===0;
+      $("winSvg1").style.display = showMage ? "block" : "none";
+      $("winSvg2").style.display = showMage ? "none" : "block";
+      $("winTitle").textContent = (winner===0 ? "🧙 1P 藍隊法師" : "⚔️ 2P 紅隊騎士") + " 獲勝！";
+      $("winDesc").textContent = "答對最多、撐到最後的就是最強代數大師！";
+    }
+    $("winStat1").textContent = `🧙 1P：答對 ${stats[0].ok} 題 / 答錯 ${stats[0].no} 題（HP ${hp[0]}）`;
+    $("winStat2").textContent = `⚔️ 2P：答對 ${stats[1].ok} 題 / 答錯 ${stats[1].no} 題（HP ${hp[1]}）`;
+    $("winStatRounds").textContent = `📖 共完成 ${qIndex + 1} 題（${mode.name}）`;
+  }
+  $("winOv").classList.remove("hidden");
+}
+</script>
+</body>
+</html>

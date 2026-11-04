@@ -181,6 +181,11 @@
   }
   .ult-btn.ready{background:linear-gradient(90deg,#ffd24d,#ff7a59); color:#fff; box-shadow:0 3px 0 #c8701f; animation:pulse 1s ease-in-out infinite;}
   .ult-btn:disabled{cursor:not-allowed; opacity:.85;}
+  /* 所有絕招共用一條能量：兩顆按鈕並排 */
+  .ult-btns{display:flex; gap:6px;}
+  .ult-btns .ult-btn{flex:1 1 0; min-width:0; font-size:13px; padding:9px 4px; letter-spacing:0;}
+  .ult-note{font-size:10px; font-weight:800; color:#8aa0b4; margin-top:4px; text-align:left; padding:0 3px; letter-spacing:.3px;}
+  .side.p2 .ult-note{color:#9a6a4a;}
   .ult-desc{font-size:10.5px; font-weight:700; color:#7a8aa0; line-height:1.4; margin-top:5px; text-align:left; padding:0 3px;}
   .side.p2 .ult-desc{color:#9a6a4a;}
   /* 升級選擇面板 */
@@ -199,6 +204,13 @@
   .choice .val{min-width:42px; text-align:center;}
   .choice.wrong{background:#ffd6d6; box-shadow:0 4px 0 #e7a0a0;}
   .choice.correct{background:#c7f3d4; box-shadow:0 4px 0 #8fd6a6;}
+  /* 應用題選項：放大按鈕框（字級維持不變），方便後進生一眼判斷 */
+  body.topic-word .choices{ grid-template-columns:1fr 1fr; max-width:520px; margin:0 auto; gap:10px; }
+  body.topic-word .choice{ width:100%; font-size:17px; min-height:62px; padding:14px 10px; }
+  body.topic-word .choice .val{ font-weight:900; font-size:22px; }
+  /* 兩步運算題的選項是「列式」，改成上下各一大格，字級一樣不縮小 */
+  body.topic-word .choices.expr{ grid-template-columns:1fr; max-width:100%; }
+  body.topic-word .choices.expr .choice{ min-height:66px; }
   .mode-btn{margin-top:10px;}
   /* 題型選擇卡（第三屏）：小數乘法 / 小數除法 */
   .topic-row{display:flex; gap:14px; margin:12px 0 4px;}
@@ -330,6 +342,10 @@
     .side .fire{ margin-top:5px; padding:7px 0; font-size:14px; }
     body.mode-choice .pques{ font-size:18px; min-height:32px; padding:5px; margin-bottom:4px; }
     body.mode-choice .choice{ padding:5px 6px; font-size:15px; min-height:30px; }
+    /* 橫屏時應用題的選項框同樣要夠大（字級不變），否則會被上面的壓縮規則縮小 */
+    body.topic-word .choice{ min-height:58px; padding:10px 8px; font-size:17px; }
+    body.topic-word .choice .val{ font-size:22px; }
+    body.topic-word .choices.expr .choice{ min-height:62px; }
   }
 </style>
 </head>
@@ -401,7 +417,7 @@
             <p>選好<b>人數</b>與<b>職業</b>後選<b>題型</b>：選小數乘法／除法會再選<b>難度</b>（簡單／普通／困難）與<b>挑戰模式</b>；選<b>小數定義</b>則直接以選擇題開始（不選難度、固定選擇題模式）。答對就會<b>釋放技能</b>打怪；每關清光小怪後出現 <b>超大 BOSS</b>，單人答對 3 題、雙人合計答對 5 題即可擊敗牠！</p>
             <p>每個職業有 <b>3 個絕技</b>，答對時輪流釋放：❄️冰凍、☄️隕石、🌀旋風、⚡審判……各有特色！</p>
             <p><b>🔮 主動技</b>：每答對 5 題集滿能量，就能點擊釋放該職業的專屬大招——🔮雙倍分數、🛡️答錯免計連錯（保命）、⚔️立即破敵、💖回血，效果各不相同！</p>
-            <p><b>🏆 通關升級</b>：每擊敗一次 BOSS 通過一關，就能<b>升級</b>——選擇<b>強化主動技</b>（所有絕招效果提升一級）或<b>習得第二絕招</b>（解鎖新大招，獨立能量條）！</p>
+            <p><b>🏆 通關升級</b>：每擊敗一次 BOSS 通過一關，就能<b>升級</b>——選擇<b>強化主動技</b>（所有絕招效果提升一級）或<b>習得第二絕招</b>（解鎖新大招；<b>與第一招共用同一條能量</b>，集滿後只能選一招釋放，用完一起歸零重新儲氣）。</p>
             <div class="mode-row" id="modeRow">
               <button type="button" class="mode-card" data-count="1">
                 <span class="mode-badge">已選擇</span>
@@ -426,7 +442,7 @@
             </div>
             <p class="pick-warn hidden" id="modeWarn">⚠️ 請先選擇「單人挑戰」或「雙人合作」！</p>
             <button class="btn mode-btn" id="toClassBtn" type="button">⚔️ 下一步：選擇職業</button>
-            <p class="hint" style="margin-top:10px;">選好人數、職業、題型與挑戰模式才開始，開始前不會出現鍵盤。⚠️ 累計答錯 3 次失去 1 條命（5 條命共享）；🎆 擊敗 BOSS 城堡放煙花！</p>
+            <p class="hint" style="margin-top:10px;">選好人數、職業、題型與挑戰模式才開始，開始前不會出現鍵盤。⚠️ 累計答錯 3 次失去 1 條命（5 條命共享；<b>應用題例外：答錯一次即扣 1 條命</b>）；🎆 擊敗 BOSS 城堡放煙花！</p>
           </div>
 
           <!-- 職業選擇（第二屏） -->
@@ -455,7 +471,7 @@
           <div class="card hidden" id="topicScreen">
             <div class="tag mode-tag">👥 請先選擇人數</div>
             <h2>🧮 選擇題型</h2>
-            <p>這次要練習哪一種計算？選「小數乘法／小數除法」會接著選難度與挑戰模式；選「小數定義」則直接以選擇題開始（不選難度、固定選擇題模式）。</p>
+            <p>這次要練習哪一種計算？選「小數乘法／小數除法」會接著選難度與挑戰模式；選「小數定義」或「應用題」則直接以選擇題開始（不選難度、固定選擇題模式）。</p>
             <div class="topic-row" id="topicRow">
               <button type="button" class="topic-card" data-topic="mul">
                 <span class="mode-badge">已選擇</span>
@@ -485,6 +501,16 @@
                   <li>小數 ×、÷ 的概念與規則</li>
                   <li>選擇題形式直接開始</li>
                   <li>不選難度</li>
+                </ul>
+              </button>
+              <button type="button" class="topic-card" data-topic="word">
+                <span class="mode-badge">已選擇</span>
+                <span class="topic-emoji">📗</span>
+                <span class="topic-name">應用題</span>
+                <ul class="mode-desc">
+                  <li>第 1–2 關：判斷乘法或除法</li>
+                  <li>第 3 關起：加入兩步運算</li>
+                  <li>第 5 關起：考運算順序</li>
                 </ul>
               </button>
             </div>
@@ -570,7 +596,7 @@
         <div class="card">
           <div class="tag">🏆 通關升級！</div>
           <h2 id="upTitle">🎉 第 1 关通过！选择你的强化</h2>
-          <p class="hint" style="margin:2px 0 10px;">每位英雄二选一：<b>⬆️ 強化主動技</b> 或 <b>✨ 習得第二絕招</b>（解鎖新招，獨立能量條）。</p>
+          <p class="hint" style="margin:2px 0 10px;">每位英雄二选一：<b>⬆️ 強化主動技</b> 或 <b>✨ 習得第二絕招</b>（解鎖新招；兩招<b>共用同一條能量</b>，集滿只能選一招釋放）。</p>
           <div class="ups" id="upgrades"></div>
           <button class="btn" id="upgradeDoneBtn" style="background:linear-gradient(90deg,#7b5cff,#5a3fd6);box-shadow:0 5px 0 #432fae;margin-top:12px;">▶ 繼續下一關</button>
         </div>
@@ -929,6 +955,7 @@
   // 題型派發：小數乘法 / 小數除法 / 小數定義（level 為題目難度檔次 1~4，定義題不使用）
   function genProblem(level){
     if(topic === 'def') return genDefProblem();
+    if(topic === 'word') return genWordProblem(state.level);   // 應用題難度直接跟關卡（每通關加強）
     return (topic === 'div') ? genDivProblem(level) : genMulProblem(level);
   }
 
@@ -1046,6 +1073,190 @@
     return makers[pick]();
   }
 
+  // 應用題（判斷用乘法還是除法）：生活情境、單運算，固定選擇題。
+  // 題幹加入人物角色名稱；部分數量改用常識量詞（一打=12、半打=6、一星期=7天、一年=12個月）代替數字。
+  // 選項固定只有「乘法／除法」兩個（不設加減干擾項）。
+  // 建立題目物件
+  //   sc.op            → 單一運算題，選項固定是「乘法／除法」
+  //   sc.options/answer → 列式題，選項是兩條算式（只有兩個選項）
+  function wordProblem(sc, level){
+    let options, answer, expr = false;
+    if(sc.options){
+      options = sc.options.slice(); answer = sc.answer; expr = true;
+    } else {
+      options = ['乘法', '除法']; answer = sc.op;
+    }
+    // 洗牌選項位置，避免正解永遠在前面
+    for(let i = options.length - 1; i > 0; i--){ const j = randInt(0, i); const t = options[i]; options[i] = options[j]; options[j] = t; }
+    return { text: sc.text, options, answerIndex: options.indexOf(answer), answer, pLevel: level || 1, expr };
+  }
+
+  // 一位小數（避開 x.0 這種不像小數的值）
+  function wordDec1(lo, hi){ let v = randInt(lo * 10, hi * 10); if(v % 10 === 0) v += 1; return (v / 10).toFixed(1); }
+  // 計算出來的小數：整數值去掉多餘的 .0
+  function wordNum(v){ const s = (+v).toFixed(1); return s.slice(-2) === '.0' ? s.slice(0, -2) : s; }
+
+  // ── 第 3 關起：兩步運算（先乘後加、先乘後減、先除後加、先除後減）──
+  // 兩條算式只差「＋／−」，考的是「該加還是該減」。
+  const WORD_TWO = [
+    () => { const N = wordName(); const a = wordDec1(2.5, 8.5), n = randInt(2, 6), b = randInt(3, 15);
+      return { options:[`${a}×${n}+${b}`, `${a}×${n}−${b}`], answer:`${a}×${n}+${b}`,
+        text:`放學後，${N}到文具店買鉛筆，一支鉛筆 ${a} 元，${N}買了 ${n} 支；之後又買了一個 ${b} 元的橡皮擦。${N}一共要付多少元？` }; },
+    () => { const N = wordName(); const a = wordDec1(3.5, 9.5), n = randInt(2, 5), b = randInt(60, 150);
+      return { options:[`${b}−${a}×${n}`, `${b}+${a}×${n}`], answer:`${b}−${a}×${n}`,
+        text:`${N}帶了 ${b} 元到書局，買了 ${n} 本故事書，一本 ${a} 元。${N}還剩多少元？` }; },
+    () => { const N = wordName(); const a = wordDec1(0.3, 1.2), n = randInt(2, 6), b = wordDec1(0.1, 0.5);
+      return { options:[`${a}×${n}+${b}`, `${a}×${n}−${b}`], answer:`${a}×${n}+${b}`,
+        text:`${N}到超市買糖，一包糖重 ${a} kg，${N}買了 ${n} 包；用來裝糖的袋子重 ${b} kg。糖和袋子一共重多少 kg？` }; },
+    () => { const N = wordName(); const a = wordDec1(2.2, 4.8), n = randInt(20, 60), b = randInt(10, 40);
+      return { options:[`${a}×${n}−${b}`, `${a}×${n}+${b}`], answer:`${a}×${n}−${b}`,
+        text:`這個月${N}家一共用了 ${n} 度電，每度電 ${a} 元；因為參加了節能計劃，電力公司減收 ${b} 元。這個月要付多少元？` }; },
+    () => { const N = wordName(); const n = randInt(2, 5), m = +wordDec1(3.0, 6.0), t = wordNum(m * n), b = randInt(2, Math.max(2, Math.floor(m) - 1));
+      return { options:[`${t}÷${n}+${b}`, `${t}÷${n}−${b}`], answer:`${t}÷${n}+${b}`,
+        text:`老師把 ${t} 顆糖果平均分給 ${n} 位小朋友，之後再給每位小朋友 ${b} 顆。每位小朋友最後有多少顆？` }; },
+    () => { const N = wordName(); const n = randInt(2, 5), m = +wordDec1(1.2, 5.0), t = wordNum(m * n), b = randInt(1, Math.max(1, Math.floor(m) - 1));
+      return { options:[`${t}÷${n}−${b}`, `${t}÷${n}+${b}`], answer:`${t}÷${n}−${b}`,
+        text:`${N}把 ${t} 支鉛筆平均分給 ${n} 位同學，每位同學再送出 ${b} 支給弟弟。每位同學最後有多少支？` }; },
+    () => { const N = wordName(); const n = randInt(2, 5), m = randInt(20, 60), t = m * n, b = randInt(5, Math.max(6, Math.floor(m / 2)));
+      return { options:[`${t}÷${n}+${b}`, `${t}÷${n}−${b}`], answer:`${t}÷${n}+${b}`,
+        text:`${N}這個月的零用錢共 ${t} 元，平均分成 ${n} 個星期使用；每個星期媽媽另外再給 ${b} 元。每個星期實際有多少元可用？` }; },
+    () => { const N = wordName(); const a = wordDec1(1.2, 3.5), n = randInt(3, 6), b = wordDec1(0.5, 1.5);
+      return { options:[`${a}×${n}+${b}`, `${a}×${n}−${b}`], answer:`${a}×${n}+${b}`,
+        text:`${N}每天跑步 ${a} km，連續跑了 ${n} 天；最後一天還多跑了 ${b} km。這 ${n} 天一共跑了多少 km？` }; },
+    () => { const N = wordName(); const m = +wordDec1(2.0, 5.0), t = wordNum(m * 7), b = wordDec1(0.3, 1.2);
+      return { options:[`${t}÷7−${b}`, `${t}÷7+${b}`], answer:`${t}÷7−${b}`,
+        text:`${N}這個星期一共走了 ${t} km，平均每天走同樣多；今天因為下雨少走了 ${b} km。今天走了多少 km？` }; },
+    () => { const N = wordName(); const a = wordDec1(2.2, 4.8), n = randInt(15, 40), b = randInt(5, 25);
+      return { options:[`${a}×${n}−${b}`, `${a}×${n}+${b}`], answer:`${a}×${n}−${b}`,
+        text:`${N}家這個月用了 ${n} 度水，每度水 ${a} 元；水務局減收 ${b} 元。這個月的水費是多少元？` }; }
+  ];
+
+  // ── 第 5 關起：考運算順序（先加後乘、先減後除…），兩條算式只差括號位置 ──
+  const WORD_HARD = [
+    () => { const N = wordName(); const a = wordDec1(2.5, 8.5), n = randInt(2, 5);
+      return { options:[`(${n}+${n})×${a}`, `${n}+${n}×${a}`], answer:`(${n}+${n})×${a}`,
+        text:`${N}和妹妹每人都買了 ${n} 支鉛筆，一支鉛筆 ${a} 元。兩人一共要付多少元？` }; },
+    () => { const N = wordName(); const b = randInt(2, 6), a = wordDec1(2.5, 7.5);
+      return { options:[`(12−${b})×${a}`, `12−${b}×${a}`], answer:`(12−${b})×${a}`,
+        text:`一盒巧克力有 12 顆，${N}先吃掉了 ${b} 顆，剩下的每顆賣 ${a} 元。剩下的巧克力共可賣多少元？` }; },
+    () => { const N = wordName(); const x = randInt(20, 60), y = randInt(20, 60), n = randInt(2, 5);
+      return { options:[`(${x}+${y})÷${n}`, `${x}+${y}÷${n}`], answer:`(${x}+${y})÷${n}`,
+        text:`${N}出 ${x} 元、姐姐出 ${y} 元，兩人合資買了 ${n} 個相同的麵包。每個麵包多少元？` }; },
+    () => { const N = wordName(); const t = randInt(80, 200), b = randInt(10, 50), n = randInt(2, 5);
+      return { options:[`(${t}−${b})÷${n}`, `${t}−${b}÷${n}`], answer:`(${t}−${b})÷${n}`,
+        text:`${N}有 ${t} 元，先買了一個 ${b} 元的筆記本，剩下的錢平均分 ${n} 天使用。每天可以用多少元？` }; },
+    () => { const N = wordName(); const a = wordDec1(1.2, 2.5), b = wordDec1(1.2, 2.5), n = randInt(2, 4);
+      return { options:[`(${a}+${b})×${n}`, `${a}+${b}×${n}`], answer:`(${a}+${b})×${n}`,
+        text:`${N}每天走 ${a} km，弟弟每天走 ${b} km。兩人一起走了 ${n} 天，一共走了多少 km？` }; },
+    () => { const N = wordName(); const t = randInt(10, 30), b = randInt(2, 8), n = randInt(2, 6);
+      return { options:[`(${t}−${b})÷${n}`, `${t}−${b}÷${n}`], answer:`(${t}−${b})÷${n}`,
+        text:`一條繩子長 ${t} 米，${N}剪去 ${b} 米，再把剩下的繩子平均分成 ${n} 段。每段長多少米？` }; },
+    () => { const N = wordName(); const x = randInt(12, 40), y = randInt(6, 24), n = randInt(2, 5);
+      return { options:[`(${x}+${y})÷${n}`, `${x}÷${n}+${y}`], answer:`(${x}+${y})÷${n}`,
+        text:`${N}有 ${x} 顆糖，媽媽再給 ${y} 顆，${N}把全部糖果平均分給 ${n} 位同學。每位同學有多少顆？` }; },
+    () => { const N = wordName(); const t = randInt(20, 50), b = randInt(4, 12), a = wordDec1(1.5, 4.5);
+      return { options:[`(${t}−${b})×${a}`, `${t}−${b}×${a}`], answer:`(${t}−${b})×${a}`,
+        text:`${N}有 ${t} 張貼紙，送給同學 ${b} 張，剩下的全部拿去賣，每張賣 ${a} 元。一共可賣多少元？` }; }
+  ];
+
+  // 人物角色名稱池（讓題目更有故事性、更貼近生活）
+  const WORD_NAMES = ['小明','小美','小華','小傑','小雨','阿樂','小芸','阿宏','小晴','小宇','小恩','阿德','小安','小芯'];
+  function wordName(){ return WORD_NAMES[randInt(0, WORD_NAMES.length - 1)]; }
+
+  function genWordProblem(level){
+    // 一位小數（字串）：dec1(2.5, 9.9) → "2.5" ~ "9.9"（避開 x.0 這種不像小數的值）
+    const dec1 = (lo, hi) => { let v = randInt(lo * 10, hi * 10); if(v % 10 === 0) v += 1; return (v / 10).toFixed(1); };
+    const N = wordName();          // 本題主角
+    // 題庫（單一運算）：每個情境回傳 { op, text }，op 為正確運算（乘法 / 除法）
+    const SINGLE = [
+      // ── 乘法：求合計（單價 × 數量）──
+      () => { const a = dec1(2.5, 9.9); return { op:'乘法',
+        text:`放學後，${N}到文具店買鉛筆，一支鉛筆 ${a} 元，${N}買了一打。一共要付多少元？` }; },
+      () => { const a = dec1(2.5, 8.5); return { op:'乘法',
+        text:`天氣很熱，${N}和同學到便利店買可樂，一罐可樂 ${a} 元，他們合資買了半打。一共要付多少元？` }; },
+      () => { const a = dec1(18, 32), n = randInt(2, 5); return { op:'乘法',
+        text:`媽媽帶${N}到市場買豬肉，豬肉每斤 ${a} 元，媽媽買了 ${n} 斤。總共要付多少元？` }; },
+      () => { const a = dec1(3.5, 8.5), n = randInt(2, 8); return { op:'乘法',
+        text:`早餐時間，${N}到麵包店買麵包，一個麵包 ${a} 元，${N}買了 ${n} 個。一共要付多少元？` }; },
+      () => { const a = dec1(2.5, 7.5), n = randInt(2, 6); return { op:'乘法',
+        text:`${N}的媽媽買蘋果送給親戚，一盒蘋果 ${a} 元，一共買了 ${n} 盒。一共要付多少元？` }; },
+      () => { const a = dec1(3.5, 9.5), n = randInt(2, 5); return { op:'乘法',
+        text:`${N}很喜歡看書，一本故事書 ${a} 元，${N}買了 ${n} 本。一共要付多少元？` }; },
+      () => { const a = dec1(2.2, 4.8), n = randInt(3, 9); return { op:'乘法',
+        text:`這個月${N}家一共用了 ${n} 度水，每度水 ${a} 元。這個月的水費是多少元？` }; },
+      () => { const a = randInt(180, 420); return { op:'乘法',
+        text:`${N}家的電費每個月大約 ${a} 元。一年的電費共多少元？` }; },
+      () => { const a = dec1(0.3, 0.9), n = randInt(2, 6); return { op:'乘法',
+        text:`${N}到超市買糖，一包糖重 ${a} kg，${N}買了 ${n} 包。這些糖一共重多少 kg？` }; },
+      () => { const a = dec1(1.2, 1.4), b = dec1(1.2, 1.4); return { op:'乘法',
+        text:`${N}今年身高 ${a} 米，爸爸的身高剛好是${N}的 ${b} 倍。爸爸身高多少米？` }; },
+      () => { const a = dec1(2.0, 5.0), b = dec1(1.5, 3.0); return { op:'乘法',
+        text:`${N}家養了一隻貓，貓重 ${a} kg；鄰居家的狗，體重是這隻貓的 ${b} 倍。狗重多少 kg？` }; },
+      () => { const a = dec1(1.5, 3.5); return { op:'乘法',
+        text:`${N}每天上學要走 ${a} km，一星期要上學 5 天。一星期一共要走多少 km？` }; },
+      () => { const a = dec1(3.5, 9.5), n = randInt(2, 6); return { op:'乘法',
+        text:`開學了，${N}到文具店買鉛筆盒，一個鉛筆盒 ${a} 元，${N}買了 ${n} 個。一共要付多少元？` }; },
+      () => { const a = dec1(2.8, 7.8), n = randInt(2, 8); return { op:'乘法',
+        text:`${N}買果汁請同學喝，一瓶果汁 ${a} 元，一共買了 ${n} 瓶。一共要付多少元？` }; },
+      // ── 除法：求單價 / 平均分 / 已知倍數求原量 ──
+      () => { const t = 12 * randInt(3, 6); return { op:'除法',
+        text:`${N}到文具店，用 ${t} 元買了一打同樣的鉛筆。每支鉛筆多少元？` }; },
+      () => { const t = 6 * randInt(3, 8); return { op:'除法',
+        text:`${N}和同學夾錢買可樂，一共用 ${t} 元買了半打可樂。每罐可樂多少元？` }; },
+      () => { const t = randInt(36, 90), n = randInt(2, 5); return { op:'除法',
+        text:`媽媽到市場，用 ${t} 元買了 ${n} 斤同樣的豬肉。每斤豬肉多少元？` }; },
+      () => { const t = randInt(24, 64), n = randInt(2, 8); return { op:'除法',
+        text:`${N}用 ${t} 元買了 ${n} 個同樣的麵包，準備和家人分享。每個麵包多少元？` }; },
+      () => { const t = randInt(24, 64), n = randInt(2, 5); return { op:'除法',
+        text:`${N}用 ${t} 元買了 ${n} 本同樣的故事書。每本故事書多少元？` }; },
+      () => { const t = dec1(6, 12), n = randInt(2, 6); return { op:'除法',
+        text:`${N}要把 ${t} kg 的糖平均分給 ${n} 位小朋友。平均每人分到多少 kg？` }; },
+      () => { const t = randInt(24, 60), n = randInt(2, 6); return { op:'除法',
+        text:`${N}把 ${t} 元零用錢平均分給 ${n} 個人。平均每人分到多少元？` }; },
+      () => { const t = randInt(24, 60), n = randInt(3, 9); return { op:'除法',
+        text:`這個月${N}家的水費一共是 ${t} 元，一共用了 ${n} 度水。每度水多少元？` }; },
+      () => { const t = 12 * randInt(50, 150); return { op:'除法',
+        text:`${N}家一年的水費一共是 ${t} 元。平均每個月的水費是多少元？` }; },
+      () => { const t = dec1(6, 18), n = randInt(2, 6); return { op:'除法',
+        text:`${N}要走 ${t} km 的路，平均分成 ${n} 段來走。每一段長多少 km？` }; },
+      () => { const t = dec1(1.7, 1.9), b = dec1(1.2, 1.4); return { op:'除法',
+        text:`爸爸身高 ${t} 米，剛好是${N}身高的 ${b} 倍。${N}身高多少米？` }; },
+      () => { const t = dec1(4, 12), b = dec1(1.5, 3.0); return { op:'除法',
+        text:`鄰居家的一隻狗重 ${t} kg，重量是一隻貓的 ${b} 倍。這隻貓重多少 kg？` }; },
+      () => { const t = randInt(20, 48); return { op:'除法',
+        text:`${N}這個月參加課外活動一共 ${t} 小時，平均分到一星期完成。每天多少小時？` }; },
+      () => { const t = randInt(24, 56), n = randInt(2, 8); return { op:'除法',
+        text:`${N}用 ${t} 元買了 ${n} 個同樣的蘋果。每個蘋果多少元？` }; }
+    ];
+    // ── 依關卡決定出題分級 ──
+    //   第 1–2 關：只有單一運算（乘法／除法）
+    //   第 3–4 關：混入兩步運算（先乘後加、先除後減…），但不是全部
+    //   第 5 關起：再加入運算順序題（先加後乘、先減後除…，要比括號）
+    let tier = 1;
+    if(level >= 5){
+      // 第 5 關起：運算順序題的比例隨關卡慢慢升高
+      const hardRate = Math.min(0.40 + (level - 5) * 0.08, 0.62);
+      const r = Math.random();
+      tier = (r < hardRate) ? 3 : (r < hardRate + 0.30 ? 2 : 1);
+    } else if(level >= 3){
+      // 第 3 關約一半、第 4 關約七成是兩步運算
+      const twoRate = (level >= 4) ? 0.68 : 0.45;
+      tier = (Math.random() < twoRate) ? 2 : 1;
+    }
+    const bank = (tier === 3) ? WORD_HARD : (tier === 2) ? WORD_TWO : SINGLE;
+    const key = (i) => tier + ':' + i;
+    // 每關同一情境只出現一次：排除本關已出過的題號（該分級出盡才整輪重來）
+    if(!state.usedWord) state.usedWord = [];
+    let avail = bank.map((_, i) => i).filter(i => !state.usedWord.includes(key(i)));
+    if(avail.length === 0){
+      state.usedWord = state.usedWord.filter(k => String(k).indexOf(tier + ':') !== 0);
+      avail = bank.map((_, i) => i);
+    }
+    const pick = avail[randInt(0, avail.length - 1)];
+    state.usedWord.push(key(pick));
+    return wordProblem(bank[pick](), level);
+  }
+
   // 小數乘法出題：依題目難度檔次 1~4
   function genMulProblem(level){
     if(level <= 1){
@@ -1135,22 +1346,25 @@
       wrongTally: 0,               // 累計答錯次數（滿 3 次失去 1 條命）
       goal: 4, cleared: 0,         // 普通怪物清光後才出 BOSS
       score: 0,                     // 兩位玩家合計總分
-      p1: { combo:0, input:'', target:null, cls: sel.p1, skillIdx: 0, ultLevel:1, ults:['ult'], ultEnergy:{ult:0}, ultReady:{ult:false}, buff:{} },
-      p2: { combo:0, input:'', target:null, cls: sel.p2, skillIdx: 0, ultLevel:1, ults:['ult'], ultEnergy:{ult:0}, ultReady:{ult:false}, buff:{} },
+      p1: { combo:0, input:'', target:null, cls: sel.p1, skillIdx: 0, ultLevel:1, ults:['ult'], ultCharge:0, ultReady:false, buff:{} },
+      p2: { combo:0, input:'', target:null, cls: sel.p2, skillIdx: 0, ultLevel:1, ults:['ult'], ultCharge:0, ultReady:false, buff:{} },
       enemies: [], pets: [], projectiles: [], particles: [], floats: [],
       fireworks: [], castleGlow: 0,     // 擊敗 BOSS 的煙火與城堡金色光暈
       beams: [], shocks: [],            // BOSS 攻擊：紅色能量束 + 城堡衝擊波
       shake: 0, flash: 0, redFlash: 0,  // 衝鋒斬震屏 / 神聖審判白光 / BOSS 攻擊紅閃
       bossActive: false, bossesDefeated: 0, bossClearPending: false,
       usedDef: [],                 // 本關已出過的定義題題號（每關同一概念只出現一次）
+      usedWord: [],                // 本關已出過的應用題題號（每關同一情境只出現一次）
       running: false, over: false, paused: false
     };
   }
 
   function difficulty(){
     const lv = state.level;
+    // 應用題：小怪 / BOSS 移速再快一點（1.6 倍），逼玩家更快判斷乘除
+    const spdMul = (topic === 'word') ? 1.6 : 1;
     return {
-      speed: 18 + (lv-1)*2,                              // px / sec：開局較慢，每過一關只加快一點點
+      speed: (18 + (lv-1)*2) * spdMul,                   // px / sec：開局較慢，每過一關只加快一點點
       minInterval: Math.max(3000 - (lv-1)*150, 1800),   // 出怪間距隨機區間（下限，ms）：每關微降，最低 1.8 秒
       maxInterval: Math.max(6000 - (lv-1)*250, 3600),   // 出怪間距隨機區間（上限，ms）：每關微降，最低 3.6 秒
       minGap: 150                                        // 怪物之間最小間距（px）
@@ -1172,11 +1386,11 @@
     document.querySelectorAll('.side.p1').forEach(el=>el.classList.add('playing'));
     if(players === 2) document.querySelectorAll('.side.p2').forEach(el=>el.classList.add('playing'));
     else document.querySelectorAll('.side.p2').forEach(el=>el.classList.remove('playing'));
-    document.body.classList.remove('mode-input','mode-choice','topic-mul','topic-div','topic-def');
+    document.body.classList.remove('mode-input','mode-choice','topic-mul','topic-div','topic-def','topic-word');
     document.body.classList.add(currentMode==='choice' ? 'mode-choice' : 'mode-input',
-                                topic==='def' ? 'topic-def' : topic==='div' ? 'topic-div' : 'topic-mul');
+                                topic==='def' ? 'topic-def' : topic==='word' ? 'topic-word' : topic==='div' ? 'topic-div' : 'topic-mul');
     const tp = document.getElementById('topicPill');
-    if(tp) tp.textContent = (topic==='div') ? '➗ 小數除法' : (topic==='def' ? '📘 小數定義' : '✖️ 小數乘法');
+    if(tp) tp.textContent = (topic==='div') ? '➗ 小數除法' : (topic==='def' ? '📘 小數定義' : (topic==='word' ? '📗 應用題' : '✖️ 小數乘法'));
     spawnTimer = 0;
     nextSpawnIn = randInterval(difficulty());   // 設定第一次隨機出怪間距
     lastT = performance.now();
@@ -1206,7 +1420,7 @@
     let hearts = '';
     for(let i=0;i<5;i++) hearts += (i<state.lives ? '❤️' : '🤍');
     livesEl.textContent = hearts;
-    if(strikeEl) strikeEl.textContent = '💢 連錯 ' + state.wrongTally + '/3';
+    if(strikeEl) strikeEl.textContent = (topic === 'word') ? '💢 答錯即扣 1 血' : ('💢 連錯 ' + state.wrongTally + '/3');
     scoreEl.textContent = state.score;
     levelEl.textContent = state.level;
     lvbarEl.style.width = Math.min(100, (state.cleared/state.goal)*100) + '%';
@@ -1257,23 +1471,24 @@
         const s = cls.skills[pl.skillIdx % cls.skills.length];
         fire.textContent = s.icon + ' 釋放【' + s.name + '】';
       }
-      // 主動技能量條與釋放按鈕（每個已解鎖絕招各一條，集滿 5 點解鎖；習得第二絕招後多一條）
+      // 主動技：所有已習得的絕招共用同一條能量（集滿 5 點，只能選一招釋放，用完一起歸零重新儲）
       const ultsEl = document.getElementById(who+'ults');
       if(ultsEl){
-        let html = '';
+        const pts = pl.ultCharge || 0;
+        const ready = !!pl.ultReady;
+        let btns = '', descs = '';
         for(const uid of pl.ults){
           const u = (uid === 'ult') ? cls.ult : cls.ult2;
-          const pts = pl.ultEnergy[uid] || 0;
-          const ready = !!pl.ultReady[uid];
-          html += '<div class="ult">' +
-                    '<div class="ult-bar' + (ready ? ' full' : '') + '"><i style="width:' + (pts/5*100) + '%"></i></div>' +
-                    '<button type="button" class="ult-btn' + (ready ? ' ready' : '') + '" data-player="' + who + '" data-ult="' + uid + '"' + (ready ? '' : ' disabled') + '>' +
-                      u.icon + ' ' + u.name + (ready ? ' ✦' : ' (' + pts + '/5)') +
-                    '</button>' +
-                    '<div class="ult-desc">' + u.name + '：' + u.desc + '</div>' +
-                  '</div>';
+          btns += '<button type="button" class="ult-btn' + (ready ? ' ready' : '') + '" data-player="' + who + '" data-ult="' + uid + '"' + (ready ? '' : ' disabled') + '>' +
+                    u.icon + ' ' + u.name + (ready ? ' ✦' : '') + '</button>';
+          descs += '<div class="ult-desc">' + u.icon + ' ' + u.name + '：' + u.desc + '</div>';
         }
-        ultsEl.innerHTML = html;
+        ultsEl.innerHTML = '<div class="ult">' +
+                '<div class="ult-bar' + (ready ? ' full' : '') + '"><i style="width:' + (pts/5*100) + '%"></i></div>' +
+                '<div class="ult-btns">' + btns + '</div>' +
+                '<div class="ult-note">' + (ready ? '能量已滿 ✦ 選一招釋放（兩招一起歸零）' : '能量 ' + pts + '/5 · 答對一題 +1') + '</div>' +
+                descs +
+              '</div>';
       }
     }
     setPlayerQues('p1');
@@ -1288,12 +1503,22 @@
       const txt = pl.target.problem.text;
       if(currentMode === 'choice'){
         el.classList.remove('idle');
-        // 定義題本身已是完整問句，不再補 ' = ?'；計算題才顯示 ' = ?'
-        el.textContent = (topic === 'def') ? txt : (txt + ' = ?');
+        // 定義題／應用題本身已是完整問句，不再補 ' = ?'；計算題才顯示 ' = ?'
+        el.textContent = (topic === 'def' || topic === 'word') ? txt : (txt + ' = ?');
         const opts = pl.target.problem.options;
+        // 應用題的兩步運算題：選項是列式，改用整行大格顯示（字級不變）
+        const wrap = choiceBtns.length ? choiceBtns[0].parentElement : null;
+        if(wrap) wrap.classList.toggle('expr', !!(topic === 'word' && pl.target.problem.expr));
         choiceBtns.forEach(b=>{
-          b.querySelector('.val').textContent = opts[+b.dataset.idx];
-          b.classList.remove('wrong','correct');
+          const idx = +b.dataset.idx;
+          if(idx < opts.length){
+            b.style.display = '';                       // 應用題只有 2 個選項，其餘隱藏
+            b.querySelector('.val').textContent = opts[idx];
+            b.classList.remove('wrong','correct');
+          } else {
+            b.style.display = 'none';
+            b.classList.remove('wrong','correct');
+          }
         });
       } else {
         el.classList.remove('idle');
@@ -1302,6 +1527,8 @@
     } else {
       el.classList.add('idle');
       el.textContent = '等待你的怪物…';
+      const wrapIdle = choiceBtns.length ? choiceBtns[0].parentElement : null;
+      if(wrapIdle) wrapIdle.classList.remove('expr');
       choiceBtns.forEach(b=>{ b.querySelector('.val').textContent='?'; b.classList.remove('wrong','correct'); });
     }
   }
@@ -1356,11 +1583,9 @@
   function onCorrect(who, a){
     const pl = state[who];
     const cls = CLASSES[pl.cls];
-    // 答對累積主動技能量點：每個已解鎖絕招各自集氣，集滿 5 點可使用
-    for(const uid of pl.ults){
-      pl.ultEnergy[uid] = Math.min(5, (pl.ultEnergy[uid]||0) + 1);
-      if(pl.ultEnergy[uid] >= 5) pl.ultReady[uid] = true;
-    }
+    // 答對累積主動技能量：所有已習得絕招共用同一條能量（集滿 5 點，只能選一招釋放）
+    pl.ultCharge = Math.min(5, (pl.ultCharge || 0) + 1);
+    if(pl.ultCharge >= 5) pl.ultReady = true;
     const si = pl.skillIdx % cls.skills.length;   // 本回合釋放第幾個技能
     const sk = cls.skills[si];
     pl.skillIdx = si + 1;                          // 下次換一個技能
@@ -1493,7 +1718,8 @@
     if(currentMode !== 'choice') return;
     const pl = state[who];
     const a = pl.target;
-    if(!a) return;
+    // 題目物件異常（例如剛好在換題）時直接忽略，避免被誤判為答錯而扣命
+    if(!a || !a.problem || a.problem.answerIndex == null) return;
     if(idx === a.problem.answerIndex){
       onCorrect(who, a);
     } else {
@@ -1523,6 +1749,17 @@
       updateHUD();
       return;   // 不計入連錯、不扣命
     }
+    // 應用題：答錯一次即扣 1 條命（沒有 3 次機會）
+    if(topic === 'word'){
+      state.wrongTally = 0;
+      state.lives--;
+      state.floats.push({ x: W/2, y: H-130, text:'−1 ❤', color:'#ff3b3b', life:1.3, big:true });
+      flashWrong('答錯了！應用題直接失去 1 條命！');
+      beep([180,120],0.18,'sawtooth');
+      if(state.lives <= 0){ updateHUD(); endGame(false); return; }
+      updateHUD();
+      return;
+    }
     state.wrongTally++;
     if(state.wrongTally >= 3){
       state.wrongTally = 0;
@@ -1537,14 +1774,15 @@
     }
     updateHUD();
   }
-  // 主動技：集滿 5 點才能點擊釋放，每職業 / 每絕招效果不同；升級後增益隨 ultLevel 提升
+  // 主動技：共用能量集滿 5 點才能點擊釋放（兩招只能選一招，用完一起歸零）；升級後增益隨 ultLevel 提升
   function castUltimate(who, ultId){
     if(!state || !state.running || state.paused) return;
     const pl = state[who];
-    if(!pl.ultReady[ultId]) return;                 // 該絕招未集滿 5 點不可使用
+    if(!pl || !pl.ults.includes(ultId)) return;
+    if(!pl.ultReady) return;                        // 能量未集滿不可使用
     const cls = CLASSES[pl.cls];
     const u = (ultId === 'ult') ? cls.ult : cls.ult2;
-    pl.ultEnergy[ultId] = 0; pl.ultReady[ultId] = false;   // 釋放後重置能量
+    pl.ultCharge = 0; pl.ultReady = false;          // 釋放後共用能量一起歸零，重新儲氣
     const o = originOf(who);
     const L = pl.ultLevel;
     switch(u.effect){
@@ -1728,6 +1966,7 @@
       state.cleared = 0;
       state.level++;
       state.usedDef = [];           // 新的一關：定義題重新可以出現
+      state.usedWord = [];          // 新的一關：應用題重新可以出現
       state.goal = 4 + (state.level - 1);
       state.paused = true;                 // 暫停遊戲，彈出升級選擇
       showUpgradeScreen();                 // 讓玩家選擇強化或習得第二絕招
@@ -1786,9 +2025,8 @@
     const pl = state[who];
     if(choice === 'newult' && !pl.ults.includes('ult2')){
       pl.ults.push('ult2');
-      pl.ultEnergy['ult2'] = 0;
-      pl.ultReady['ult2'] = false;
-      showFloat('✨ ' + CLASSES[pl.cls].ult2.icon + ' 習得第二絕招：' + CLASSES[pl.cls].ult2.name + '！');
+      // 能量同步：直接沿用現有那條能量（不另開新條），已滿就維持可選兩招
+      showFloat('✨ ' + CLASSES[pl.cls].ult2.icon + ' 習得第二絕招：' + CLASSES[pl.cls].ult2.name + '！（與第一招共用能量）');
     } else {
       pl.ultLevel++;
       showFloat('⬆️ 主動技強化至 Lv.' + pl.ultLevel + '！');
@@ -2091,12 +2329,16 @@
 
   // ---- draw ----
   function draw(){
+    // 每幀強制把畫布狀態歸位：即使上一幀某個繪製函式拋錯、漏掉 restore，
+    // 位移/透明度也不會逐幀累積，避免整個畫面被推歪、看起來像遊戲「卡死退出」。
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([]);
     ctx.clearRect(0,0,W,H);
     const shaking = !!(state && state.shake>0);
-    if(shaking){                       // 衝鋒斬震屏
+    if(shaking){                       // 衝鋒斬震屏（用 setTransform 取代 save/translate，避免 restore 配對失衡）
       const m = state.shake*26;
-      ctx.save();
-      ctx.translate((Math.random()-0.5)*m, (Math.random()-0.5)*m);
+      ctx.setTransform(dpr,0,0,dpr, (Math.random()-0.5)*m*dpr, (Math.random()-0.5)*m*dpr);
     }
     drawBackground();
     drawTower();
@@ -2172,7 +2414,7 @@
     }
     // 柔和暗角，提升整體質感
     drawVignette();
-    if(shaking) ctx.restore();
+    if(shaking) ctx.setTransform(dpr,0,0,dpr,0,0);
   }
 
   // 小寵物（牧師「寵物召喚」）：圓滾滾的天使小寵物，含撲動小翅膀與光環
@@ -3221,7 +3463,7 @@
         ctx.beginPath(); ctx.arc(cx,cy,r*1.14,0,Math.PI*2); ctx.stroke();
         ctx.setLineDash([]);
         // 定義題不在此重複顯示整道題目（作答區已顯示），只標示題型
-        const txt = (topic === 'def') ? '📘 BOSS 定義題' : ('👹 BOSS  ' + e.problem.text);
+        const txt = (topic === 'def' || topic === 'word') ? (topic === 'word' ? '📗 BOSS 應用題' : '📘 BOSS 定義題') : ('👹 BOSS  ' + e.problem.text);
         ctx.font='bold 20px "PingFang TC",sans-serif';
         const tw=ctx.measureText(txt).width+26;
         const bx=cx-tw/2;
@@ -3243,7 +3485,7 @@
       ctx.setLineDash([]);
       const tag = owner==='p1' ? 'P1 ' : 'P2 ';
       // 定義題不重複顯示題目，只保留 P1/P2 歸屬標籤（作答區已顯示題幹）
-      const txt = (topic === 'def') ? tag.trim() : (tag + e.problem.text);
+      const txt = (topic === 'def' || topic === 'word') ? tag.trim() : (tag + e.problem.text);
       ctx.font='bold 16px "PingFang TC",sans-serif';
       const tw=ctx.measureText(txt).width+18;
       const bx=cx-tw/2;
@@ -3332,8 +3574,8 @@
   });
   document.getElementById('toDiffBtn').addEventListener('click',()=>{
     if(!topic){ showWarn(document.getElementById('topicWarn')); return; }
-    if(topic === 'def'){
-      // 小數定義：固定選擇題模式，直接開始（跳過難度與挑戰模式）
+    if(topic === 'def' || topic === 'word'){
+      // 小數定義 / 應用題：固定選擇題模式，直接開始（跳過難度與挑戰模式）
       currentMode = 'choice';
       startGame();
       return;
@@ -3368,7 +3610,7 @@
       el.classList.toggle('sel', el.dataset.topic === topic);
     });
     const btn = document.getElementById('toDiffBtn');
-    if(btn) btn.textContent = (topic === 'def') ? '🎯 直接開始（選擇題模式）' : '🎚️ 下一步：選擇難度';
+    if(btn) btn.textContent = (topic === 'def' || topic === 'word') ? '🎯 直接開始（選擇題模式）' : '🎚️ 下一步：選擇難度';
   }
   document.querySelectorAll('.topic-card').forEach(el=>{
     el.addEventListener('click',()=>{

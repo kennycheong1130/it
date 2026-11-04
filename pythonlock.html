@@ -292,9 +292,9 @@ body{
 .coop-who{ font-weight:bold; }
 .coop-who.who-down{ color:#c0392b; }
 .q-disabled{ opacity:.55; }
-/* 橫屏空間較寬時，兩個作答區左右並排 */
+/* 橫屏空間較寬時，兩個作答區左右並排（只在雙人 coop-mode 生效，單人維持整行） */
 @media (orientation: landscape) and (min-width: 820px){
-  #questions-area{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
+  #questions-area.coop-mode{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; }
 }
 
 /* ---------- 單人作答區放大（僅單人；雙人 .coop-q 不受影響，維持原尺寸） ----------
@@ -347,6 +347,48 @@ body{
   border-radius:8px; padding:4px 7px; font-size: clamp(8px, 1.35vh, 10px); font-weight:bold; color:#9a6b00;
   margin-bottom:6px; line-height:1.35;
 }
+.lu-row.lu-down{ background:#fdeaea; border-color:#e8a0a0; color:#a33; }
+
+/* ---------- 通關成長畫面 ---------- */
+.growth-box{
+  width:100%; max-width: 430px; margin:0 auto; padding: 2px;
+  max-height: calc(100dvh - 80px); overflow:auto;
+}
+.growth-sub{ font-size: clamp(9px,1.4vh,11px); color:#666; margin-bottom:6px; line-height:1.4; }
+.gcard{ background:#f7f9ff; border:2px solid #d5e0f5; border-radius:12px; padding:7px 8px; margin-bottom:7px; }
+.ghead{ display:flex; align-items:center; gap:6px; font-size: clamp(10px,1.55vh,12px); font-weight:bold; color:#2c4a7c; }
+.ghead svg{ width:26px; height:26px; }
+.ghead .glv{ font-weight:normal; color:#7a86a3; }
+.grow-points{ font-size: clamp(10px,1.5vh,12px); font-weight:bold; color:#b8860b; margin:3px 0 4px; }
+.grow-row{ display:flex; align-items:center; gap:6px; margin:4px 0; font-size: clamp(10px,1.5vh,12px); }
+.grow-row .glabel{ flex:1; text-align:left; color:#333; }
+.gstep{ width:26px; height:26px; border:none; border-radius:8px; background:#4a90d9; color:#fff;
+  font-weight:bold; font-size:15px; cursor:pointer; box-shadow:0 2px 0 #2f6bb0; font-family:inherit; }
+.gstep:active{ transform:translateY(2px); box-shadow:0 0 0 #2f6bb0; }
+.gstep:disabled{ background:#c8d2e0; box-shadow:none; cursor:not-allowed; }
+.gval{ min-width:26px; text-align:center; font-weight:bold; color:#1d7a45; }
+.gtotal{ font-size: clamp(9px,1.35vh,11px); color:#556; background:#eef3fb; border-radius:8px; padding:4px 6px; margin-top:5px; line-height:1.4; }
+.gskill{ margin-top:6px; border-top:1px dashed #cfd9ea; padding-top:5px; }
+.gskill-t{ font-size: clamp(9px,1.4vh,11px); font-weight:bold; color:#7a5ac0; margin-bottom:3px; }
+.gsk{ display:flex; align-items:center; gap:6px; margin:3px 0; font-size: clamp(9px,1.4vh,11px); color:#333; }
+.gsk .gname{ flex:1; text-align:left; line-height:1.25; }
+.gbtn{ border:none; border-radius:8px; padding:4px 8px; font-size: clamp(9px,1.35vh,11px); font-weight:bold;
+  color:#fff; background:#8e5cf7; cursor:pointer; box-shadow:0 2px 0 #6b3fd1; font-family:inherit; }
+.gbtn:active{ transform:translateY(2px); box-shadow:0 0 0 #6b3fd1; }
+.gbtn:disabled{ background:#c9bfe4; box-shadow:none; cursor:not-allowed; }
+.gbtn.done{ background:#9aa0a8; box-shadow:none; }
+.growth-hint{ font-size: clamp(9px,1.35vh,11px); color:#b3261e; min-height:14px; margin:2px 0 6px; }
+#screen-growth .menu-btn{ padding: clamp(7px,1.2vh,10px); font-size: clamp(11px,1.6vh,13px);
+  margin:4px 0; border-radius:10px; box-shadow:0 2px 0 rgba(0,0,0,.22); }
+#screen-growth .menu-btn:disabled{ filter:grayscale(.6); opacity:.55; cursor:not-allowed; }
+
+/* 技能按鈕（每人最多 2 招，橫向並排） */
+.skill-row{ display:flex; gap:5px; margin-top:4px; }
+.skill-row .skill-btn{ width:auto; flex:1 1 0; min-width:0; padding:7px 3px; font-size:11px; line-height:1.2; margin-top:0; }
+.sk-lv{ font-size:9px; opacity:.9; margin-left:3px; }
+/* 雙人時已被選走的職業 */
+.class-card.taken{ opacity:.45; filter:grayscale(.7); cursor:not-allowed; }
+.class-taken{ font-size:10px; color:#c0392b; margin-top:4px; font-weight:bold; }
 
 /* 浮動傷害 */
 .float-dmg{
@@ -448,20 +490,30 @@ body{
 
   #battle-layout{
     display:grid;
-    /* 橫屏：作答區放「下面」——戰場(上) : 作答區(下) = 1:1，單人/雙人皆同 */
-    grid-template-rows: 1fr 1fr;
-    gap:14px;
-    height: calc(100dvh - 190px);
+    /* 橫屏：作答區放「下面」——戰場(上) : 作答區(下) = 1:2，單人/雙人皆同 */
+    grid-template-rows: 1fr 2fr;
+    gap:12px;
+    height: calc(100dvh - 190px);   /* 實際高度由 fitBattle() 依可用空間校正 */
   }
-  #battle-field{ display:flex; flex-direction:column; gap:10px; min-height:0; overflow:auto; }
-  #battle-question{ min-height:0; overflow:auto; display:flex; flex-direction:column; align-items:center; }
+  #battle-field{ display:flex; flex-direction:column; gap:8px; min-height:0; overflow:hidden; }
+  #scene-fit{ flex:0 0 auto; }   /* 不壓縮：內容由 fitBattleScene() 等比縮小 */
+  #battle-question{ min-height:0; overflow:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; }
   #battle-question > #questions-area{ align-self:start; width:100%; }
   #boss-area{ padding:14px 12px; }
   .boss-sprite svg{ width:96px; height:96px; }
+  .battle-scene{ padding:8px 10px 10px; }
   #boss-name{ font-size:20px; margin:4px 0 8px; }
   #players-panel{ gap:10px; }
   .player-card{ min-width:0; }
   .player-sprite svg{ width:64px; height:64px; }
+  /* 橫屏高度有限：戰鬥卡壓縮，讓「最多 2 招技能」的按鈕也放得下 */
+  .battle-scene .player-card{ padding:6px 7px 5px; }
+  .battle-scene .player-sprite svg{ width:44px; height:44px; }
+  .battle-scene .player-name{ font-size:12px; margin:0 0 3px; }
+  .battle-scene .player-atk{ font-size:11px; margin-top:3px; }
+  .battle-scene .energy-wrap{ margin:3px 0 2px; }
+  .battle-scene .skill-row{ margin-top:3px; }
+  .battle-scene .skill-row .skill-btn{ padding:5px 2px; font-size:10px; }
   #options{ gap:12px; }
   .option-btn{ padding:13px 15px; font-size:16px; }
   #q-text{ font-size:19px; }
@@ -473,19 +525,44 @@ body{
   /* 更寬螢幕：整體再放大一階 */
   @media (min-width: 900px){
     #app{ max-width: 1200px; }
-    .boss-sprite svg{ width:120px; height:120px; }
+    .boss-sprite svg{ width:100px; height:100px; }
     .player-sprite svg{ width:76px; height:76px; }
     #q-text{ font-size:21px; }
     #options .option-btn{ padding:15px 17px; font-size:17px; }
   }
 
-  /* 作答區緊湊化：在 1:1 下半部即可完整顯示，不需內部捲動（單人/雙人皆同） */
-  #questions-area .q-box:not(.coop-q){ padding:12px; min-height:0; }
-  #q-text{ font-size:16px; line-height:1.45; }
-  #options{ gap:6px; margin-top:8px; }
-  #options .option-btn{ padding:8px 11px; font-size:14px; gap:9px; border-radius:12px; }
-  #options .opt-letter{ width:26px; height:26px; font-size:13px; }
-  #feedback{ margin-top:8px; padding:7px 9px; font-size:12px; line-height:1.45; }
+  /* 作答區佔 2/3 高度，字型放大；內容若仍超出，fitAnswerArea() 會自動等比縮小 */
+  #questions-area .q-box:not(.coop-q){ padding:14px 16px; min-height:0; }
+  #q-text{ font-size:20px; line-height:1.55; }
+  #options{ gap:9px; margin-top:10px; }
+  #options .option-btn{ padding:10px 13px; font-size:16px; gap:11px; border-radius:12px; }
+  #options .opt-letter{ width:29px; height:29px; font-size:14.5px; }
+  #feedback{ margin-top:8px; padding:8px 10px; font-size:13px; line-height:1.45; }
+  #questions-area .q-meta{ font-size:12px; }
+
+  /* 單人橫屏：題目（左）／選項（右）左右分欄，善用寬度；雙人 coop-q 完全不變 */
+  #questions-area .q-box.solo-q{
+    display:grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    grid-template-areas:
+      "meta meta"
+      "text opts"
+      "fb   fb";
+    column-gap:22px; row-gap:8px;
+    align-items:start;
+    width:100%;
+    padding:12px 14px;
+  }
+  #questions-area .q-box.solo-q .q-meta{ grid-area:meta; }
+  /* 左欄只有題目，空間充裕 → 題目字型可以放大很多 */
+  #questions-area .q-box.solo-q #q-text{ grid-area:text; font-size:24px; line-height:1.6; }
+  /* 右欄選項：略收窄內距，讓 4 個選項在 2/3 高度內不需捲動 */
+  #questions-area .q-box.solo-q #options{ grid-area:opts; margin-top:0; gap:7px; }
+  #questions-area .q-box.solo-q #options .option-btn{ padding:7px 12px; font-size:15.5px; gap:10px; }
+  #questions-area .q-box.solo-q #options .opt-letter{ width:26px; height:26px; font-size:13.5px; }
+  #questions-area .q-box.solo-q #feedback{ grid-area:fb; margin-top:0; }
+  #questions-area .q-box.solo-q #feedback:empty{ display:none; }
+
   /* 雙人作答面板同步緊湊 */
   .coop-q .q-text{ font-size:13px; line-height:1.4; }
   .coop-q .options{ gap:5px; margin-top:6px; }
@@ -499,9 +576,9 @@ body{
   .screen{ padding:10px 12px 14px; }
   .app-header{ padding:8px 10px; font-size:18px; }
   .app-header small{ font-size:11px; }
-  #battle-layout{ gap:10px; height:auto; grid-template-rows:auto auto; }
-  #battle-field{ overflow:visible; }
-  #battle-question{ overflow:visible; }
+  #battle-layout{ gap:10px; height:calc(100dvh - 150px); grid-template-rows:1fr 2fr; }
+  #battle-field{ overflow:hidden; }
+  #battle-question{ overflow:hidden; }
   #boss-area{ padding:8px; }
   .boss-sprite svg{ width:62px; height:62px; }
   #boss-name{ font-size:15px; margin:2px 0 4px; }
@@ -523,13 +600,13 @@ body{
   .battle-scene{ padding:8px 10px 10px; }
   .vs-badge{ width:40px; height:40px; font-size:16px; }
   .battle-scene #players-panel{ flex-direction:row; }
-  /* 矮橫屏：單人作答區回歸緊湊，避免超出一個畫面 */
-  #questions-area .q-box:not(.coop-q){ padding:12px; min-height:0; display:block; }
-  #q-text{ font-size:15px; line-height:1.4; }
+  /* 矮橫屏：作答區仍是 2/3 高度，字型略小但保留左右分欄（單人） */
+  #questions-area .q-box:not(.coop-q){ padding:12px 14px; min-height:0; }
+  #q-text{ font-size:18px; line-height:1.5; }
   #options{ gap:8px; margin-top:10px; }
-  #options .option-btn{ padding:10px 12px; font-size:14px; }
-  #options .opt-letter{ width:26px; height:26px; font-size:14px; }
-  #feedback{ font-size:13px; padding:8px 10px; margin-top:8px; }
+  #options .option-btn{ padding:9px 12px; font-size:15px; }
+  #options .opt-letter{ width:27px; height:27px; font-size:13.5px; }
+  #feedback{ font-size:12.5px; padding:7px 9px; margin-top:7px; }
 }
 
 /* 直屏窄手機（原本的 520 斷點仍保留，並補強題目可讀性） */
@@ -560,6 +637,7 @@ body{
       <div class="big">🏰⚔️🐉</div>
       <h2>歡迎來到程式勇者村！</h2>
       <p>用你在 10 堂課學到的 Python 魔法指令，<br>答對選擇題就能攻擊魔王，把牠打倒吧！</p>
+      <p style="font-size:12px;color:#6b7a99;margin-top:6px;">🔥 每打完一個大關可獲得 <b>20 點成長</b>，自由分配到血量／攻擊／防禦，<br>還能升級技能或再學第 2 招（每人最多 2 招）。</p>
     </div>
     <button class="menu-btn" onclick="selectMode('solo')">🧍 單人冒險</button>
     <button class="menu-btn alt" onclick="selectMode('coop')">👫 雙人合作</button>
@@ -578,7 +656,7 @@ body{
   <!-- 階段選擇 -->
   <section id="screen-stage" class="screen">
     <div class="section-title">選擇挑戰的階段</div>
-    <div class="section-sub">題目對應 10 堂課（print → 變數 → 運算 → if → 迴圈 → 清單 → turtle → 專題），由易到難分成 4 個階段<br>🔥 第 4 階段「煉獄級」最難：巢狀迴圈、清單切片、字串方法、f-string、多步驟程式追蹤</div>
+    <div class="section-sub">每 2 堂課一個階段，共 5 個基礎階段（print → 變數 → 運算 → if → 迴圈 → 清單 → turtle → 專題）<br>🔥 最後再加第 6 階段「終極試煉」：10 堂課全部內容混合，題目最難、最需要多步驟思考</div>
     <div class="section-sub" id="stage-progress" style="font-weight:bold;color:#8e44ad;"></div>
     <div class="card-grid" id="stage-cards"></div>
     <div style="text-align:center;margin-top:14px;">
@@ -595,6 +673,7 @@ body{
 
     <div id="battle-layout">
       <div id="battle-field">
+        <div id="scene-fit">
         <div class="battle-scene">
           <div id="players-panel"></div>
 
@@ -610,6 +689,7 @@ body{
             <div class="boss-shield" id="boss-shield" style="display:none">🛡️ 護盾 <span id="boss-shield-val">0</span></div>
             <div class="boss-hp-label">魔王血量（打掉就勝利！）</div>
           </div>
+        </div>
         </div>
 
         <div id="skill-banner"></div>
@@ -633,7 +713,7 @@ body{
     </div>
   </section>
 
-  <!-- 打敗魔王・升級畫面 -->
+  <!-- 打敗魔王・前往下一隻 -->
   <section id="screen-levelup" class="screen">
     <div class="result-box">
       <div class="result-title win" id="levelup-title"></div>
@@ -642,6 +722,17 @@ body{
       <div id="levelup-next" class="lu-next"></div>
       <button class="menu-btn" onclick="nextBoss()">⚔️ 挑戰下一隻魔王</button>
       <button class="menu-btn" onclick="backHome()" style="background:linear-gradient(135deg,#95a5c6,#b6c0db);box-shadow:0 6px 0 #6b748f;">🏠 回到首頁</button>
+    </div>
+  </section>
+
+  <!-- 通關成長：分配 20 點素質 + 技能升級／學習 -->
+  <section id="screen-growth" class="screen">
+    <div class="growth-box">
+      <div class="result-title win" id="growth-title">🎊 大關通關！角色成長</div>
+      <div class="growth-sub" id="growth-sub"></div>
+      <div id="growth-cards"></div>
+      <div class="growth-hint" id="growth-hint"></div>
+      <button class="menu-btn" id="growth-confirm" onclick="confirmGrowth()">✅ 完成成長，繼續冒險</button>
     </div>
   </section>
 
@@ -948,6 +1039,100 @@ const BOSS_SVG = {
       <rect x="56" y="96" width="8" height="12" rx="3" fill="#c0392b"/>
     </svg>`,
   ],
+  /* ---------- 第 5 階段：算數森林（運算・if） ---------- */
+  5: [
+    /* 算盤妖 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <ellipse cx="60" cy="64" rx="30" ry="30" fill="#7bc96f" stroke="#3f9e2e" stroke-width="3"/>
+      <rect x="40" y="50" width="40" height="10" rx="4" fill="#eaffd6" stroke="#3f9e2e" stroke-width="2"/>
+      <rect x="40" y="70" width="40" height="10" rx="4" fill="#eaffd6" stroke="#3f9e2e" stroke-width="2"/>
+      <circle cx="48" cy="55" r="3" fill="#3f9e2e"/><circle cx="60" cy="55" r="3" fill="#3f9e2e"/><circle cx="72" cy="55" r="3" fill="#3f9e2e"/>
+      <circle cx="48" cy="75" r="3" fill="#3f9e2e"/><circle cx="60" cy="75" r="3" fill="#3f9e2e"/><circle cx="72" cy="75" r="3" fill="#3f9e2e"/>
+      <circle cx="50" cy="40" r="5" fill="#223"/><circle cx="70" cy="40" r="5" fill="#223"/>
+      <path d="M54 44 q6 6 12 0" stroke="#223" stroke-width="3" fill="none"/>
+    </svg>`,
+    /* 符號鬼 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M36 70 Q36 30 60 30 Q84 30 84 70 L84 100 L74 92 L64 100 L54 92 L44 100 L36 92 Z" fill="#9be7c4" stroke="#3aa882" stroke-width="3"/>
+      <circle cx="50" cy="58" r="5" fill="#223"/><circle cx="70" cy="58" r="5" fill="#223"/>
+      <text x="48" y="80" font-size="16" fill="#1b6b4f" font-family="monospace">+-</text>
+      <text x="66" y="80" font-size="16" fill="#1b6b4f" font-family="monospace">×÷</text>
+    </svg>`,
+    /* 判斷魔 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M40 64 Q40 34 60 34 Q80 34 80 64 Q80 96 60 96 Q40 96 40 64 Z" fill="#9b8cff" stroke="#5b4aa0" stroke-width="3"/>
+      <path d="M44 38 l-6 -16 l12 6 Z M76 38 l6 -16 l-12 6 Z" fill="#5b4aa0"/>
+      <circle cx="52" cy="60" r="5" fill="#fff"/><circle cx="68" cy="60" r="5" fill="#fff"/>
+      <circle cx="52" cy="61" r="2.5" fill="#311"/><circle cx="68" cy="61" r="2.5" fill="#311"/>
+      <text x="54" y="86" font-size="22" fill="#3a2f6b" font-family="monospace">?</text>
+    </svg>`,
+    /* 邏輯獸 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M38 66 Q38 38 60 36 Q82 38 82 66 Q82 94 60 94 Q38 94 38 66 Z" fill="#ffb066" stroke="#c8742a" stroke-width="3"/>
+      <path d="M40 44 l-10 -10 l8 14 Z M80 44 l10 -10 l-8 14 Z" fill="#ffb066" stroke="#c8742a" stroke-width="3"/>
+      <circle cx="52" cy="62" r="5" fill="#223"/><circle cx="68" cy="62" r="5" fill="#223"/>
+      <text x="46" y="84" font-size="11" fill="#7a3d10" font-family="monospace">AND</text>
+      <text x="62" y="84" font-size="11" fill="#7a3d10" font-family="monospace">OR</text>
+    </svg>`,
+    /* 森林賢者 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <rect x="52" y="64" width="16" height="34" rx="6" fill="#8a5a2b" stroke="#5e3b18" stroke-width="3"/>
+      <circle cx="60" cy="48" r="26" fill="#5fae4f" stroke="#2f7a2f" stroke-width="3"/>
+      <circle cx="60" cy="48" r="14" fill="#7bc96f"/>
+      <circle cx="52" cy="46" r="4" fill="#223"/><circle cx="68" cy="46" r="4" fill="#223"/>
+      <path d="M54 56 q6 6 12 0" stroke="#223" stroke-width="3" fill="none"/>
+    </svg>`,
+  ],
+  /* ---------- 第 6 階段：迴圈洞窟（while・列表） ---------- */
+  6: [
+    /* 迴圈幽靈 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M36 70 Q36 28 60 28 Q84 28 84 70 L84 100 L74 92 L64 100 L54 92 L44 100 L36 92 Z" fill="#b9a7ff" stroke="#6b4fb0" stroke-width="3"/>
+      <circle cx="50" cy="58" r="5" fill="#223"/><circle cx="70" cy="58" r="5" fill="#223"/>
+      <path d="M60 42 a12 12 0 1 1 -0.1 0 M60 42 l5 -5 M60 42 l-5 5" stroke="#4a2f8a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>`,
+    /* 計數妖 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <ellipse cx="60" cy="64" rx="28" ry="30" fill="#6fa8dc" stroke="#3d6aa0" stroke-width="3"/>
+      <path d="M44 42 l-6 -14 l12 6 Z M76 42 l6 -14 l-12 6 Z" fill="#3d6aa0"/>
+      <circle cx="52" cy="60" r="5" fill="#223"/><circle cx="68" cy="60" r="5" fill="#223"/>
+      <text x="48" y="86" font-size="18" fill="#fff" font-family="monospace">123</text>
+    </svg>`,
+    /* 清單術士 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M40 40 Q60 22 80 40 L80 96 L40 96 Z" fill="#8e7cc3" stroke="#5b4a91" stroke-width="3"/>
+      <rect x="84" y="44" width="6" height="56" rx="3" fill="#b9a7ff" stroke="#5b4a91" stroke-width="2"/>
+      <circle cx="54" cy="54" r="4" fill="#fff"/><circle cx="66" cy="54" r="4" fill="#fff"/>
+      <rect x="48" y="66" width="24" height="4" rx="2" fill="#e9e2ff"/>
+      <rect x="48" y="74" width="20" height="4" rx="2" fill="#e9e2ff"/>
+      <rect x="48" y="82" width="24" height="4" rx="2" fill="#e9e2ff"/>
+    </svg>`,
+    /* 索引魔 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M36 64 Q36 36 60 36 Q84 36 84 64 Q84 96 60 96 Q36 96 36 64 Z" fill="#7b6bd0" stroke="#483a9e" stroke-width="3"/>
+      <path d="M44 40 l-4 -16 l10 8 Z M76 40 l4 -16 l-10 8 Z" fill="#483a9e"/>
+      <circle cx="52" cy="62" r="5" fill="#ffd93d"/><circle cx="68" cy="62" r="5" fill="#ffd93d"/>
+      <text x="46" y="86" font-size="13" fill="#fff" font-family="monospace">[0]</text>
+      <text x="62" y="86" font-size="13" fill="#fff" font-family="monospace">[1]</text>
+    </svg>`,
+    /* 洞窟吞噬者 */
+    `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      ${GROUND}
+      <path d="M28 70 Q28 38 60 38 Q92 38 92 70 Q92 96 60 96 Q28 96 28 70 Z" fill="#5a4b8a" stroke="#2e2350" stroke-width="3"/>
+      <ellipse cx="60" cy="64" rx="26" ry="18" fill="#1b1330"/>
+      <path d="M40 62 l6 8 l6 -8 l6 8 l6 -8 l6 8 l6 -8 l6 8" fill="#fff" stroke="#2e2350" stroke-width="1"/>
+      <circle cx="48" cy="52" r="4" fill="#ffd93d"/><circle cx="72" cy="52" r="4" fill="#ffd93d"/>
+    </svg>`,
+  ],
 };
 
 </script>
@@ -993,71 +1178,131 @@ function escapeHtml(t){
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-/* ---------- 職業資料（名稱與職業相關 + 主動技能） ---------- */
+/* ---------- 技能庫（每個技能 3 級；每個角色最多 2 招，且各角色技能不重複） ----------
+   type 決定戰鬥中的實際效果：
+   wall 擋傷 / blood 獻血增傷 / burn 灼燒 / heal 自我治療 /
+   pierce 破甲無視護盾 / stun 震懾（魔王無法反擊）/ drain 吸血
+*/
+const SKILL_LEVEL_MAX = 3;
+const SKILLS = {
+  wall: {
+    id:'wall', name:'盾牆守護', icon:'🛡️', type:'wall',
+    brief:'擋下下一次傷害',
+    text: lv => `展開護盾，抵擋下一次答錯受到的傷害${lv>=2?'，並反彈 50% 傷害給魔王':''}${lv>=3?'（可連續抵擋 2 次）':''}`,
+  },
+  blood: {
+    id:'blood', name:'獻血狂斬', icon:'🩸', type:'blood',
+    brief:'扣血換取重擊',
+    text: lv => `立即消耗自身 10% 最大血量（不會致死），下一題答對造成 ×${[2,2.5,3][lv-1]} 傷害`,
+  },
+  burn: {
+    id:'burn', name:'烈焰灼燒', icon:'🔥', type:'burn',
+    brief:'點燃魔王持續燒傷',
+    text: lv => `下一題答對後點燃魔王 2 回合，每回合額外 ${[8,12,16][lv-1]} 點傷害（無視護盾）`,
+  },
+  heal: {
+    id:'heal', name:'聖光治癒', icon:'🌟', type:'heal',
+    brief:'回復自身 30% 血量',
+    text: lv => `回復自己最大血量的 30%（不治療隊友、不能復活任何人）${lv>=2?`，並額外回復 ${lv-1} 點能量`:''}`,
+  },
+  pierce: {
+    id:'pierce', name:'破甲重擊', icon:'⚡', type:'pierce',
+    brief:'無視護盾＋增傷',
+    text: lv => `下一題無視魔王護盾，傷害 +${[20,35,50][lv-1]}%`,
+  },
+  stun: {
+    id:'stun', name:'震懾之擊', icon:'💫', type:'stun',
+    brief:'讓魔王無法反擊',
+    text: lv => `下一題魔王無法反擊（答錯也不受傷）${lv>=2?'，且該題傷害 +25%':''}${lv>=3?'，該題魔王也無法施放技能':''}`,
+  },
+  drain: {
+    id:'drain', name:'汲血之刃', icon:'🧛', type:'drain',
+    brief:'攻擊同時吸血',
+    text: lv => `下一題答對時，回復造成傷害的 ${[40,55,70][lv-1]}% 血量`,
+  },
+};
+/* 只能靠「通關成長」學會的技能（四職業的基礎技能不會互相學習，確保角色技能不重複） */
+const LEARNABLE = ['pierce','stun','drain'];
+function skillLvText(id, lv){ return SKILLS[id] ? SKILLS[id].text(lv) : ''; }
+
+/* ---------- 職業資料（每個職業的基礎技能都不同） ---------- */
 const CLASSES = {
-  knight:  { key:'knight',  name:'鐵壁騎士', hp:120, atk:18, def:3,
-             hpGain:22, atkGain:4, defGain:3, color:'#4a90d9',
-             skillName:'盾牆守護', skillEffect:'block',
-             skillDesc:'下一題答錯也不會受傷（擋下攻擊）',
-             passive:'被攻擊受到的傷害減半；升級時血量與防禦成長最高' },
-  warrior: { key:'warrior', name:'狂戰勇士', hp:90,  atk:24, def:1,
-             hpGain:18, atkGain:7, defGain:1, color:'#e74c3c',
-             skillName:'狂暴斬', skillEffect:'crit2',
-             skillDesc:'下一題答對造成 2 倍傷害',
-             passive:'攻擊成長最快：每次升級攻擊力大幅提升' },
-  mage:    { key:'mage',    name:'炎爆法師', hp:70,  atk:28, def:1,
-             hpGain:14, atkGain:8, defGain:1, color:'#e67e22',
-             skillName:'炎爆術', skillEffect:'crit3',
-             skillDesc:'下一題答對造成 3 倍傷害',
-             passive:'爆發型：攻擊最高、升級更猛，但血量較少' },
-  sage:    { key:'sage',    name:'聖輝賢者', hp:100, atk:20, def:2,
-             hpGain:20, atkGain:4, defGain:2, color:'#27ae60',
-             skillName:'聖光治癒', skillEffect:'healSelf30',
-             skillDesc:'只回復自己「目前最大血量的 30%」（牧師不治療隊友，也不能復活任何人）',
-             passive:'每答對數題回血；升級後回得更多更頻繁' },
+  knight:  { key:'knight',  name:'鐵壁騎士', hp:120, atk:18, def:3, color:'#4a90d9',
+             skill:'wall',
+             passive:'天生防禦高：被攻擊傷害減半' },
+  warrior: { key:'warrior', name:'狂戰勇士', hp:90,  atk:24, def:1, color:'#e74c3c',
+             skill:'blood',
+             passive:'攻擊力最高：以血量換取爆發傷害' },
+  mage:    { key:'mage',    name:'炎爆法師', hp:70,  atk:28, def:1, color:'#e67e22',
+             skill:'burn',
+             passive:'爆發型：攻擊最高但血量最少，擅長持續灼燒' },
+  sage:    { key:'sage',    name:'聖輝賢者', hp:100, atk:20, def:2, color:'#27ae60',
+             skill:'heal',
+             passive:'每答對 4 題自動回復少許自身血量（不治療隊友）' },
 };
 
 /* ---------- 階段 / 魔王（每階段 5 隻，血量一隻比一隻多） ---------- */
 const STAGES = {
+  /* ---------- 每兩堂課合為一個階段（共 5 個基礎階段），最後再加 1 個終極挑戰 ---------- */
   1: {
-    id:1, name:'新手村', sub:'入門基礎：print、變數、運算（第 1–3 課）', color:'#7ed957',
+    id:1, name:'新手廣場', sub:'第 1–2 課：print、變數與 input', color:'#7ed957', lessons:[1,2],
     bosses:[
       { name:'史萊姆',     hp:120, atk:12, skill:{ name:'黏液分裂', type:'heal',   power:15, desc:'分裂回復自身血量' } },
-      { name:'蝙蝠精',     hp:165, atk:13, skill:{ name:'超聲波',   type:'aoe',    power:8,  desc:'對全體勇者造成傷害' } },
-      { name:'蘑菇怪',     hp:210, atk:14, skill:{ name:'毒孢子',   type:'aoe',    power:10, desc:'散播毒物，全體受創' } },
+      { name:'蝙蝠精',     hp:160, atk:13, skill:{ name:'超聲波',   type:'aoe',    power:8,  desc:'對全體勇者造成傷害' } },
+      { name:'蘑菇怪',     hp:205, atk:14, skill:{ name:'毒孢子',   type:'aoe',    power:10, desc:'散播毒物，全體受創' } },
       { name:'石龜獸',     hp:255, atk:15, skill:{ name:'龜殼防護', type:'shield', power:25, desc:'展開護盾抵擋傷害' } },
-      { name:'村莊守衛長', hp:300, atk:16, skill:{ name:'守衛號令', type:'buff',   power:4,  desc:'提升自身攻擊力' } },
+      { name:'村莊守衛長', hp:310, atk:16, skill:{ name:'守衛號令', type:'buff',   power:4,  desc:'提升自身攻擊力' } },
     ],
   },
   2: {
-    id:2, name:'迷霧洞窟', sub:'流程控制：if 判斷、for / while 迴圈（第 4–7 課）', color:'#b0a08f',
+    id:2, name:'算數森林', sub:'第 3–4 課：數字運算、if 單向判斷', color:'#37b24d', lessons:[3,4],
     bosses:[
-      { name:'洞窟蝙蝠王', hp:200, atk:15, skill:{ name:'暗影突襲', type:'aoe',    power:12, desc:'突襲全體勇者' } },
-      { name:'毒蛛',       hp:250, atk:16, skill:{ name:'劇毒之咬', type:'aoe',    power:14, desc:'毒液侵襲全體' } },
-      { name:'骷髏兵',     hp:300, atk:17, skill:{ name:'骨之盾',   type:'shield', power:30, desc:'召喚骨盾抵擋傷害' } },
-      { name:'石巨人',     hp:360, atk:18, skill:{ name:'巨石投擲', type:'aoe',    power:16, desc:'投擲巨石重創全體' } },
-      { name:'洞窟魔眼',   hp:420, atk:19, skill:{ name:'凝視強化', type:'buff',   power:5,  desc:'凝視提升攻擊力' } },
+      { name:'算盤妖',   hp:290, atk:14, skill:{ name:'念珠攻擊', type:'aoe',    power:12, desc:'彈射念珠重創全體' } },
+      { name:'符號鬼',   hp:345, atk:15, skill:{ name:'符號亂舞', type:'aoe',    power:14, desc:'拋出 +−×÷ 符號襲擊' } },
+      { name:'判斷魔',   hp:405, atk:16, skill:{ name:'條件之盾', type:'shield', power:30, desc:'以條件展開護盾' } },
+      { name:'邏輯獸',   hp:470, atk:17, skill:{ name:'邏輯強化', type:'buff',   power:5,  desc:'強化自身攻擊力' } },
+      { name:'森林賢者', hp:540, atk:18, skill:{ name:'生息回復', type:'heal',   power:40, desc:'汲取森林之力回血' } },
     ],
   },
   3: {
-    id:3, name:'魔王城', sub:'進階挑戰：清單、turtle 繪圖、綜合專題（第 8–10 課）', color:'#e74c3c',
+    id:3, name:'判斷迷宮', sub:'第 5–6 課：if-else / elif、for 迴圈', color:'#4d96ff', lessons:[5,6],
     bosses:[
-      { name:'火龍兵',   hp:260, atk:18, skill:{ name:'烈焰吐息', type:'aoe',    power:18, desc:'噴出烈焰重創全體' } },
-      { name:'冰巫妖',   hp:330, atk:19, skill:{ name:'寒冰壁壘', type:'shield', power:35, desc:'築起寒冰護盾' } },
-      { name:'暗影騎士', hp:420, atk:20, skill:{ name:'暗影斬',   type:'aoe',    power:20, desc:'暗影斬擊全體' } },
-      { name:'巨型傀儡', hp:510, atk:21, skill:{ name:'鋼鐵修復', type:'heal',   power:40, desc:'修復鋼體回血' } },
-      { name:'Python 大帝', hp:600, atk:22, skill:{ name:'終極代碼', type:'aoe', power:24, desc:'釋放終極代碼重創全體' } },
+      { name:'洞窟蝙蝠王', hp:480, atk:16, skill:{ name:'暗影突襲', type:'aoe',    power:14, desc:'突襲全體勇者' } },
+      { name:'毒蛛',       hp:550, atk:17, skill:{ name:'劇毒之咬', type:'aoe',    power:16, desc:'毒液侵襲全體' } },
+      { name:'骷髏兵',     hp:625, atk:18, skill:{ name:'骨之盾',   type:'shield', power:34, desc:'召喚骨盾抵擋傷害' } },
+      { name:'石巨人',     hp:705, atk:19, skill:{ name:'巨石投擲', type:'aoe',    power:18, desc:'投擲巨石重創全體' } },
+      { name:'洞窟魔眼',   hp:790, atk:20, skill:{ name:'凝視強化', type:'buff',   power:6,  desc:'凝視提升攻擊力' } },
     ],
   },
-  /* ---------- 第 4 階段：煉獄級（最難，題目需要多步驟思考） ---------- */
   4: {
-    id:4, name:'煉獄級', sub:'地獄試煉：巢狀迴圈、清單切片、字串方法、f-string、多步驟追蹤（第 8–10 課進階）', color:'#8e44ad',
+    id:4, name:'迴圈洞窟', sub:'第 7–8 課：while 猜數字、列表（清單）', color:'#e67e22', lessons:[7,8],
     bosses:[
-      { name:'煉獄犬',     hp:380, atk:22, skill:{ name:'地獄火咬', type:'aoe',    power:22, desc:'噴吐地獄火重創全體' } },
-      { name:'熾炎巫師',   hp:470, atk:23, skill:{ name:'炎之壁壘', type:'shield', power:48, desc:'築起炎之護盾抵擋傷害' } },
-      { name:'噬魂鬼王',   hp:570, atk:24, skill:{ name:'噬魂回復', type:'heal',   power:55, desc:'吞噬靈魂修復自身' } },
-      { name:'混沌巨龍',   hp:690, atk:25, skill:{ name:'混沌吐息', type:'aoe',    power:26, desc:'吐出混沌烈焰重創全體' } },
-      { name:'滅世魔尊',   hp:820, atk:27, skill:{ name:'毀滅代碼', type:'aoe',    power:30, desc:'釋放毀滅代碼重創全體' } },
+      { name:'迴圈幽靈',   hp:640,  atk:18, skill:{ name:'無限纏繞', type:'aoe',    power:16, desc:'不斷纏繞重創全體' } },
+      { name:'計數妖',     hp:730,  atk:19, skill:{ name:'計數轟擊', type:'aoe',    power:18, desc:'累積計數一擊轟出' } },
+      { name:'清單術士',   hp:825,  atk:20, skill:{ name:'索引之盾', type:'shield', power:38, desc:'以索引展開護盾' } },
+      { name:'索引魔',     hp:925,  atk:21, skill:{ name:'索引入侵', type:'aoe',    power:20, desc:'入侵索引襲擊全體' } },
+      { name:'洞窟吞噬者', hp:1030, atk:22, skill:{ name:'吞噬回復', type:'heal',   power:48, desc:'吞噬力量修復自身' } },
+    ],
+  },
+  5: {
+    id:5, name:'繪圖王國', sub:'第 9–10 課：turtle 繪圖、綜合小專題', color:'#e74c3c', lessons:[9,10],
+    bosses:[
+      { name:'火龍兵',   hp:820,  atk:20, skill:{ name:'烈焰吐息', type:'aoe',    power:20, desc:'噴出烈焰重創全體' } },
+      { name:'冰巫妖',   hp:930,  atk:21, skill:{ name:'寒冰壁壘', type:'shield', power:42, desc:'築起寒冰護盾' } },
+      { name:'暗影騎士', hp:1045, atk:22, skill:{ name:'暗影斬',   type:'aoe',    power:22, desc:'暗影斬擊全體' } },
+      { name:'巨型傀儡', hp:1165, atk:23, skill:{ name:'鋼鐵修復', type:'heal',   power:50, desc:'修復鋼體回血' } },
+      { name:'Python 大帝', hp:1290, atk:24, skill:{ name:'終極代碼', type:'aoe', power:26, desc:'釋放終極代碼重創全體' } },
+    ],
+  },
+  /* ---------- 終極挑戰：前面全部課程內容混合，題目最難 ---------- */
+  6: {
+    id:6, name:'終極試煉', sub:'終極挑戰：10 堂課全部內容混合・最難', color:'#8e44ad', ultimate:true,
+    bosses:[
+      { name:'煉獄犬',     hp:950,  atk:22, skill:{ name:'地獄火咬', type:'aoe',    power:22, desc:'噴吐地獄火重創全體' } },
+      { name:'熾炎巫師',   hp:1120, atk:24, skill:{ name:'炎之壁壘', type:'shield', power:52, desc:'築起炎之護盾抵擋傷害' } },
+      { name:'噬魂鬼王',   hp:1310, atk:26, skill:{ name:'噬魂回復', type:'heal',   power:60, desc:'吞噬靈魂修復自身' } },
+      { name:'混沌巨龍',   hp:1520, atk:28, skill:{ name:'混沌吐息', type:'aoe',    power:28, desc:'吐出混沌烈焰重創全體' } },
+      { name:'滅世魔尊',   hp:1750, atk:30, skill:{ name:'毀滅代碼', type:'aoe',    power:32, desc:'釋放毀滅代碼重創全體' } },
     ],
   },
 };
@@ -1513,6 +1758,50 @@ const TEMPLATES = {
     () => ({ lesson:8, q:'想一次在串列 nums 後面加入兩個元素 7 和 8，可以用？',
       options:[`nums.extend([7, 8])`,`nums.add([7, 8])`,`nums.append(7, 8)`,`nums.push(7, 8)`], answer:0,
       explain:'extend() 會把另一個串列的內容逐個接在後面；append() 一次只能加一個。' }),
+
+    /* --- 補強第 5 階段（第 9–10 課）：隨機變化的 turtle / 綜合題，題目更多樣 --- */
+    () => { const d=randint(30,200); return { lesson:9, q:`想讓海龜向前走 ${d} 步並畫線，要用哪一行？`,
+      options:[`turtle.forward(${d})`,`turtle.forward = ${d}`,`turtle.go(${d})`,`turtle.move(${d})`], answer:0,
+      explain:'forward(步數) 讓海龜前進指定步數，移動時會畫出線條。' }; },
+    () => { const ang=pick([30,45,60,90,120]); return { lesson:9, q:`想讓海龜向右轉 ${ang} 度，要用哪一行？`,
+      options:[`turtle.right(${ang})`,`turtle.right = ${ang}`,`turtle.turn(${ang})`,`turtle.rotate(${ang})`], answer:0,
+      explain:'right(角度) 讓海龜向右轉指定角度，right('+ang+') 就是右轉 '+ang+' 度。' }; },
+    () => { const r=randint(20,120); return { lesson:9, q:`想畫一個半徑 ${r} 的圓，要用哪一行？`,
+      options:[`turtle.circle(${r})`,`turtle.circle = ${r}`,`turtle.round(${r})`,`turtle.dot(${r})`], answer:0,
+      explain:'circle(半徑) 會以指定半徑畫圓，circle('+r+') 就是半徑 '+r+' 的圓。' }; },
+    () => { const w=randint(2,10); return { lesson:9, q:`想把畫筆線條粗細設成 ${w}，要用哪一行？`,
+      options:[`turtle.pensize(${w})`,`turtle.width = ${w}`,`turtle.thick(${w})`,`turtle.line(${w})`], answer:0,
+      explain:'pensize(粗細) 設定畫筆寬度，數字越大線越粗。' }; },
+    () => { const c=pick(['red','blue','green','purple','orange']); return { lesson:9, q:`想把畫筆顏色設成 ${c}，要用哪一行？`,
+      options:[`turtle.color("${c}")`,`turtle.color = ${c}`,`turtle.paint(${c})`,`turtle.setcolor = "${c}"`], answer:0,
+      explain:'color("顏色") 設定畫筆顏色，記得顏色名稱要用引號包起來。' }; },
+    () => { const s=pick([3,4,5,6,8,10,12]); const ang=Math.round(360/s); return { lesson:9, q:`用 for 迴圈畫「正 ${s} 邊形」，每次前進後要讓海龜轉幾度？`,
+      options:numOpts(ang,[90, 180, 360-s]), answer:0,
+      explain:'繞一圈是 360 度，正 '+s+' 邊形每個外角 = 360 ÷ '+s+' = '+ang+' 度。' }; },
+    () => { const d=randint(20,80); return { lesson:9, q:`下面程式會讓海龜總共前進多少步？\nfor i in range(3):\n    turtle.forward(${d})`,
+      options:numOpts(d*3,[d, d+3, d*2]), answer:0,
+      explain:'迴圈跑 3 次，每次都前進 '+d+' 步，共 '+d+' × 3 = '+(d*3)+' 步。' }; },
+    () => { const x=randint(-100,100), y=randint(-100,100); return { lesson:9, q:`想讓海龜直接移動到座標 (${x}, ${y})，要用哪一行？`,
+      options:[`turtle.goto(${x}, ${y})`,`turtle.goto(${x} ${y})`,`turtle.move(${x}, ${y})`,`turtle.pos = ${x}, ${y}`], answer:0,
+      explain:'goto(x, y) 把海龜移到指定座標，兩個數字之間用逗號分隔。' }; },
+    () => { const a=randint(1,5), b=randint(a+3,a+8); let s=0; for(let i=a;i<b;i++) s+=i; return { lesson:10, q:`下面程式會印出什麼？\ntotal = 0\nfor i in range(${a}, ${b}):\n    total = total + i\nprint(total)`,
+      options:numOpts(s,[s+b, b-a, a*b]), answer:0,
+      explain:'range('+a+', '+b+') 從 '+a+' 加到 '+(b-1)+'，總和是 '+s+'。' }; },
+    () => { const it=Array.from({length:5},()=>randint(1,20)); const k=randint(8,15); const lit='['+it.join(', ')+']'; const c=it.filter(x=>x>k).length; return { lesson:10, q:`nums = ${lit}，下面程式會印出什麼？\ncount = 0\nfor n in nums:\n    if n > ${k}:\n        count = count + 1\nprint(count)`,
+      options:numOpts(c,[it.length, it.length-c, k]), answer:0,
+      explain:'逐一檢查是否大於 '+k+' 並計數，'+lit+' 中共有 '+c+' 個。' }; },
+    () => { const n=randint(3,5); let p=1; for(let i=1;i<=n;i++) p*=i; return { lesson:10, q:`下面程式會印出什麼？\ntotal = 1\nfor i in range(1, ${n+1}):\n    total = total * i\nprint(total)`,
+      options:numOpts(p,[p+n, n*(n+1)/2, p*2]), answer:0,
+      explain:'total 從 1 開始，依序乘上 1、2、…、'+n+'，結果是 '+p+'。' }; },
+    () => { const n=randint(4,9); let c=0; for(let i=1;i<=n;i++) if(i%2===1) c++; return { lesson:10, q:`下面程式會印出什麼？\ncount = 0\nfor i in range(1, ${n+1}):\n    if i % 2 == 1:\n        count = count + 1\nprint(count)`,
+      options:numOpts(c,[n, n-c, 0]), answer:0,
+      explain:'i % 2 == 1 代表奇數，1 到 '+n+' 中共有 '+c+' 個奇數。' }; },
+    () => { const n=randint(3,7); const arr=[]; for(let i=n;i>=1;i--) arr.push(i); return { lesson:10, q:`下面程式會依序印出什麼？\nfor i in range(${n}, 0, -1):\n    print(i)`,
+      options:[arr.join(', '), `1, 2, ..., ${n}`, `0, 1, ..., ${n}`, `${n}, ${n-1}, ...`], answer:0,
+      explain:'range('+n+', 0, -1) 從 '+n+' 倒數到 1（不含 0）。' }; },
+    () => { const n=randint(3,6); const arr=[]; for(let i=1;i<=n;i++) arr.push(i*i); return { lesson:10, q:`下面程式會印出什麼？\nresult = []\nfor i in range(1, ${n+1}):\n    result.append(i * i)\nprint(result)`,
+      options:[`[${arr.join(', ')}]`, `[${arr.slice(0,-1).join(', ')}]`, `${n*n}`, `[1, 2, 3]`], answer:0,
+      explain:'i 從 1 到 '+n+'，每次把 i×i 加進清單，結果是 ['+arr.join(', ')+']。' }; },
   ],
 
   /* ================= 第 4 階段：煉獄級（最難，需要多步驟思考） ================= */
@@ -1681,6 +1970,18 @@ const TEMPLATES = {
   ],
 };
 
+/* ---------- 題庫重組：依課程主題歸類，並抽出「終極挑戰」專用題 ---------- */
+/* 每題模板都標註了 lesson（對應 10 堂課）。這裡依 lesson 自動把題目分類到 LESSON_BANK，
+   讓每個基礎階段（各 2 堂課）都能從正確的課程抽題；最難的第 4 組題目則保留給終極挑戰，
+   不會流到前面的階段。 */
+const LESSON_BANK = {};
+for(let l=1; l<=10; l++) LESSON_BANK[l] = [];
+[1,2,3].forEach(k => TEMPLATES[k].forEach(fn => {
+  const probe = fn();                       // 執行一次只是為了讀取 lesson 標籤
+  if(LESSON_BANK[probe.lesson]) LESSON_BANK[probe.lesson].push(fn);
+}));
+const ULT_BANK = TEMPLATES[4];              // 終極挑戰：原最難題庫（多步驟思考、跨全部課程）
+
 const TIME_LIMITS = [15, 13, 11, 9, 8]; // 第 1~5 隻魔王的思考秒數
 
 /* ---------- 遊戲狀態 ---------- */
@@ -1688,9 +1989,13 @@ let state = {
   mode:'solo', players:[], current:0,
   stage:null, bosses:[], bossIndex:0,
   bossName:'', bossAtk:0, bossMax:0, bossHp:0, bossShield:0,
+  bossBurn:null,           // 灼燒狀態 { dmg, turns }
+  growth:null,             // 通關成長畫面的暫存配點
+  growthSummary:'',        // 成長結果（顯示在通關結果頁）
   questions:[], qIndex:0,
   answered:false, timeLimit:15, timeLeft:15,
   result:false,
+  recentTpl:[],            // 最近出過的題型（函式參考），用來避免「長很像的題目」太常出現
 };
 let timerId = null;
 let usedSigs = new Set();      // 本場遊戲已出過的題目特徵值
@@ -1700,8 +2005,9 @@ let usedSigOrder = [];         // 依出現順序記錄，題庫抽乾時可淘�
 function makePlayer(name, clsKey){
   const c = CLASSES[clsKey];
   return { name, cls:c, level:1, hp:c.hp, maxHp:c.hp, atk:c.atk, def:c.def,
-           correct:0, alive:true, energy:0, pendingSkill:null,
-           healEvery:3, healAmount:15, picked:-1, done:false };
+           skills:[{ id:c.skill, lv:1 }],   // 每人最多 2 招，初始只有職業基礎技能
+           correct:0, alive:true, energy:0, pending:null,
+           picked:-1, done:false };
 }
 function allDown(){ return state.players.every(p=>!p.alive); }
 function nextAlive(idx){
@@ -1712,41 +2018,69 @@ function nextAlive(idx){
   }
   return idx;
 }
-function levelUp(p){
-  p.level++;
-  p.maxHp += p.cls.hpGain; p.hp = p.maxHp;
-  p.atk += p.cls.atkGain; p.def += p.cls.defGain;
-  p.pendingSkill = null; p.energy = 0;
-  if(p.cls.key==='sage'){ p.healEvery = Math.max(2, p.healEvery-1); p.healAmount += 8; }
-  p.alive = true;
+/* 技能等級查詢（安全版：找不到就當 1 級） */
+function skillOf(p, id){
+  const s = p.skills.find(k=>k.id===id);
+  return s ? s.lv : 0;
+}
+/* 某位玩家「不可以再學」的技能：自己已有的、以及隊友已有的（角色技能不重複） */
+function learnedByAnyone(id, selfIdx){
+  return state.players.some((p,i)=> i!==selfIdx && p.skills.some(s=>s.id===id));
 }
 
-/* ---------- 題目生成（隨機模板，整場遊戲絕不重複） ---------- */
-function genQuestion(stageId){
-  const pool = TEMPLATES[stageId];
-  for(let attempt=0; attempt<300; attempt++){
-    const q = pick(pool)();
-    const sig = q.q + '|' + q.options.join('|');
-    if(!usedSigs.has(sig)){
-      usedSigs.add(sig); usedSigOrder.push(sig);
-      const opts = q.options.map((t,i)=>({ text:t, correct: i===q.answer }));
-      return { lesson:q.lesson, q:q.q, shuffled:shuffle(opts), explain:q.explain };
-    }
+/* ---------- 題目生成（按階段對應的課程抽題；整場遊戲絕不重複、也不讓相似題太常出現） ---------- */
+/* 每個階段依 STAGES[x].lessons 指定對應的課程；終極挑戰用 ULT_BANK（全部課程最難題）。
+   另外用 recentTpl 記住「最近出過的題型（同一個模板函式）」，短期內不重抽同一型，
+   避免一直出現長得很像的題目。 */
+function poolForStage(stageId){
+  const s = STAGES[stageId];
+  if(!s) return ULT_BANK;
+  if(s.ultimate){
+    // 終極挑戰：10 堂課「全部課程」的題目都納入，再加上最難的多步驟題
+    let pool = [];
+    for(let l=1; l<=10; l++) pool = pool.concat(LESSON_BANK[l] || []);
+    return pool.concat(ULT_BANK);
   }
-  // 極端情況（題庫接近抽乾）：淘汰「最舊的一半」紀錄再抽，
-  // 讓題目能繼續變化，且仍不會與近期出現過的題目重複。
+  const lessons = s.lessons || [];
+  let pool = [];
+  lessons.forEach(l => { if(LESSON_BANK[l]) pool = pool.concat(LESSON_BANK[l]); });
+  return pool.length ? pool : ULT_BANK;
+}
+function genQuestion(stageId){
+  const pool = poolForStage(stageId);
+  const recent = state.recentTpl;
+
+  // 挑一個題型：盡量避開「最近 6 題用過的題型」，避免相似題一直出現
+  function drawFn(){
+    let fn = pick(pool), guard = 0;
+    while(guard < 60 && pool.length > recent.length && recent.indexOf(fn) !== -1){
+      fn = pick(pool); guard++;
+    }
+    return fn;
+  }
+  function accept(fn, q){
+    const sig = q.q + '|' + q.options.join('|');
+    if(usedSigs.has(sig)) return null;           // 本場已出過完全相同的題目
+    usedSigs.add(sig); usedSigOrder.push(sig);
+    recent.push(fn); if(recent.length > 6) recent.shift();
+    const opts = q.options.map((t,i)=>({ text:t, correct: i===q.answer }));
+    return { lesson:q.lesson, q:q.q, shuffled:shuffle(opts), explain:q.explain };
+  }
+
+  for(let attempt=0; attempt<400; attempt++){
+    const fn = drawFn();
+    const r = accept(fn, fn());
+    if(r) return r;
+  }
+  // 極端情況（題庫接近抽乾）：淘汰最舊的一半紀錄再抽，讓題目能繼續變化
   const drop = usedSigOrder.splice(0, Math.floor(usedSigOrder.length/2));
   drop.forEach(s=>usedSigs.delete(s));
-  for(let attempt=0; attempt<200; attempt++){
-    const q = pick(pool)();
-    const sig = q.q + '|' + q.options.join('|');
-    if(!usedSigs.has(sig)){
-      usedSigs.add(sig); usedSigOrder.push(sig);
-      const opts = q.options.map((t,i)=>({ text:t, correct: i===q.answer }));
-      return { lesson:q.lesson, q:q.q, shuffled:shuffle(opts), explain:q.explain };
-    }
+  for(let attempt=0; attempt<300; attempt++){
+    const fn = drawFn();
+    const r = accept(fn, fn());
+    if(r) return r;
   }
-  const q = pick(pool)();
+  const fn = drawFn(); const q = fn();
   const opts = q.options.map((t,i)=>({ text:t, correct: i===q.answer }));
   return { lesson:q.lesson, q:q.q, shuffled:shuffle(opts), explain:q.explain };
 }
@@ -1782,6 +2116,7 @@ function selectMode(m){
   // 之後不論換魔王、換階段或再挑戰一次，都不會出現重複題目。
   usedSigs = new Set();
   usedSigOrder = [];
+  state.recentTpl = [];
   beginClassSelection();
 }
 
@@ -1795,27 +2130,34 @@ function renderClassScreen(){
   if(state.mode==='coop'){
     if(pickOrder.length===0){
       $('class-title').textContent = '👉 玩家 1 請選擇職業';
-      $('class-sub').textContent = '第一棒先選，選完會輪到玩家 2 選。';
+      $('class-sub').textContent = '四個職業的技能都不一樣，選完會輪到玩家 2 選（兩位不可同職業）。';
     } else {
       const first = CLASSES[pickOrder[0]];
       $('class-title').textContent = '👉 玩家 2 請選擇職業';
-      $('class-sub').textContent = `✅ 玩家 1 已選擇：${first.name}。現在輪到玩家 2！`;
+      $('class-sub').textContent = `✅ 玩家 1 已選擇：${first.name}。請選另一個職業，兩人的技能才不會重複！`;
     }
   } else {
     $('class-title').textContent = '請選擇你的職業';
-    $('class-sub').textContent = '不同職業有不同血量與攻擊力，選一個你喜歡的！';
+    $('class-sub').textContent = '每個職業的技能都不同，選一個你喜歡的！通關一大關後可再學習第 2 招技能。';
   }
-  $('class-cards').innerHTML = Object.values(CLASSES).map(c=>`
-    <button class="class-card" style="--c:${c.color}" onclick="pickClass('${c.key}')">
+  $('class-cards').innerHTML = Object.values(CLASSES).map(c=>{
+    const sk = SKILLS[c.skill];
+    // 雙人時第一位已選的職業不能再選（兩人的技能才不會一樣）
+    const taken = state.mode==='coop' && pickOrder[0]===c.key;
+    return `<button class="class-card ${taken?'taken':''}" style="--c:${c.color}"
+        ${taken?'disabled aria-disabled="true"':''} onclick="pickClass('${c.key}')">
       <div class="class-icon">${CLASS_SVG[c.key]}</div>
       <div class="class-name">${c.name}</div>
       <div class="class-stats">
         <span>❤️ ${c.hp}</span><span>⚔️ ${c.atk}</span><span>🛡️ ${c.def}</span>
       </div>
-      <div class="class-skill"><b>🔥 ${c.skillName}</b>：${c.skillDesc}</div>
-    </button>`).join('');
+      <div class="class-skill"><b>${sk.icon} ${sk.name}</b>：${sk.text(1)}</div>
+      ${taken?'<div class="class-taken">✅ 已有勇者選了這個職業（技能不可重複）</div>':''}
+    </button>`;
+  }).join('');
 }
 function pickClass(clsKey){
+  if(state.mode==='coop' && pickOrder[0]===clsKey) return;  // 雙人不可同職業（技能會重複）
   pickOrder.push(clsKey);
   if(state.mode==='coop' && pickOrder.length<2){
     renderClassScreen();
@@ -1846,7 +2188,7 @@ function unlockStage(id){
   return false;
 }
 function resetProgress(){
-  if(!confirm('確定要重置闖關進度嗎？第 2–4 階段會重新鎖住。')) return;
+  if(!confirm('確定要重置闖關進度嗎？第 2–6 階段會重新鎖住。')) return;
   unlockedStage = 1;
   try{ localStorage.removeItem(UNLOCK_KEY); }catch(e){}
   renderStageScreen();
@@ -1887,7 +2229,12 @@ function startStage(id){
   state.stage = STAGES[id];
   state.bosses = STAGES[id].bosses;
   state.bossIndex = 0;
-  state.players = state.players.map(p => makePlayer(p.name, p.cls.key));
+  state.players = state.players.map(p=>{
+    // 保留角色成長（等級、素質、技能）；只把血量補滿、能量與待發動技能歸零
+    p.hp = p.maxHp; p.alive = true; p.energy = 0; p.pending = null;
+    p.correct = 0; p.picked = -1; p.done = false;
+    return p;
+  });
   state.questions = [];
   state.qIndex = 0;
   state.current = 0;
@@ -1902,6 +2249,7 @@ function loadBoss(index){
   state.bossMax = b.hp; state.bossHp = b.hp;
   state.bossAtk = b.atk; state.bossName = b.name;
   state.bossShield = 0;
+  state.bossBurn = null;
   state.timeLimit = TIME_LIMITS[Math.min(index, TIME_LIMITS.length-1)];
   // 注意：這裡「不」重置 usedSigs，去重範圍涵蓋整場遊戲（含所有魔王與階段）
 }
@@ -1920,7 +2268,17 @@ function pipsHtml(p){
   return [0,1,2].map(k=>`<span class="epip ${k<p.energy?'on':''}"></span>`).join('');
 }
 function skillReady(i,p){
-  return p.alive && p.energy>=3 && !state.answered && (state.mode==='coop' ? true : i===state.current);
+  return p.alive && p.energy>=3 && !state.answered && !p.pending &&
+         (state.mode==='coop' ? true : i===state.current);
+}
+function skillButtonsHtml(i,p){
+  const ready = skillReady(i,p);
+  return p.skills.map((s,si)=>{
+    const def = SKILLS[s.id];
+    return `<button class="skill-btn ${ready?'ready':''}" id="skill-${i}-${si}"
+      onclick="activateSkill(${i},${si})" ${ready?'':'disabled'}
+      title="${escapeHtml(def.text(s.lv))}">${def.icon} ${def.name}<span class="sk-lv">Lv.${s.lv}</span></button>`;
+  }).join('');
 }
 function renderBattle(){
   const s = state.stage;
@@ -1935,12 +2293,11 @@ function renderBattle(){
     <div class="player-card ${(state.mode!=='coop'? i===state.current : p.alive)?'active':''} ${p.alive?'':'down'}" id="player-${i}">
       <div class="player-sprite">${CLASS_SVG[p.cls.key]}</div>
       <div class="player-name">${p.name}（${p.cls.name}）<span class="level-badge">Lv.${p.level}</span></div>
-      <div class="player-skill">🔥 技能：${p.cls.skillName}</div>
       <div class="hp-bar"><div class="hp-fill" id="php-${i}" style="width:${p.hp/p.maxHp*100}%"></div>
         <span class="hp-text" id="phpt-${i}">${p.hp}/${p.maxHp}</span></div>
       <div class="player-atk">⚔️ 攻擊 ${p.atk}　🛡️ 防禦 ${p.def}</div>
       <div class="energy-wrap"><span class="en-label">⚡能量</span><span class="pips" id="pips-${i}">${pipsHtml(p)}</span></div>
-      <button class="skill-btn ${skillReady(i,p)?'ready':''}" id="skill-${i}" onclick="activateSkill(${i})" ${skillReady(i,p)?'':'disabled'}>🔥 ${p.cls.skillName}</button>
+      <div class="skill-row" id="skills-${i}">${skillButtonsHtml(i,p)}</div>
       ${p.alive?'':'<div class="down-tag">😵 昏倒</div>'}
     </div>`).join('');
   renderQuestion();
@@ -1962,19 +2319,54 @@ function ensureQuestions(){
     }
   });
 }
-/* 作答區自動縮放：測量內容自然高度，若超出所在格子高度則整體縮小，
-   使作答區永遠不需捲動（依畫面大小自動調整比例；單人/雙人皆適用） */
+/* ---------- 版面自適應（橫屏：戰場 1 : 作答區 2） ----------
+   1) fitBattleLayout：把 #battle-layout 的高度對齊「目前剩下的視窗高度」，
+      避免寫死 calc() 在小螢幕上溢出或被裁掉；直屏則維持自然高度。
+   2) fitBattleScene：戰場區內容（角色卡＋魔王）若超出上方 1/3 就等比縮小。
+   3) fitAnswerArea：作答區內容若超出下方 2/3 就等比縮小。
+   三者都只縮不放，任何畫面尺寸都不用捲動。 */
+function isLandscape(){
+  return window.matchMedia('(orientation: landscape)').matches;
+}
+function fitBattleLayout(){
+  const layout = document.getElementById('battle-layout');
+  if(!layout) return;
+  layout.style.height = '';
+  if(!isLandscape()) return;
+  const top = layout.getBoundingClientRect().top + window.scrollY;
+  const scr = layout.closest('.screen');
+  const padB = scr ? (parseFloat(getComputedStyle(scr).paddingBottom) || 0) : 0;
+  const h = Math.floor(window.innerHeight - top - padB - 6);   // 預留下方邊距，避免整頁出現捲軸
+  if(h > 220) layout.style.height = h + 'px';
+}
+function fitBattleScene(){
+  const field = document.getElementById('battle-field');
+  const fit   = document.getElementById('scene-fit');   // 縮放「包覆層」，避免直接縮放會裁切內容的 .battle-scene
+  if(!field || !fit) return;
+  fit.style.zoom = '1';
+  const avail = field.clientHeight;
+  const nat   = fit.getBoundingClientRect().height;
+  if(avail > 0 && nat > avail + 1){
+    fit.style.zoom = String(Math.max(0.35, Math.min(1, avail / nat)));
+  }
+}
 function fitAnswerArea(){
   const box  = document.getElementById('battle-question');
   const area = document.getElementById('questions-area');
   if(!box || !area) return;
   area.style.zoom = '1';                       // 先還原，取得自然高度
-  const avail = box.clientHeight;              // 作答區所在格的高度（橫屏=下半部）
+  const avail = box.clientHeight;              // 作答區所在格的高度（橫屏=下面 2/3）
   const nat   = area.getBoundingClientRect().height;
   if(avail > 0 && nat > avail + 1){
     const s = Math.max(0.4, Math.min(1, avail / nat));   // 只縮不放，最多 0.4
     area.style.zoom = String(s);
   }
+}
+/* 一次做完三層量測（順序有相依性：先定高度，再縮內容） */
+function fitBattle(){
+  fitBattleLayout();
+  fitBattleScene();
+  fitAnswerArea();
 }
 
 function renderQuestion(){
@@ -1984,11 +2376,14 @@ function renderQuestion(){
   state.players.forEach(p=>{ p.done = !p.alive; p.picked = -1; });
   const letters = ['A','B','C','D'];
 
+  const area = $('questions-area');
+  area.classList.toggle('coop-mode', state.mode==='coop');
+
   if(state.mode!=='coop'){
-    // 單人：單一題目框（維持原結構與 ID）
+    // 單人：單一題目框（維持原結構與 ID）；solo-q 讓橫屏時可切成左右兩欄
     const q = state.questions[0][state.qIndex];
     $('questions-area').innerHTML = `
-      <div class="q-box">
+      <div class="q-box solo-q">
         <div class="q-meta"><span id="progress">第 ${state.qIndex+1} 題（隨機生成）</span><span id="q-lesson">📚 第 ${q.lesson} 課・${LESSON_TOPICS[q.lesson]}</span></div>
         <div id="q-text">${escapeHtml(q.q).replace(/\n/g,'<br>')}</div>
         <div id="options">${q.shuffled.map((o,i)=>`
@@ -2022,7 +2417,9 @@ function renderQuestion(){
   $('skill-banner').classList.remove('show');
   refreshControls();
   startTime();
-  requestAnimationFrame(fitAnswerArea);   // 題目渲染後，依畫面自動縮放作答區
+  // 題目渲染後：先在這一幀量測，再於版面穩定後補量一次（避免字型/圖片載入造成高度變動）
+  requestAnimationFrame(fitBattle);
+  setTimeout(()=>{ if(state.players && state.players.length) fitBattle(); }, 120);
 }
 function updateBars(){
   $('boss-hp-fill').style.width = (state.bossHp/state.bossMax*100)+'%';
@@ -2063,24 +2460,42 @@ function updateTimerUI(){
   const bar = $('timer-bar'); if(bar) bar.classList.toggle('low', state.timeLeft<=5);
 }
 
-/* ---------- 主動技能（需 3 點能量） ---------- */
-function activateSkill(i){
+/* ---------- 主動技能（需 3 點能量；每個技能各自獨立、依等級強化） ---------- */
+function activateSkill(i, si){
   const p = state.players[i];
-  if(!p.alive || p.energy<3 || state.answered) return;
+  if(!p.alive || p.energy<3 || state.answered || p.pending) return;
+  if(state.mode!=='coop' && i!==state.current) return;
+  const sk = p.skills[si || 0];
+  if(!sk) return;
+  const def = SKILLS[sk.id], lv = sk.lv;
   p.energy = 0;
-  if(p.cls.skillEffect==='healSelf30'){
-    /* 牧師／賢者：只補自己，回復「目前最大血量的 30%」。
-       不碰任何其他玩家 → 隊友不會被治療，倒下的人也不會復活。 */
+
+  if(def.type==='heal'){
+    /* 賢者：只補自己，回復「目前最大血量的 30%」，不治療隊友、不復活任何人 */
     const amount = Math.round(p.maxHp * 0.3);
     const before = p.hp;
     p.hp = Math.min(p.maxHp, p.hp + amount);
     const gained = p.hp - before;
-    showSkillBanner(`🌟 ${p.name} 施放【${p.cls.skillName}】！只回復自身最大血量 30%（+${gained}），無法復活隊友`);
-    if(gained > 0){ floatDamage($('player-'+i), '+'+gained, 'heal'); healFlash(i); }
+    const refund = lv>=2 ? lv-1 : 0;
+    if(refund) p.energy = Math.min(3, refund);
+    showSkillBanner(`🌟 ${p.name} 施放【${def.name} Lv.${lv}】！回復自身最大血量 30%（+${gained}）${refund?`，返還 ${refund} 點能量`:''}，無法復活隊友`);
+    if(gained>0){ floatDamage($('player-'+i), '+'+gained, 'heal'); healFlash(i); }
+    playSound('skill');
+  } else if(def.type==='blood'){
+    const cost = Math.min(Math.max(1, Math.round(p.maxHp*0.10)), Math.max(0, p.hp-1));
+    p.hp = Math.max(1, p.hp - cost);
+    p.pending = { id:'blood', lv };
+    floatDamage($('player-'+i), '🩸-'+cost, 'dmg-player');
+    showSkillBanner(`🩸 ${p.name} 燃燒生命（-${cost} 血），下一題造成 ×${[2,2.5,3][lv-1]} 傷害！`);
+    playSound('skill');
+  } else if(def.type==='wall'){
+    const charges = lv>=3 ? 2 : 1;
+    p.pending = { id:'wall', lv, charges };
+    showSkillBanner(`🛡️ ${p.name} 展開【${def.name} Lv.${lv}】！可抵擋 ${charges} 次傷害${lv>=2?'，並反彈 50% 傷害':''}`);
     playSound('skill');
   } else {
-    p.pendingSkill = p.cls.skillEffect; // 'block' | 'crit2' | 'crit3'
-    showSkillBanner(`✨ ${p.name} 準備【${p.cls.skillName}】！下一題生效！`);
+    p.pending = { id:def.type, lv };
+    showSkillBanner(`${def.icon} ${p.name} 準備【${def.name} Lv.${lv}】！下一題生效`);
     playSound('skill');
   }
   refreshControls();
@@ -2097,12 +2512,8 @@ function refreshControls(){
   state.players.forEach((p,i)=>{
     const pips = $('pips-'+i);
     if(pips) pips.innerHTML = pipsHtml(p);
-    const btn = $('skill-'+i);
-    if(btn){
-      const ready = skillReady(i,p);
-      btn.disabled = !ready;
-      btn.classList.toggle('ready', ready);
-    }
+    const row = $('skills-'+i);
+    if(row) row.innerHTML = skillButtonsHtml(i,p);   // 技能按鈕狀態（能量、待發動）
   });
 }
 
@@ -2142,6 +2553,18 @@ function resolveRound(){
   state.answered = true;
   stopTime();
 
+  /* 🔥 灼燒持續傷害：烈焰灼燒點燃後，接下來 2 題每題先額外燒魔王（無視護盾） */
+  if(state.bossBurn && state.bossBurn.turns>0 && state.bossHp>0){
+    const bd = state.bossBurn.dmg;
+    state.bossHp = Math.max(0, state.bossHp - bd);
+    floatDamage($('boss-area'), '🔥-'+bd, 'dmg-crit');
+    state.bossBurn.turns--;
+    if(state.bossBurn.turns<=0) state.bossBurn = null;
+  }
+
+  let bossStunned = false;   // 震懾：魔王這題無法反擊
+  let bossSilenced = false;  // 震懾 Lv3：魔王這題也無法施放技能
+
   // 逐位結算存活玩家（雙人：兩人都獨立計算攻擊 / 受傷，題目各自不同）
   state.players.forEach((p,i)=>{
     if(!p.alive) return;
@@ -2149,16 +2572,25 @@ function resolveRound(){
     const correct = p.picked>=0 && q.shuffled[p.picked].correct;
     const playerEl = $('player-'+i);
     const fbEl = state.mode==='coop' ? $('feedback-'+i) : $('feedback');
+    const pd = p.pending;               // 已準備、將在本題生效的技能（若有）
 
     if(correct){
       p.correct++;
       p.energy = Math.min(3, p.energy+1);
-      let mult = 1, crit = false;
-      if(p.pendingSkill==='crit2'){ mult=2; crit=true; p.pendingSkill=null; }
-      else if(p.pendingSkill==='crit3'){ mult=3; crit=true; p.pendingSkill=null; }
+      let mult = 1, crit = false, ignoreShield = false, drainPct = 0;
+
+      if(pd){
+        if(pd.id==='blood'){ mult = [2,2.5,3][pd.lv-1]; crit = true; p.pending = null; }
+        else if(pd.id==='pierce'){ mult = 1 + [0.2,0.35,0.5][pd.lv-1]; crit = true; ignoreShield = true; p.pending = null; }
+        else if(pd.id==='stun'){ if(pd.lv>=2) mult = 1.25; crit = true; p.pending = null; }
+        else if(pd.id==='drain'){ drainPct = [0.4,0.55,0.7][pd.lv-1]; p.pending = null; }
+        else if(pd.id==='burn'){ p.pending = null; }
+        // wall（盾牆）保留待命：要等答錯時才消耗，答對不會用掉
+      }
+
       const dmg = Math.round(p.atk * mult);
       let real = dmg;
-      if(state.bossShield > 0){
+      if(!ignoreShield && state.bossShield > 0){
         const absorb = Math.min(state.bossShield, real);
         state.bossShield -= absorb; real -= absorb;
         if(absorb>0) floatDamage($('boss-area'), '🛡️-'+absorb, 'dmg-shield');
@@ -2167,27 +2599,64 @@ function resolveRound(){
       if(real>0) floatDamage($('boss-area'), '-'+real, crit?'dmg-crit':'dmg-boss');
       bossHit(crit);
       playSound('hit');
-      let msg = `✅ ${p.name} 答對！對 ${state.bossName} 造成 ${dmg} 點傷害` + (crit?'（暴擊！）':'') + '！';
-      if(p.cls.key==='sage' && p.correct % p.healEvery === 0 && p.hp < p.maxHp){
+
+      let msg = `✅ ${p.name} 答對！對 ${state.bossName} 造成 ${dmg} 點傷害` + (mult>1?'（技能強化！）':'') + '！';
+
+      if(pd && pd.id==='burn'){
+        state.bossBurn = { dmg:[8,12,16][pd.lv-1], turns:2 };
+        msg += ` 🔥 魔王被點燃，接下來 2 題各額外受到 ${state.bossBurn.dmg} 傷害！`;
+      }
+      if(drainPct>0){
         const before = p.hp;
-        p.hp = Math.min(p.maxHp, p.hp + p.healAmount);
+        p.hp = Math.min(p.maxHp, p.hp + Math.round(dmg*drainPct));
+        const got = p.hp - before;
+        if(got>0){ floatDamage(playerEl, '+'+got, 'heal'); healFlash(i); }
+        msg += ` 🧛 吸血回復 ${got} 血！`;
+      }
+      if(pd && pd.id==='stun'){ bossStunned = true; if(pd.lv>=3) bossSilenced = true; }
+      if(p.cls.key==='sage' && p.correct % 4 === 0 && p.hp < p.maxHp){
+        const before = p.hp;
+        p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp*0.05));
         floatDamage(playerEl, '+'+(p.hp-before), 'heal');
         healFlash(i);
-        msg += ` 💚 賢者治癒 +${p.hp-before} 血！`;
+        msg += ` 💚 賢者被動治癒 +${p.hp-before} 血！`;
       }
       msg += ' 📘 ' + q.explain;
       if(fbEl){ fbEl.textContent = msg; fbEl.className = 'feedback ok'; }
     } else {
-      let blocked = false;
-      if(p.pendingSkill==='block'){ blocked = true; p.pendingSkill = null; }
+      let blocked = false, noCounter = false, reflect = false;
+      if(pd){
+        if(pd.id==='wall'){
+          blocked = true;
+          pd.charges--;
+          if(pd.charges<=0) p.pending = null;   // 用完才移除
+          if(pd.lv>=2) reflect = true;
+        } else if(pd.id==='stun'){
+          noCounter = true; bossStunned = true;
+          if(pd.lv>=3) bossSilenced = true;
+          p.pending = null;
+        } else {
+          p.pending = null;                     // 其他技能答錯就失效
+        }
+      }
+
       let dmg = Math.max(1, state.bossAtk - p.def);
       if(p.cls.key==='knight') dmg = Math.ceil(dmg/2);
-      if(blocked) dmg = 0;
+      if(blocked || noCounter) dmg = 0;
       p.hp = Math.max(0, p.hp - dmg);
       if(p.hp===0) p.alive = false;
-      if(blocked){
+
+      if(noCounter){
+        floatDamage(playerEl, '💫 魔王被震懾', 'heal');
+        if(fbEl){ fbEl.textContent = `❌ ${p.name} 答錯，但💫震懾讓 ${state.bossName} 無法反擊！📘 ` + q.explain; fbEl.className = 'feedback bad'; }
+      } else if(blocked){
         floatDamage(playerEl, '🛡️BLOCK', 'heal');
-        if(fbEl){ fbEl.textContent = `❌ ${p.name} 答錯，但🛡️盾牆擋下了攻擊！📘 ` + q.explain; fbEl.className = 'feedback bad'; }
+        if(reflect && state.bossHp>0){
+          const rd = Math.max(1, Math.round(Math.max(1, state.bossAtk - p.def) * 0.5));
+          state.bossHp = Math.max(0, state.bossHp - rd);
+          floatDamage($('boss-area'), '🛡️反彈-'+rd, 'dmg-shield');
+        }
+        if(fbEl){ fbEl.textContent = `❌ ${p.name} 答錯，但🛡️盾牆擋下了攻擊${reflect?'並反彈傷害':''}！📘 ` + q.explain; fbEl.className = 'feedback bad'; }
       } else {
         floatDamage(playerEl, '-'+dmg, 'dmg-player');
         playerHit(i); shakeScreen(); playSound('hurt');
@@ -2197,21 +2666,24 @@ function resolveRound(){
     }
   });
 
-  // 魔王技能：每 BOSS_SKILL_EVERY 題施放一次（魔王仍存活、仍有勇者站立時）
-  if(state.bossHp>0 && state.players.some(p=>p.alive) && (state.qIndex+1) % BOSS_SKILL_EVERY === 0){
+  // 魔王技能：每 BOSS_SKILL_EVERY 題施放一次（魔王仍存活、仍有勇者站立、沒被震懾時）
+  if(state.bossHp>0 && !bossSilenced && state.players.some(p=>p.alive) && (state.qIndex+1) % BOSS_SKILL_EVERY === 0){
     useBossSkill();
   }
 
   refreshControls();
   updateBars();
+  // 解析訊息變長後版面會變高 → 重新量測，避免作答區被裁掉
+  requestAnimationFrame(fitBattle);
 
   setTimeout(()=>{
     if(state.bossHp<=0){
-      state.players.forEach(p=>levelUp(p));
+      /* ※ 擊敗魔王「不」重置血量與技能（不再升級補滿血），
+          只有打完一個大關（最後一隻魔王）才進入成長畫面。 */
       if(state.bossIndex < state.bosses.length-1){
         showBossDefeated();
       } else {
-        showResult('stageClear');
+        openGrowth();
       }
       return;
     }
@@ -2318,15 +2790,145 @@ function bossCastEffect(type){
   }
 }
 
-/* ---------- 打敗魔王（中場升級畫面） ---------- */
+/* ---------- 打敗魔王（中場畫面：血量與技能都保留，不重置） ---------- */
 function showBossDefeated(){
   showScreen('levelup');
   const next = state.bosses[state.bossIndex+1];
   $('levelup-title').textContent = `🎉 你打敗了 ${state.bossName}！`;
-  $('levelup-msg').textContent = '全體勇者升級了！能力全面提升，血量回滿！';
+  $('levelup-msg').textContent = '繼續前進！⚠️ 血量、能量與技能都不會重置，撐到打完整個大關才有成長機會。';
   $('levelup-stats').innerHTML = state.players.map(p=>`
-    <div class="lu-row">${CLASS_SVG[p.cls.key]} ${p.name} → <b>Lv.${p.level}</b>　❤️${p.maxHp}　⚔️${p.atk}　🛡️${p.def}</div>`).join('');
-  $('levelup-next').textContent = `⚔️ 下一隻魔王：第 ${state.bossIndex+2} / ${state.bosses.length} 隻 — ${next.name}（${next.hp} 血，思考 ${TIME_LIMITS[state.bossIndex+1]} 秒）`;
+    <div class="lu-row ${p.alive?'':'lu-down'}">${CLASS_SVG[p.cls.key]} ${p.name} → <b>Lv.${p.level}</b>　❤️${p.hp}/${p.maxHp}　⚔️${p.atk}　🛡️${p.def}　🔥${p.skills.map(s=>`${SKILLS[s.id].name} Lv.${s.lv}`).join('／')}</div>`).join('');
+  $('levelup-next').textContent = `⚔️ 下一隻魔王：第 ${state.bossIndex+2} / ${state.bosses.length} 隻 — ${next.name}（${next.hp} 血，思考 ${TIME_LIMITS[Math.min(state.bossIndex+1, TIME_LIMITS.length-1)]} 秒）`;
+}
+/* ---------- 通關成長：20 點素質自由配 + 技能升級／學習 ---------- */
+const GROWTH_POINTS = 20;
+const GROWTH_STEP = { hp:10, atk:1, def:1 };   // 1 點 = 血量+10 / 攻擊+1 / 防禦+1
+function openGrowth(){
+  state.growth = {
+    points: state.players.map(()=>GROWTH_POINTS),
+    add: state.players.map(()=>({ hp:0, atk:0, def:0 })),
+    skillDone: state.players.map(()=>false),
+    skillChoice: state.players.map(()=>''),
+  };
+  renderGrowth();
+  showScreen('growth');
+}
+/* 這位角色目前可以「升級」與「學習」的技能 */
+function growthOptions(i){
+  const p = state.players[i];
+  const ups = p.skills.map((s,si)=>({ si, sk:s })).filter(o=>o.sk.lv < SKILL_LEVEL_MAX);
+  const learns = (p.skills.length < 2)
+    ? LEARNABLE.filter(id => !p.skills.some(s=>s.id===id) && !learnedByAnyone(id,i))
+    : [];
+  return { ups, learns };
+}
+function renderGrowth(){
+  const g = state.growth; if(!g) return;
+  $('growth-title').textContent = `🎊 通關「第 ${state.stage.id} 階段・${state.stage.name}」！`;
+  $('growth-sub').innerHTML = `每位勇者各有 <b>${GROWTH_POINTS} 點</b>，可自由分配到血量／攻擊／防禦；<br>
+    並可 <b>升級現有技能</b> 或 <b>再學第 2 招技能</b>（每人最多 2 招，技能等級上限 Lv.${SKILL_LEVEL_MAX}）。`;
+
+  $('growth-cards').innerHTML = state.players.map((p,i)=>{
+    const a = g.add[i], pts = g.points[i], done = g.skillDone[i];
+    const { ups, learns } = growthOptions(i);
+    const rows = [
+      ...p.skills.map((s,si)=>{
+        const def = SKILLS[s.id];
+        const chosen = g.skillChoice[i] === 'up'+si;
+        const btn = s.lv < SKILL_LEVEL_MAX
+          ? `<button class="gbtn ${done?'done':''}" ${done?'disabled':''} onclick="growthUpgrade(${i},${si})">${done?(chosen?'✅ 已升級':'—'):'升級 Lv.'+(s.lv+1)}</button>`
+          : '<button class="gbtn done" disabled>已滿級</button>';
+        return `<div class="gsk"><span class="gname">${def.icon} <b>${def.name}</b> Lv.${s.lv}｜${def.brief}</span>${btn}</div>`;
+      }),
+      ...learns.map(id=>{
+        const def = SKILLS[id];
+        const chosen = g.skillChoice[i] === 'learn'+id;
+        return `<div class="gsk"><span class="gname">${def.icon} <b>${def.name}</b>（新招 Lv.1）｜${def.brief}</span>
+          <button class="gbtn ${done?'done':''}" ${done?'disabled':''} onclick="growthLearn(${i},'${id}')">${done?(chosen?'✅ 已學會':'—'):'學習'}</button></div>`;
+      }),
+    ].join('');
+
+    const statRows = ['hp','atk','def'].map(k=>{
+      const label = k==='hp' ? `❤️ 血量（每點 +${GROWTH_STEP.hp}）`
+                  : k==='atk' ? `⚔️ 攻擊（每點 +${GROWTH_STEP.atk}）`
+                  : `🛡️ 防禦（每點 +${GROWTH_STEP.def}）`;
+      return `<div class="grow-row">
+        <span class="glabel">${label}</span>
+        <button class="gstep" ${a[k]<=0?'disabled':''} onclick="growthAdd(${i},'${k}',-1)">－</button>
+        <span class="gval">${a[k]}</span>
+        <button class="gstep" ${pts<=0?'disabled':''} onclick="growthAdd(${i},'${k}',1)">＋</button>
+      </div>`;
+    }).join('');
+
+    return `<div class="gcard">
+      <div class="ghead">${CLASS_SVG[p.cls.key]} ${p.name}（${p.cls.name}）<span class="glv">Lv.${p.level}</span></div>
+      <div class="grow-points">剩餘點數：${pts} / ${GROWTH_POINTS}</div>
+      ${statRows}
+      <div class="gtotal">配點後 → ❤️ ${p.maxHp + a.hp*GROWTH_STEP.hp}　⚔️ ${p.atk + a.atk*GROWTH_STEP.atk}　🛡️ ${p.def + a.def*GROWTH_STEP.def}</div>
+      <div class="gskill">
+        <div class="gskill-t">技能（${p.skills.length}/2）</div>
+        ${rows}
+        ${done?'<div class="gsk" style="color:#7a5ac0;">✅ 本次技能已選定</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const needPts = g.points.some(n=>n>0);
+  const needSkill = state.players.some((p,i)=>{
+    if(g.skillDone[i]) return false;
+    const o = growthOptions(i);
+    return o.ups.length>0 || o.learns.length>0;
+  });
+  $('growth-hint').textContent = needPts
+    ? '⚠️ 還有點數沒分配完，要全部用完才能繼續'
+    : (needSkill ? '⚠️ 每人還要選一項：升級現有技能 或 學會第 2 招' : '');
+  $('growth-confirm').disabled = needPts || needSkill;
+}
+function growthAdd(i, kind, d){
+  const g = state.growth; if(!g) return;
+  const a = g.add[i];
+  if(d>0 && g.points[i]<=0) return;
+  if(d<0 && a[kind]<=0) return;
+  a[kind] += d; g.points[i] -= d;
+  renderGrowth();
+}
+function growthUpgrade(i, si){
+  const g = state.growth; if(!g || g.skillDone[i]) return;
+  const sk = state.players[i].skills[si];
+  if(!sk || sk.lv >= SKILL_LEVEL_MAX) return;
+  sk.lv++;
+  g.skillDone[i] = true;
+  g.skillChoice[i] = 'up'+si;
+  renderGrowth();
+}
+function growthLearn(i, id){
+  const g = state.growth; if(!g || g.skillDone[i]) return;
+  const p = state.players[i];
+  if(p.skills.length >= 2) return;
+  if(p.skills.some(s=>s.id===id) || learnedByAnyone(id,i)) return;
+  if(LEARNABLE.indexOf(id) === -1) return;
+  p.skills.push({ id, lv:1 });
+  g.skillDone[i] = true;
+  g.skillChoice[i] = 'learn'+id;
+  renderGrowth();
+}
+function confirmGrowth(){
+  const g = state.growth; if(!g) return;
+  if(g.points.some(n=>n>0)) return;
+  const summary = [];
+  state.players.forEach((p,i)=>{
+    const a = g.add[i];
+    p.maxHp += a.hp*GROWTH_STEP.hp;
+    p.atk   += a.atk*GROWTH_STEP.atk;
+    p.def   += a.def*GROWTH_STEP.def;
+    p.level++;
+    p.hp = p.maxHp;            // 進入下一個大關前補滿血
+    p.alive = true; p.energy = 0; p.pending = null;
+    summary.push(`${p.name} Lv.${p.level}：❤️${p.maxHp}（+${a.hp*GROWTH_STEP.hp}）　⚔️${p.atk}（+${a.atk}）　🛡️${p.def}（+${a.def}）｜${p.skills.map(s=>`${SKILLS[s.id].name} Lv.${s.lv}`).join('、')}`);
+  });
+  state.growthSummary = summary.join('<br>');
+  state.growth = null;
+  showResult('stageClear');
 }
 function retryStage(){ startStage(state.stage.id); }
 function backToStages(){ renderStageScreen(); showScreen('stage'); }
@@ -2359,7 +2961,12 @@ function showResult(type){
     $('result-title').className = 'result-title lose';
     $('result-msg').textContent = '魔王太強了，升級練功後再來挑戰吧！';
   }
-  $('result-stats').textContent = `${names}　→　總共答對 ${total} 題`;
+  if(type==='stageClear' && state.growthSummary){
+    $('result-stats').innerHTML = `${names}　→　總共答對 ${total} 題<br><br>🌟 本次成長結果：<br>${state.growthSummary}`;
+    state.growthSummary = '';
+  } else {
+    $('result-stats').textContent = `${names}　→　總共答對 ${total} 題`;
+  }
 }
 function confetti(){
   const box = $('confetti');
@@ -2379,10 +2986,10 @@ function confetti(){
 
 window.addEventListener('DOMContentLoaded', ()=>{ showScreen('home'); });
 
-// 視窗/方向變化時，若在戰鬥畫面就重新自動縮放作答區
+// 視窗/方向變化時，若在戰鬥畫面就重新自動縮放（戰場 1 : 作答區 2 也會重算）
 window.addEventListener('resize', ()=>{
   const battle = document.getElementById('screen-battle');
-  if(battle && battle.classList.contains('active')) fitAnswerArea();
+  if(battle && battle.classList.contains('active')) fitBattle();
 });
 
 </script>
