@@ -82,6 +82,11 @@ body{
 .class-name{ font-size:19px; font-weight:bold; color:var(--c); margin:4px 0; }
 .class-stats{ display:flex; justify-content:center; gap:10px; font-size:13px; color:#555; margin:6px 0; }
 .class-skill{ font-size:12px; color:#777; line-height:1.4; min-height:32px; }
+.class-skill-more{
+  display:inline-block; margin-top:5px; font-size:11.5px; font-weight:bold; color:#5a2d82;
+  background:#f6f2ff; border:1px dashed #a06cd5; border-radius:9px; padding:2px 9px; cursor:pointer;
+}
+.class-skill-more:hover{ background:#ece2ff; }
 
 /* 階段卡 */
 .stage-card{
@@ -94,6 +99,14 @@ body{
 .stage-sub{ font-size:13px; color:#666; }
 .stage-bossname{ font-size:14px; margin:8px 0 4px; color:#444; font-weight:bold; }
 .stage-qcount{ font-size:13px; color:#888; }
+.stage-skills{ font-size:11.5px; color:#8a7aa8; line-height:1.4; margin-top:5px;
+  border-top:1px dashed #ded7ee; padding-top:5px; }
+.codex-btn{
+  font-family:inherit; font-size:13.5px; font-weight:bold; color:#5a2d82; cursor:pointer;
+  background:#f6f2ff; border:2px dashed #a06cd5; border-radius:14px; padding:8px 16px;
+  transition: background .15s, transform .1s;
+}
+.codex-btn:hover{ background:#ede4ff; transform:translateY(-1px); }
 
 /* 尚未解鎖的階段卡 */
 .stage-card.locked{
@@ -106,7 +119,14 @@ body{
 
 /* ---------- 戰鬥畫面 ---------- */
 #screen-battle{ position:relative; }
-.battle-top{ text-align:center; color:#3a3a55; font-size:14px; margin-bottom:6px; }
+.battle-top{ position:relative; text-align:center; color:#3a3a55; font-size:14px; margin-bottom:6px; }
+.top-skill-btn{
+  position:absolute; right:0; top:-3px; font-family:inherit; font-size:12px; font-weight:bold;
+  color:#5a2d82; background:#f6f2ff; border:1.5px dashed #a06cd5; border-radius:10px;
+  padding:2px 9px; cursor:pointer; white-space:nowrap;
+}
+.top-skill-btn:hover{ background:#ece2ff; }
+.top-skill-btn:active{ transform:translateY(1px); }
 
 /* 魔王區 */
 #boss-area{
@@ -166,10 +186,76 @@ body{
   display:inline-block; padding:2px 10px; border-radius:10px; margin-bottom:6px; }
 /* 魔王技能標籤 + 護盾顯示（直接浮在地圖上，不另設白底） */
 .boss-skill{
-  font-size:12px; font-weight:bold; color:#5a2d82; background:rgba(255,255,255,.55);
-  display:inline-block; padding:2px 10px; border-radius:10px; margin-bottom:6px;
-  border:1px dashed #a06cd5;
+  font-size:12px; font-weight:bold; color:#5a2d82; background:rgba(255,255,255,.72);
+  display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:10px;
+  margin-bottom:6px; border:1px dashed #a06cd5; cursor:pointer; font-family:inherit;
+  transition: background .15s, transform .1s;
+  white-space:nowrap; max-width:100%; overflow:hidden;
 }
+.boss-skill:hover{ background:#fff; transform:translateY(-1px); }
+.boss-skill .bs-name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.boss-skill .bs-tag{
+  font-size:10.5px; padding:1px 6px; border-radius:8px; border:1px solid currentColor;
+  opacity:.9; font-weight:bold;
+}
+.boss-skill .bs-hint{ font-size:10px; color:#9b8bb4; font-weight:normal; }
+
+/* 魔王登場：技能介紹小卡（浮在戰場頂部，自動淡出，可點擊關閉） */
+.boss-intro{
+  position:absolute; left:50%; top:3px; width:min(97%, 540px);
+  transform:translate(-50%, -10px); opacity:0; pointer-events:none; z-index:30;
+  background:rgba(255,255,255,.97); border:2px solid #a06cd5; border-left:6px solid #a06cd5;
+  border-radius:11px; padding:3px 8px 4px; text-align:left;
+  box-shadow:0 8px 22px rgba(80,40,120,.28);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.boss-intro.show{ opacity:1; transform:translate(-50%, 0); pointer-events:auto; cursor:pointer; }
+.boss-intro .bi-head{ display:flex; align-items:center; gap:6px; flex-wrap:nowrap; overflow:hidden; }
+.boss-intro .bi-name{ font-size:11.5px; font-weight:bold; color:#c0392b; white-space:nowrap; }
+.boss-intro .bi-type{
+  font-size:10px; font-weight:bold; padding:0 5px; border-radius:7px; border:1px solid currentColor;
+  white-space:nowrap;
+}
+.boss-intro .bi-skill{ font-size:11px; font-weight:bold; color:#5a2d82; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; flex:1; }
+.boss-intro .bi-line{ font-size:10.5px; color:#4a4a63; line-height:1.4; margin-top:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.boss-intro .bi-line b{ color:#c0392b; }
+.boss-intro .bi-tip{ color:#2f7a52; font-weight:bold; }
+.boss-intro .bi-x{ font-size:9.5px; color:#a99cc0; white-space:nowrap; }
+
+/* 魔王技能 / 圖鑑彈窗 */
+.modal-mask{
+  position:fixed; inset:0; background:rgba(24,20,44,.58); display:none;
+  align-items:center; justify-content:center; padding:16px; z-index:300;
+}
+.modal-mask.show{ display:flex; }
+.modal-card{
+  background:#fff; border-radius:20px; width:100%; max-width:620px; max-height:86vh;
+  overflow:auto; padding:18px 16px 16px; position:relative;
+  box-shadow:0 22px 60px rgba(0,0,0,.32);
+}
+.modal-close{
+  position:absolute; top:10px; right:12px; width:32px; height:32px; border-radius:50%;
+  border:none; background:#f0f2f7; color:#666; font-size:15px; cursor:pointer; font-family:inherit;
+}
+.modal-close:hover{ background:#e2e6ef; }
+.modal-title{ font-size:19px; font-weight:bold; color:#3a3a55; margin:0 36px 4px 0; }
+.modal-sub{ font-size:13px; color:#7a7a95; margin-bottom:10px; line-height:1.55; }
+.codex-stage{ margin-top:16px; }
+.codex-stage-title{ font-size:15px; font-weight:bold; color:#5a2d82; border-left:5px solid #a06cd5;
+  padding-left:8px; margin-bottom:9px; }
+.codex-boss{
+  border:1px solid #e6e2f0; border-radius:12px; padding:9px 12px; margin-bottom:9px; background:#fbfaff;
+}
+.codex-boss-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; }
+.codex-boss-name{ font-weight:bold; color:#c0392b; }
+.codex-boss-stat{ font-size:12.5px; color:#666; }
+.codex-badge{ font-size:11px; font-weight:bold; padding:1px 8px; border-radius:8px; border:1px solid currentColor; }
+.codex-skill{ font-size:13.5px; color:#5a2d82; font-weight:bold; margin-top:6px; }
+.codex-eff{ font-size:12.5px; color:#4a4a63; line-height:1.5; margin-top:2px; }
+.codex-tip{ font-size:12px; color:#2f7a52; margin-top:3px; line-height:1.45; }
+.codex-note{ font-size:12.5px; color:#6b5c8a; background:#f6f2ff; border-radius:10px; padding:8px 10px; line-height:1.55; }
 .boss-shield{
   font-size:12px; font-weight:bold; color:#1d4ed8; background:rgba(219,234,254,.85);
   display:inline-block; padding:2px 10px; border-radius:10px; margin-top:4px;
@@ -344,8 +430,8 @@ body{
 .lu-row{ background:#eafaf0; border:1.5px solid #9be15d; border-radius:8px; padding:3px 7px; font-size: clamp(9px, 1.45vh, 11px); color:#1d7a45; line-height:1.3; }
 .lu-next{
   background: linear-gradient(135deg,#fff4d6,#ffe9b0); border:1.5px dashed #e0a200;
-  border-radius:8px; padding:4px 7px; font-size: clamp(8px, 1.35vh, 10px); font-weight:bold; color:#9a6b00;
-  margin-bottom:6px; line-height:1.35;
+  border-radius:8px; padding:5px 8px; font-size: clamp(9px, 1.55vh, 11px); font-weight:bold; color:#9a6b00;
+  margin-bottom:6px; line-height:1.45;
 }
 .lu-row.lu-down{ background:#fdeaea; border-color:#e8a0a0; color:#a33; }
 
@@ -372,6 +458,7 @@ body{
 .gskill-t{ font-size: clamp(9px,1.4vh,11px); font-weight:bold; color:#7a5ac0; margin-bottom:3px; }
 .gsk{ display:flex; align-items:center; gap:6px; margin:3px 0; font-size: clamp(9px,1.4vh,11px); color:#333; }
 .gsk .gname{ flex:1; text-align:left; line-height:1.25; }
+.gbtn.info{ background:#f1e9ff; color:#5a2d82; box-shadow:0 2px 0 #cdbde8; padding:4px 6px; }
 .gbtn{ border:none; border-radius:8px; padding:4px 8px; font-size: clamp(9px,1.35vh,11px); font-weight:bold;
   color:#fff; background:#8e5cf7; cursor:pointer; box-shadow:0 2px 0 #6b3fd1; font-family:inherit; }
 .gbtn:active{ transform:translateY(2px); box-shadow:0 0 0 #6b3fd1; }
@@ -386,6 +473,16 @@ body{
 .skill-row{ display:flex; gap:5px; margin-top:4px; }
 .skill-row .skill-btn{ width:auto; flex:1 1 0; min-width:0; padding:7px 3px; font-size:11px; line-height:1.2; margin-top:0; }
 .sk-lv{ font-size:9px; opacity:.9; margin-left:3px; }
+/* 技能說明鈕（掛在技能列尾端，不佔用技能鈕寬度） */
+.sk-info{
+  flex:0 0 auto; width:26px; min-width:26px; margin-top:4px; padding:0;
+  display:flex; align-items:center; justify-content:center;
+  border:1.5px solid #cdd6e6; border-radius:10px; background:#fff; color:#5a2d82;
+  font-size:13px; line-height:1; cursor:pointer; font-family:inherit;
+  transition: background .15s, border-color .15s;
+}
+.sk-info:hover{ background:#f3ecff; border-color:#a06cd5; }
+.sk-info:active{ transform:translateY(1px); }
 /* 雙人時已被選走的職業 */
 .class-card.taken{ opacity:.45; filter:grayscale(.7); cursor:not-allowed; }
 .class-taken{ font-size:10px; color:#c0392b; margin-top:4px; font-weight:bold; }
@@ -476,7 +573,7 @@ body{
 
 /* 直屏（預設）：垂直堆疊，由上而下閱讀 */
 #battle-layout{ display:block; }
-#battle-field{ display:block; }
+#battle-field{ display:block; position:relative; }
 #battle-question{ display:block; }
 
 @media (orientation: portrait){
@@ -514,6 +611,7 @@ body{
   .battle-scene .energy-wrap{ margin:3px 0 2px; }
   .battle-scene .skill-row{ margin-top:3px; }
   .battle-scene .skill-row .skill-btn{ padding:5px 2px; font-size:10px; }
+  .battle-scene .sk-info{ width:20px; min-width:20px; font-size:11px; margin-top:3px; }
   #options{ gap:12px; }
   .option-btn{ padding:13px 15px; font-size:16px; }
   #q-text{ font-size:19px; }
@@ -614,6 +712,22 @@ body{
   .card-grid{ grid-template-columns:1fr; }
   .boss-sprite{ font-size:52px; }
   #q-text{ font-size:16px; }
+  /* 小螢幕：魔王技能標籤只留類型，避免擠成多行 */
+  .boss-skill .bs-hint{ display:none; }
+  .boss-skill{ font-size:10.5px; padding:2px 7px; gap:4px; white-space:normal; }
+  .boss-skill .bs-name{ white-space:normal; }
+  .boss-skill .bs-tag{ font-size:9.5px; padding:0 4px; }
+  .battle-scene .sk-info{ width:22px; min-width:22px; font-size:11px; }
+  /* 窄直屏：標題很長，技能鈕改放在標題下方獨立一行，避免互相重疊 */
+  #battle-sub{ display:block; }
+  .top-skill-btn{ position:static; display:inline-block; margin-top:4px;
+    font-size:11.5px; padding:1px 8px; }
+  /* 小螢幕：魔王技能介紹卡改成可換行，資訊不被省略號截掉 */
+  .boss-intro{ padding:4px 8px 5px; }
+  .boss-intro .bi-head{ flex-wrap:wrap; row-gap:1px; }
+  .boss-intro .bi-skill{ flex:none; white-space:normal; }
+  .boss-intro .bi-line{ white-space:normal; }
+  .boss-intro .bi-x{ display:none; }
   /* 場景：魔王與勇者同圖，窄直屏下讓勇者卡直排以免擠壓 */
   .battle-scene{ padding:12px 10px 14px; }
   .vs-badge{ width:44px; height:44px; font-size:17px; }
@@ -660,6 +774,9 @@ body{
     <div class="section-sub" id="stage-progress" style="font-weight:bold;color:#8e44ad;"></div>
     <div class="card-grid" id="stage-cards"></div>
     <div style="text-align:center;margin-top:14px;">
+      <button class="codex-btn" onclick="openBossCodex()">👹 魔王技能圖鑑（每隻魔王的招式與應對）</button>
+    </div>
+    <div style="text-align:center;margin-top:14px;">
       <button class="back-link" onclick="beginClassSelection()">← 重新選職業</button>
       <button class="back-link" onclick="resetProgress()" style="margin-left:14px;">🔄 重置進度</button>
     </div>
@@ -667,7 +784,10 @@ body{
 
   <!-- 戰鬥 -->
   <section id="screen-battle" class="screen">
-    <div class="battle-top" id="battle-sub"></div>
+    <div class="battle-top">
+      <span id="battle-sub"></span>
+      <button class="top-skill-btn" type="button" onclick="openPartySkills()" title="查看勇者技能說明">📖 技能</button>
+    </div>
 
     <div id="timer-bar"><div id="timer-fill"></div><span id="timer-text">⏱️ 15</span></div>
 
@@ -682,7 +802,7 @@ body{
           <div id="boss-area">
             <div class="boss-sprite" id="boss-sprite">👾</div>
             <div id="boss-name">魔王</div>
-            <div class="boss-skill" id="boss-skill">👹 技能：—</div>
+            <div class="boss-skill" id="boss-skill" role="button" tabindex="0" onclick="openBossSkillCard()">👹 技能：—</div>
             <div class="boss-progress" id="boss-progress">魔王 1 / 5</div>
             <div class="hp-bar"><div class="hp-fill" id="boss-hp-fill" style="width:100%"></div>
               <span class="hp-text" id="boss-hp-text">0/0</span></div>
@@ -693,6 +813,9 @@ body{
         </div>
 
         <div id="skill-banner"></div>
+
+        <!-- 魔王登場：技能介紹（自動淡出，可點擊關閉） -->
+        <div id="boss-intro" class="boss-intro" onclick="hideBossIntro()"></div>
       </div>
 
       <div id="battle-question">
@@ -737,6 +860,14 @@ body{
   </section>
 
   <div id="confetti"></div>
+</div>
+
+<!-- 魔王技能詳情 / 魔王圖鑑 共用彈窗 -->
+<div id="boss-modal" class="modal-mask" onclick="if(event.target===this) closeBossModal()">
+  <div class="modal-card">
+    <button class="modal-close" type="button" onclick="closeBossModal()">✕</button>
+    <div id="boss-modal-body"></div>
+  </div>
 </div>
 
 <script>
@@ -1308,6 +1439,40 @@ const STAGES = {
 };
 /* 魔王每 N 題（答完後）施放一次技能 */
 const BOSS_SKILL_EVERY = 3;
+
+/* ---------- 魔王技能介紹資料（所有魔王共用一套技能類型說明） ---------- */
+const SOLO_BOSS_HP_RATE = 0.75;   // 單人模式：魔王血量 -25%
+const BOSS_SKILL_TYPES = {
+  aoe:    { icon:'💥', label:'範圍攻擊', color:'#e74c3c',
+            counter:'全體都會受傷（防禦可減半），血少的勇者要早點用「聖光治癒」保命。' },
+  heal:   { icon:'💚', label:'自我回復', color:'#27ae60',
+            counter:'牠會自己補血，集中輸出、別讓牠有機會回復。' },
+  shield: { icon:'🛡️', label:'護盾防禦', color:'#2980b9',
+            counter:'護盾會先吸收傷害，用「破甲」或高攻技能加速破盾。' },
+  buff:   { icon:'⚔️', label:'攻擊強化', color:'#e67e22',
+            counter:'牠會越打越痛，速戰速決、不要拖太久。' },
+};
+function bossSkillType(type){
+  return BOSS_SKILL_TYPES[type] || { icon:'👹', label:'特殊技能', color:'#8e44ad', counter:'小心應對。' };
+}
+/* 單人模式時，回復／護盾的數值也按同一比例縮小，維持與血量一致的手感 */
+function bossSkillPowerOf(sk, rate){
+  const raw = sk.power;
+  if(!sk || (sk.type!=='heal' && sk.type!=='shield')) return raw;
+  const r = (rate==null) ? (state.bossScale || 1) : rate;
+  return Math.max(1, Math.round(raw * r));
+}
+/* 技能效果的完整描述（帶實際數值） */
+function bossSkillEffect(sk, maxHp, rate){
+  const p = bossSkillPowerOf(sk, rate);
+  switch(sk.type){
+    case 'aoe':    return `對所有存活勇者造成 ${p} 點傷害（防禦可減免一半）`;
+    case 'heal':   return `回復自身 ${p} 點血量（約總血量的 ${maxHp?Math.round(p/maxHp*100):0}%）`;
+    case 'shield': return `獲得 ${p} 點護盾，優先吸收你們造成的傷害`;
+    case 'buff':   return `自身攻擊力永久 +${p}，之後每次攻擊都更痛`;
+    default:       return sk.desc;
+  }
+}
 
 /* ---------- 課程主題（對應 10 堂課，由易到難，使用者指定次序） ---------- */
 const LESSON_TOPICS = {
@@ -1989,6 +2154,7 @@ let state = {
   mode:'solo', players:[], current:0,
   stage:null, bosses:[], bossIndex:0,
   bossName:'', bossAtk:0, bossMax:0, bossHp:0, bossShield:0,
+  bossScale:1,             // 單人模式魔王強度縮放（血量 -25%）
   bossBurn:null,           // 灼燒狀態 { dmg, turns }
   growth:null,             // 通關成長畫面的暫存配點
   growthSummary:'',        // 成長結果（顯示在通關結果頁）
@@ -2152,6 +2318,7 @@ function renderClassScreen(){
         <span>❤️ ${c.hp}</span><span>⚔️ ${c.atk}</span><span>🛡️ ${c.def}</span>
       </div>
       <div class="class-skill"><b>${sk.icon} ${sk.name}</b>：${sk.text(1)}</div>
+      <span class="class-skill-more" onclick="event.stopPropagation();openClassSkills('${c.key}')">📖 技能詳情（Lv.1→3）</span>
       ${taken?'<div class="class-taken">✅ 已有勇者選了這個職業（技能不可重複）</div>':''}
     </button>`;
   }).join('');
@@ -2201,8 +2368,10 @@ function renderStageScreen(){
     ? '🏅 全部階段已通關！可以自由重玩任何階段。'
     : `🔓 目前開放至第 ${unlockedStage} 階段（通關後才會解鎖下一階段）`;
   $('stage-cards').innerHTML = Object.values(STAGES).map(s=>{
-    const hps = s.bosses.map(b=>b.hp);
+    const rate = state.mode === 'solo' ? SOLO_BOSS_HP_RATE : 1;
+    const hps = s.bosses.map(b=>Math.round(b.hp * rate));
     const min = Math.min(...hps), max = Math.max(...hps);
+    const skillNames = s.bosses.map(b=>b.skill.name).join('・');
     if(s.id > unlockedStage){
       return `<button class="stage-card locked" type="button" disabled aria-disabled="true">
         <div class="stage-lock">🔒</div>
@@ -2219,6 +2388,8 @@ function renderStageScreen(){
       <div class="stage-sub">${s.sub}</div>
       <div class="stage-bossname">👹 5 隻魔王連戰（血量 ${min}→${max}）</div>
       <div class="stage-qcount">${cleared ? '✅ 已通關・可再挑戰' : '📝 無限題庫・隨機生成不重複'}</div>
+      <div class="stage-skills">👹 魔王技能：${skillNames}</div>
+      <div class="stage-qcount" style="font-size:11.5px;color:#8a7aa8;">${rate<1?'🟢 單人模式：魔王血量 -25%':'👫 雙人模式：魔王完整強度'}</div>
     </button>`;
   }).join('');
 }
@@ -2246,12 +2417,16 @@ function startStage(id){
 }
 function loadBoss(index){
   const b = state.bosses[index];
-  state.bossMax = b.hp; state.bossHp = b.hp;
+  // 單人模式：只有一隻勇者輸出，魔王血量降低 25%（技能的回復／護盾同步按比例縮小）
+  state.bossScale = (state.mode === 'solo') ? SOLO_BOSS_HP_RATE : 1;
+  const hp = Math.round(b.hp * state.bossScale);
+  state.bossMax = hp; state.bossHp = hp;
   state.bossAtk = b.atk; state.bossName = b.name;
   state.bossShield = 0;
   state.bossBurn = null;
   state.timeLimit = TIME_LIMITS[Math.min(index, TIME_LIMITS.length-1)];
   // 注意：這裡「不」重置 usedSigs，去重範圍涵蓋整場遊戲（含所有魔王與階段）
+  requestAnimationFrame(showBossIntro);
 }
 function nextBoss(){
   state.bossIndex++;
@@ -2273,12 +2448,15 @@ function skillReady(i,p){
 }
 function skillButtonsHtml(i,p){
   const ready = skillReady(i,p);
-  return p.skills.map((s,si)=>{
+  const btns = p.skills.map((s,si)=>{
     const def = SKILLS[s.id];
     return `<button class="skill-btn ${ready?'ready':''}" id="skill-${i}-${si}"
       onclick="activateSkill(${i},${si})" ${ready?'':'disabled'}
       title="${escapeHtml(def.text(s.lv))}">${def.icon} ${def.name}<span class="sk-lv">Lv.${s.lv}</span></button>`;
   }).join('');
+  // 技能說明鈕：任何時候都能看（含升級後的效果）
+  return btns + `<button class="sk-info" type="button" onclick="openHeroSkills(${i})"
+    title="查看 ${escapeHtml(p.name)} 的技能說明">📖</button>`;
 }
 function renderBattle(){
   const s = state.stage;
@@ -2286,8 +2464,11 @@ function renderBattle(){
   $('boss-sprite').innerHTML = BOSS_SVG[s.id][state.bossIndex];
   $('boss-name').textContent = `${state.bossName}`;
   const sk = state.bosses[state.bossIndex].skill;
-  $('boss-skill').textContent = `👹 技能：${sk.name}`;
-  $('boss-skill').title = sk.desc;
+  const ti = bossSkillType(sk.type);
+  $('boss-skill').innerHTML = `<span class="bs-name">${ti.icon} 技能：${sk.name}</span>` +
+    `<span class="bs-tag" style="color:${ti.color}">${ti.label}</span>` +
+    `<span class="bs-hint">點我看詳情</span>`;
+  $('boss-skill').title = `${sk.name}｜${bossSkillEffect(sk, state.bossMax)}（每 ${BOSS_SKILL_EVERY} 題發動）`;
   $('boss-progress').textContent = `魔王 ${state.bossIndex+1} / ${state.bosses.length}（本題 ${state.timeLimit} 秒）`;
   $('players-panel').innerHTML = state.players.map((p,i)=>`
     <div class="player-card ${(state.mode!=='coop'? i===state.current : p.alive)?'active':''} ${p.alive?'':'down'}" id="player-${i}">
@@ -2696,31 +2877,32 @@ function resolveRound(){
 /* ---------- 魔王技能 ---------- */
 function useBossSkill(){
   const sk = state.bosses[state.bossIndex].skill;
+  const power = bossSkillPowerOf(sk);
   const area = $('boss-area');
-  showSkillBanner(`👹 ${state.bossName} 施放【${sk.name}】！${sk.desc}！`);
+  showSkillBanner(`👹 ${state.bossName} 施放【${sk.name}】！${bossSkillEffect(sk, state.bossMax)}`);
   bossCastEffect(sk.type);
   playSound('skill');
   switch(sk.type){
     case 'heal':{
       const before = state.bossHp;
-      state.bossHp = Math.min(state.bossMax, state.bossHp + sk.power);
+      state.bossHp = Math.min(state.bossMax, state.bossHp + power);
       floatDamage(area, '+'+(state.bossHp-before), 'heal');
       break;
     }
     case 'buff':{
-      state.bossAtk += sk.power;
-      floatDamage(area, '⚔️+'+sk.power, 'dmg-crit');
+      state.bossAtk += power;
+      floatDamage(area, '⚔️+'+power, 'dmg-crit');
       break;
     }
     case 'shield':{
-      state.bossShield += sk.power;
-      floatDamage(area, '🛡️+'+sk.power, 'dmg-shield');
+      state.bossShield += power;
+      floatDamage(area, '🛡️+'+power, 'dmg-shield');
       break;
     }
     case 'aoe':{
       state.players.forEach((p,i)=>{
         if(!p.alive) return;
-        const dmg = Math.max(1, sk.power - Math.floor(p.def/2));   // 防禦略減技能傷害
+        const dmg = Math.max(1, power - Math.floor(p.def/2));   // 防禦略減技能傷害
         p.hp = Math.max(0, p.hp - dmg);
         if(p.hp===0) p.alive = false;
         floatDamage($('player-'+i), '-'+dmg, 'dmg-player');
@@ -2730,6 +2912,171 @@ function useBossSkill(){
       break;
     }
   }
+}
+
+/* ---------- 魔王技能介紹：登場小卡 / 詳情彈窗 / 魔王圖鑑 ---------- */
+function showBossIntro(){
+  if(!state.bosses || !state.bosses.length) return;
+  const el = $('boss-intro'); if(!el) return;
+  const field = $('battle-field');
+  // 戰場被壓得太扁（極矮的橫屏視窗）時不顯示浮動介紹，避免整張卡蓋住戰場
+  if(field && field.clientHeight > 0 && field.clientHeight < 110){
+    el.classList.remove('show'); return;
+  }
+  const b = state.bosses[state.bossIndex];
+  const sk = b.skill, ti = bossSkillType(sk.type);
+  el.innerHTML = `
+    <div class="bi-head">
+      <span class="bi-name">👹 ${b.name} 登場</span>
+      <span class="bi-type" style="color:${ti.color}">${ti.icon} ${ti.label}</span>
+      <span class="bi-skill">【${sk.name}】${sk.desc}</span>
+      <span class="bi-x">點擊關閉</span>
+    </div>
+    <div class="bi-line">${bossSkillEffect(sk, state.bossMax)}　·　每 ${BOSS_SKILL_EVERY} 題發動　·　<span class="bi-tip">💡 點技能標籤看完整介紹</span></div>`;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 4200);
+}
+function hideBossIntro(){
+  const el = $('boss-intro'); if(!el) return;
+  clearTimeout(el._t); el.classList.remove('show');
+}
+function openBossModal(html){
+  const body = $('boss-modal-body'), mask = $('boss-modal');
+  if(!body || !mask) return;
+  body.innerHTML = html;
+  mask.classList.add('show');
+  const card = mask.querySelector('.modal-card');
+  if(card) card.scrollTop = 0;
+}
+function closeBossModal(){
+  const m = $('boss-modal'); if(m) m.classList.remove('show');
+}
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){ closeBossModal(); hideBossIntro(); }
+});
+
+/* 單一魔王的技能卡（戰鬥中點技能標籤時顯示） */
+function bossSkillCardHtml(b, opt){
+  const o = opt || {};
+  const sk = b.skill, ti = bossSkillType(sk.type);
+  return `
+    <div class="modal-title">👹 ${b.name}・技能介紹</div>
+    <div class="modal-sub">${o.sub || ''}</div>
+    <div class="codex-boss">
+      <div class="codex-boss-head">
+        <span class="codex-boss-name">${b.name}</span>
+        <span class="codex-boss-stat">❤️ ${o.hp} 血　⚔️ ${o.atk} 攻</span>
+        <span class="codex-badge" style="color:${ti.color}">${ti.icon} ${ti.label}</span>
+      </div>
+      <div class="codex-skill">【${sk.name}】${sk.desc}</div>
+      <div class="codex-eff">效果：${bossSkillEffect(sk, o.hp, o.rate)}</div>
+      <div class="codex-eff">發動：每答完 ${BOSS_SKILL_EVERY} 題施放一次（第 ${BOSS_SKILL_EVERY}、${BOSS_SKILL_EVERY*2}、${BOSS_SKILL_EVERY*3}… 題）</div>
+      <div class="codex-tip">💡 應對：${ti.counter}</div>
+    </div>
+    <div class="codex-note">${o.note || ''}</div>`;
+}
+function openBossSkillCard(){
+  if(!state.bosses || !state.bosses.length) return;
+  const b = state.bosses[state.bossIndex];
+  const rate = state.bossScale || 1;
+  openBossModal(bossSkillCardHtml(b, {
+    sub: `目前魔王 ${state.bossIndex+1} / ${state.bosses.length}　（本題 ${state.timeLimit} 秒）`,
+    hp: state.bossMax, atk: state.bossAtk, rate,
+    note: rate < 1
+      ? '🟢 單人模式：魔王血量已 -25%，回復／護盾數值亦同步縮小。'
+      : '👫 雙人合作模式：魔王為完整強度，兩人合力輸出。',
+  }));
+}
+/* 魔王圖鑑：列出已解鎖階段的全部魔王與招式 */
+function openBossCodex(){
+  const maxId = Math.min(unlockedStage, MAX_STAGE);
+  const ids = Object.keys(STAGES).map(Number).filter(id => id <= maxId);
+  const rate = state.mode === 'solo' ? SOLO_BOSS_HP_RATE : 1;
+  const parts = ids.map(id=>{
+    const s = STAGES[id];
+    return `<div class="codex-stage">
+      <div class="codex-stage-title">第 ${id} 階段・${s.name}<span style="font-weight:normal;font-size:11.5px;color:#8a7aa8;">（${s.sub}）</span></div>
+      ${s.bosses.map((b,i)=>{
+        const hp = Math.round(b.hp * rate);
+        const ti = bossSkillType(b.skill.type);
+        return `<div class="codex-boss">
+          <div class="codex-boss-head">
+            <span class="codex-boss-name">${i+1}. ${b.name}</span>
+            <span class="codex-boss-stat">❤️ ${hp}　⚔️ ${b.atk}</span>
+            <span class="codex-badge" style="color:${ti.color}">${ti.icon} ${ti.label}</span>
+          </div>
+          <div class="codex-skill">【${b.skill.name}】${b.skill.desc}</div>
+          <div class="codex-eff">效果：${bossSkillEffect(b.skill, hp, rate)}</div>
+          <div class="codex-tip">💡 應對：${ti.counter}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+  openBossModal(`
+    <div class="modal-title">👹 魔王技能圖鑑</div>
+    <div class="modal-sub">每隻魔王都會在「每答完 ${BOSS_SKILL_EVERY} 題」時施放一次技能，作答時留意牠的招式。<br>
+      ${rate < 1 ? '目前是 <b>單人模式</b>：魔王血量已 -25%。' : '目前是 <b>雙人合作</b>模式：魔王為完整強度。'}</div>
+    <div class="codex-note">💥 範圍攻擊打全部勇者（防禦可減半）　💚 回復只補魔王自己　🛡️ 護盾優先吸收傷害　⚔️ 強化讓魔王越打越痛</div>
+    ${parts}`);
+}
+
+/* ---------- 勇者技能介紹（戰鬥中 📖／職業選擇／成長畫面共用同一個彈窗） ---------- */
+function heroSkillCardHtml(id, lv){
+  const def = SKILLS[id];
+  if(!def) return '';
+  const max = SKILL_LEVEL_MAX;
+  const next = lv < max ? def.text(lv+1) : '';
+  const how = (def.type === 'heal')
+    ? '🕐 發動方式：立刻生效（不佔用下一題）'
+    : '🕐 發動方式：發動後「下一題」生效，該題答對才吃得到效果';
+  return `<div class="codex-boss">
+    <div class="codex-boss-head">
+      <span class="codex-boss-name">${def.icon} ${def.name}</span>
+      <span class="codex-boss-stat">Lv.${lv} / ${max}</span>
+      <span class="codex-badge" style="color:#7a5ac0">${def.brief}</span>
+    </div>
+    <div class="codex-skill">目前效果（Lv.${lv}）</div>
+    <div class="codex-eff">${def.text(lv)}</div>
+    ${next
+      ? `<div class="codex-skill" style="color:#2f7a52">升級後（Lv.${lv+1}）</div><div class="codex-eff">${next}</div>`
+      : `<div class="codex-tip">✅ 已達最高級 Lv.${max}</div>`}
+    <div class="codex-eff" style="color:#6b5c8a">${how}</div>
+  </div>`;
+}
+function openHeroSkills(i){
+  const p = state.players && state.players[i];
+  if(!p) return;
+  const title = (p.name === '勇者') ? `${p.cls.name}・勇者技能` : `${p.name}・勇者技能`;
+  openBossModal(`
+    <div class="modal-title">🧙 ${title}</div>
+    <div class="modal-sub">${p.cls.name}　❤️ ${p.hp}/${p.maxHp}　⚔️ ${p.atk}　🛡️ ${p.def}　·　技能 ${p.skills.length}/2<br>
+      集滿 <b>⚡3 能量</b> 才能發動一次（每答對 1 題 +1 能量）。</div>
+    <div class="codex-note">打敗魔王後血量與技能都不會重置；技能最高 Lv.${SKILL_LEVEL_MAX}，只能靠「通關後的成長點數」升級，或再學第 2 招。</div>
+    ${p.skills.map(s=>heroSkillCardHtml(s.id, s.lv)).join('')}`);
+}
+/* 戰鬥畫面右上角「📖 技能」：單人＝自己，雙人＝兩人一起列出 */
+function openPartySkills(){
+  if(!state.players || !state.players.length) return;
+  if(state.players.length === 1) return openHeroSkills(0);
+  const blocks = state.players.map(p=>`
+    <div class="codex-stage">
+      <div class="codex-stage-title">${p.name}（${p.cls.name}）Lv.${p.level}　❤️ ${p.hp}/${p.maxHp}　⚔️ ${p.atk}　🛡️ ${p.def}</div>
+      ${p.skills.map(s=>heroSkillCardHtml(s.id, s.lv)).join('')}
+    </div>`).join('');
+  openBossModal(`
+    <div class="modal-title">🧙 隊伍技能</div>
+    <div class="modal-sub">兩位勇者的技能各自獨立，集滿 <b>⚡3 能量</b> 才能發動一次（每答對 1 題 +1 能量）。</div>
+    <div class="codex-note">打敗魔王後血量與技能都不會重置；技能最高 Lv.${SKILL_LEVEL_MAX}，只能靠「通關後的成長點數」升級，或再學第 2 招。</div>
+    ${blocks}`);
+}
+function openClassSkills(key){
+  const c = CLASSES[key]; if(!c) return;
+  openBossModal(`
+    <div class="modal-title">${c.name}・職業技能</div>
+    <div class="modal-sub">❤️ ${c.hp} 血　⚔️ ${c.atk} 攻　🛡️ ${c.def} 防<br>💠 被動：${c.passive}</div>
+    ${heroSkillCardHtml(c.skill, 1)}
+    <div class="codex-note">通關每個大關後，可把技能升到 Lv.${SKILL_LEVEL_MAX}，或再學第 2 招（破甲重擊／震懾之擊／汲血之刃）。每人最多 2 招，隊友學過的不會重複。</div>`);
 }
 
 /* ---------- 特效 ---------- */
@@ -2798,7 +3145,11 @@ function showBossDefeated(){
   $('levelup-msg').textContent = '繼續前進！⚠️ 血量、能量與技能都不會重置，撐到打完整個大關才有成長機會。';
   $('levelup-stats').innerHTML = state.players.map(p=>`
     <div class="lu-row ${p.alive?'':'lu-down'}">${CLASS_SVG[p.cls.key]} ${p.name} → <b>Lv.${p.level}</b>　❤️${p.hp}/${p.maxHp}　⚔️${p.atk}　🛡️${p.def}　🔥${p.skills.map(s=>`${SKILLS[s.id].name} Lv.${s.lv}`).join('／')}</div>`).join('');
-  $('levelup-next').textContent = `⚔️ 下一隻魔王：第 ${state.bossIndex+2} / ${state.bosses.length} 隻 — ${next.name}（${next.hp} 血，思考 ${TIME_LIMITS[Math.min(state.bossIndex+1, TIME_LIMITS.length-1)]} 秒）`;
+  const nextTi = bossSkillType(next.skill.type);
+  const nextHp = Math.round(next.hp * (state.bossScale || 1));
+  $('levelup-next').innerHTML =
+    `⚔️ 下一隻魔王：第 ${state.bossIndex+2} / ${state.bosses.length} 隻 — ${next.name}（${nextHp} 血，思考 ${TIME_LIMITS[Math.min(state.bossIndex+1, TIME_LIMITS.length-1)]} 秒）<br>` +
+    `👹 技能【${next.skill.name}】${nextTi.icon} ${nextTi.label}：${bossSkillEffect(next.skill, nextHp)}`;
 }
 /* ---------- 通關成長：20 點素質自由配 + 技能升級／學習 ---------- */
 const GROWTH_POINTS = 20;
@@ -2838,12 +3189,14 @@ function renderGrowth(){
         const btn = s.lv < SKILL_LEVEL_MAX
           ? `<button class="gbtn ${done?'done':''}" ${done?'disabled':''} onclick="growthUpgrade(${i},${si})">${done?(chosen?'✅ 已升級':'—'):'升級 Lv.'+(s.lv+1)}</button>`
           : '<button class="gbtn done" disabled>已滿級</button>';
-        return `<div class="gsk"><span class="gname">${def.icon} <b>${def.name}</b> Lv.${s.lv}｜${def.brief}</span>${btn}</div>`;
+        return `<div class="gsk"><span class="gname">${def.icon} <b>${def.name}</b> Lv.${s.lv}｜${def.brief}</span>
+          <button class="gbtn info" onclick="openHeroSkills(${i})" title="技能說明">📖</button>${btn}</div>`;
       }),
       ...learns.map(id=>{
         const def = SKILLS[id];
         const chosen = g.skillChoice[i] === 'learn'+id;
         return `<div class="gsk"><span class="gname">${def.icon} <b>${def.name}</b>（新招 Lv.1）｜${def.brief}</span>
+          <button class="gbtn info" onclick="openHeroSkills(${i})" title="技能說明">📖</button>
           <button class="gbtn ${done?'done':''}" ${done?'disabled':''} onclick="growthLearn(${i},'${id}')">${done?(chosen?'✅ 已學會':'—'):'學習'}</button></div>`;
       }),
     ].join('');
